@@ -121,6 +121,20 @@ Keep a `## Quiz State` section at the top of the tracker file:
 
 Update after each quiz interaction.
 
+## Cron Setup
+
+When the user asks to set up a scheduled vocabulary quiz:
+
+1. **Ask for:** frequency (default: every 1h), delivery channel + target
+2. **Job name:** `vocabulary-quiz-{agentName}` (e.g. `vocabulary-quiz-english`)
+3. **Create a cron job** with these settings:
+   - Session: isolated
+   - Timeout: 120 seconds
+   - Message: instruct the agent to use the `vocabulary-builder` skill to run a quiz
+4. **Quiz constraints** (include in the cron message):
+   - Check Quiz State — skip if pending quiz unanswered today
+   - Respect sleep hours: no messages 11PM–7AM (user's timezone)
+
 ## References
 
 - Video: [Why I Stopped Using Flashcards and Started Using AI](https://youtu.be/wjWrVpZZXSg)

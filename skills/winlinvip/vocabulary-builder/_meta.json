@@ -3,11 +3,16 @@
   "slug": "vocabulary-builder",
   "displayName": "Vocabulary Builder",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1772295390078,
-    "commit": "https://github.com/openclaw/skills/commit/9a5cee507f40b44b601d1c124bd5ff013594cbd0"
+    "version": "1.1.2",
+    "publishedAt": 1772300886067,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1772295390078,
+      "commit": "https://github.com/openclaw/skills/commit/9a5cee507f40b44b601d1c124bd5ff013594cbd0"
+    },
     {
       "version": "1.0.3",
       "publishedAt": 1771125275200,
