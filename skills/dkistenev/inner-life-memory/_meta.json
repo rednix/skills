@@ -3,11 +3,16 @@
   "slug": "inner-life-memory",
   "displayName": "Inner Life Memory",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1772279821452,
-    "commit": "https://github.com/openclaw/skills/commit/eb04ddb5ddad536a0928a6f7308151a2de3a86ce"
+    "version": "1.0.4",
+    "publishedAt": 1772297468114,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1772279821452,
+      "commit": "https://github.com/openclaw/skills/commit/eb04ddb5ddad536a0928a6f7308151a2de3a86ce"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1772208603795,
