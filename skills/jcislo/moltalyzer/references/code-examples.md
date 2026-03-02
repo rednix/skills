@@ -7,12 +7,7 @@ import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 
-const key = process.env.EVM_PRIVATE_KEY
-  || process.env.PRIVATE_KEY
-  || process.env.BLOCKRUN_WALLET_KEY
-  || process.env.WALLET_PRIVATE_KEY;
-
-const signer = privateKeyToAccount(key as `0x${string}`);
+const signer = privateKeyToAccount(process.env.EVM_PRIVATE_KEY as `0x${string}`);
 const client = new x402Client();
 registerExactEvmScheme(client, { signer });
 const fetchWithPayment = wrapFetchWithPayment(fetch, client);
@@ -34,7 +29,7 @@ console.log(data.hotDiscussions);     // [{ topic, sentiment, description }]
 const res = await fetchWithPayment("https://api.moltalyzer.xyz/api/github/digests/latest");
 const { data } = await res.json();
 console.log(data.notableProjects);  // [{ name, stars, language, description }]
-console.log(data.emergingTools);    // ["CamoFox: anti-detection browser MCP server"]
+console.log(data.emergingTools);    // ["LiteLLM: unified LLM gateway proxy"]
 ```
 
 ## Fetch Polymarket Signals

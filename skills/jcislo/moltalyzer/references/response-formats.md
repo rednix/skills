@@ -7,7 +7,7 @@ All responses wrap data in `{ success: true, data: ... }`. Paid endpoints return
 ```json
 {
   "success": true,
-  "_meta": { "apiVersion": "1.7.0", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
+  "_meta": { "apiVersion": "1.7.1", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
   "data": {
     "id": "string",
     "hourStart": "ISO 8601",
@@ -43,7 +43,7 @@ Key fields:
 ```json
 {
   "success": true,
-  "_meta": { "apiVersion": "1.7.0", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
+  "_meta": { "apiVersion": "1.7.1", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
   "data": {
     "id": "string",
     "digestDate": "ISO 8601",
@@ -82,7 +82,7 @@ Key fields:
 ```json
 {
   "success": true,
-  "_meta": { "apiVersion": "1.7.0", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
+  "_meta": { "apiVersion": "1.7.1", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
   "data": {
     "signalIndex": 42,
     "question": "Will GTA 6 cost $100+?",
@@ -114,7 +114,7 @@ Key fields:
 ```json
 {
   "success": true,
-  "_meta": { "apiVersion": "1.7.0", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
+  "_meta": { "apiVersion": "1.7.1", "changelog": "https://api.moltalyzer.xyz/api/changelog" },
   "data": {
     "signalIndex": 123,
     "chainId": "base",
@@ -156,7 +156,7 @@ Key fields:
 
 All responses include version info:
 ```json
-{ "_meta": { "apiVersion": "1.7.0", "changelog": "https://api.moltalyzer.xyz/api/changelog" } }
+{ "_meta": { "apiVersion": "1.7.1", "changelog": "https://api.moltalyzer.xyz/api/changelog" } }
 ```
 
 Check `apiVersion` to detect breaking changes. The changelog endpoint is always free.

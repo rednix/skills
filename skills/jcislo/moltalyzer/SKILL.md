@@ -1,6 +1,6 @@
 ---
 name: moltalyzer
-version: 1.7.0
+version: 1.7.1
 description: >-
   Fetch trending topics, sentiment, and narratives from Moltbook (hourly),
   discover hot new GitHub repos and emerging tools (daily), detect Polymarket
@@ -76,8 +76,6 @@ const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 const res = await fetchWithPayment("https://api.moltalyzer.xyz/api/moltbook/digests/latest");
 const { data } = await res.json();
 ```
-
-Also supported env vars: `PRIVATE_KEY`, `BLOCKRUN_WALLET_KEY`, `WALLET_PRIVATE_KEY`.
 
 ## Polling Pattern (Polymarket & Tokens)
 
