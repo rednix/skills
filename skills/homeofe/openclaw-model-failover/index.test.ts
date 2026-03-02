@@ -101,6 +101,22 @@ describe("isTemporarilyUnavailableLike", () => {
     expect(isTemporarilyUnavailableLike("copilot-proxy not responding")).toBe(true);
   });
 
+  it("detects 'temporarily overloaded' (gateway chat message)", () => {
+    expect(isTemporarilyUnavailableLike("The AI service is temporarily overloaded. Please try again in a moment.")).toBe(true);
+  });
+
+  it("detects bare 'overloaded'", () => {
+    expect(isTemporarilyUnavailableLike("Overloaded")).toBe(true);
+  });
+
+  it("detects HTTP 529 (Anthropic overloaded status)", () => {
+    expect(isTemporarilyUnavailableLike("HTTP 529")).toBe(true);
+  });
+
+  it("detects 'service is temporarily'", () => {
+    expect(isTemporarilyUnavailableLike("service is temporarily down")).toBe(true);
+  });
+
   it("returns false for unrelated errors", () => {
     expect(isTemporarilyUnavailableLike("Syntax error")).toBe(false);
     expect(isTemporarilyUnavailableLike(undefined)).toBe(false);
@@ -1034,14 +1050,17 @@ describe("message_sent handler", () => {
     expect(state.limited["provB/m3"]).toBeUndefined();
   });
 
-  it("skips when model cannot be determined", () => {
+  it("falls back to first model in order when model cannot be determined from ctx", () => {
     const { handlers } = setup();
     handlers["message_sent"](
       { content: "API rate limit reached" },
       { sessionKey: "s1" }
     );
     const state = loadState(statePath);
-    expect(Object.keys(state.limited)).toHaveLength(0);
+    // Should block first provider's models (provA) since it defaults to order[0]
+    expect(state.limited["provA/m1"]).toBeDefined();
+    expect(state.limited["provA/m2"]).toBeDefined();
+    expect(state.limited["provB/m3"]).toBeUndefined();
   });
 
   it("patches sessions.json on rate-limit detection", () => {

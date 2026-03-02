@@ -3,11 +3,16 @@
   "slug": "openclaw-model-failover",
   "displayName": "OpenClaw Model Failover",
   "latest": {
-    "version": "0.2.0",
-    "publishedAt": 1772280785932,
-    "commit": "https://github.com/openclaw/skills/commit/aac52bbae6f2f2f5a5262ce91b5559ec98f30282"
+    "version": "0.2.1",
+    "publishedAt": 1772472526240,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.2.0",
+      "publishedAt": 1772280785932,
+      "commit": "https://github.com/openclaw/skills/commit/aac52bbae6f2f2f5a5262ce91b5559ec98f30282"
+    },
     {
       "version": "0.1.5",
       "publishedAt": 1771952013008,
