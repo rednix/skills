@@ -1,0 +1,11 @@
+{
+  "owner": "mbpz",
+  "slug": "akshare-stock",
+  "displayName": "A股量化 AkShare",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1772461532238,
+    "commit": null
+  },
+  "history": []
+}
