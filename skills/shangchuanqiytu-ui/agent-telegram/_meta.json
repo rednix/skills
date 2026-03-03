@@ -1,0 +1,11 @@
+{
+  "owner": "shangchuanqiytu-ui",
+  "slug": "agent-telegram",
+  "displayName": "Agent Telegram",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772436771618,
+    "commit": null
+  },
+  "history": []
+}
