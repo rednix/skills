@@ -15,6 +15,7 @@ Usage:
 import argparse
 import httpx
 import os
+import subprocess
 import sys
 import time
 import base64
@@ -23,6 +24,28 @@ from pathlib import Path
 # Force unbuffered output
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
+
+# Usage tracking
+TRACKER_PATH = os.path.expanduser("~/clawd/scripts/track-usage.sh")
+
+
+def track_usage(prompt: str, result_path: str, status: str = "success"):
+    """Log usage to Supabase tracker."""
+    if not os.path.exists(TRACKER_PATH):
+        return
+    
+    try:
+        cmd = [
+            TRACKER_PATH, "log",
+            "--skill", "morpheus",
+            "--prompt", prompt[:500],
+            "--result", str(result_path),
+            "--type", "image",
+            "--status", status
+        ]
+        subprocess.run(cmd, capture_output=True, timeout=10)
+    except Exception as e:
+        print(f"Warning: Failed to track usage: {e}", file=sys.stderr)
 
 
 DEPLOYMENT_ID = "1e16994d-da67-4f30-9ade-250f964b2abc"
@@ -263,11 +286,15 @@ def main():
             output_url = outputs[0].get("url") or outputs[0].get("data", {}).get("images", [{}])[0].get("url")
             if output_url:
                 download_output(client, output_url, args.output)
+                # Track successful usage
+                track_usage(f"{args.brief} | Target: {args.target}", args.output, "success")
             else:
                 print(f"Output data: {outputs}")
+                track_usage(args.brief, "", "failed")
         else:
             print("No outputs in result")
             print(f"Full result: {result}")
+            track_usage(args.brief, "", "failed")
 
 
 if __name__ == "__main__":

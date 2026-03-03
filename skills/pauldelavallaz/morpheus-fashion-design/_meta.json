@@ -3,11 +3,16 @@
   "slug": "morpheus-fashion-design",
   "displayName": "Morpheus Fashion Design",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1770859133216,
-    "commit": "https://github.com/openclaw/skills/commit/5f7c2a53f143914539dad6370204fc7f60b1dc8c"
+    "version": "1.4.0",
+    "publishedAt": 1772496446349,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1770859133216,
+      "commit": "https://github.com/openclaw/skills/commit/5f7c2a53f143914539dad6370204fc7f60b1dc8c"
+    },
     {
       "version": "1.2.0",
       "publishedAt": 1770788206218,
