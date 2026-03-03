@@ -1,18 +1,19 @@
 ---
 name: firm-a2a-bridge
-version: 1.0.0
+version: 2.0.0
 description: >
-  Agent-to-Agent (A2A) Protocol v1.0 RC bridge for OpenClaw agents.
+  Agent-to-Agent (A2A) Protocol RC v1.0 bridge for OpenClaw agents.
   Enables agent discovery, identity cards, task lifecycle management,
-  and push notification configuration compliant with the A2A specification.
-  Covers gaps G1-G6 from the Phase 7 disruption roadmap.
+  push notification configuration, task cancellation, and SSE subscriptions
+  compliant with the A2A RC v1.0 specification.
+  Covers gaps G1-G8 from the Phase 7 disruption roadmap.
 author: romainsantoli-web
 license: MIT
 metadata:
   openclaw:
     registry: ClawHub
     requires:
-      - mcp-openclaw-extensions >= 2.0.0
+      - mcp-openclaw-extensions >= 3.0.0
 tags:
   - a2a
   - agent-card
@@ -20,6 +21,8 @@ tags:
   - interoperability
   - multi-agent
   - protocol
+  - sse
+  - cancel-task
 ---
 
 # firm-a2a-bridge
@@ -28,7 +31,7 @@ tags:
 
 ## Purpose
 
-Ce skill implémente le **A2A Protocol v1.0 RC** (Agent-to-Agent) pour OpenClaw,
+Ce skill implémente le **A2A Protocol RC v1.0** (Agent-to-Agent) pour OpenClaw,
 permettant aux agents de se découvrir mutuellement, d'échanger des tâches, et de
 recevoir des notifications push — tout cela via une interface MCP standardisée.
 
@@ -41,6 +44,8 @@ recevoir des notifications push — tout cela via une interface MCP standardisé
 | G4 — Pas de suivi de tâches A2A | HIGH | `openclaw_a2a_task_status` |
 | G5 — Pas de push notifications A2A | MEDIUM | `openclaw_a2a_push_config` |
 | G6 — Pas de découverte d'agents | HIGH | `openclaw_a2a_discovery` |
+| G7 — Pas d'annulation de tâches | HIGH | `openclaw_a2a_cancel_task` |
+| G8 — Pas de souscription SSE | HIGH | `openclaw_a2a_subscribe_task` |
 
 ## Tools
 
@@ -56,6 +61,10 @@ de sécurité depuis le frontmatter et le corps du SOUL.md.
 - `capabilities` (dict, optional) — Capacités A2A (streaming, pushNotifications)
 - `security_schemes` (dict, optional) — Schémas OAuth2/apiKey/http
 - `extensions` (list, optional) — Déclarations d'extensions A2A
+- `sign` (bool, optional) — Signer la carte avec JCS+JWS
+- `signing_key` (str, optional) — Clé de signature (masquée dans l'output)
+- `default_input_modes` (list, optional) — Types MIME d'entrée par défaut
+- `default_output_modes` (list, optional) — Types MIME de sortie par défaut
 
 **Exemple :**
 ```json
@@ -109,6 +118,21 @@ Supporte create, get, list, delete avec protection SSRF.
 - `auth_token` (str, optional) — Token Bearer pour la livraison
 - `config_id` (str, optional) — ID de config (requis pour get/delete)
 
+### `openclaw_a2a_cancel_task`
+Annule une tâche A2A en cours d'exécution (CancelTask RC v1.0).
+Erreur si la tâche est déjà en état terminal.
+
+**Paramètres :**
+- `task_id` (str, required) — ID de la tâche à annuler
+
+### `openclaw_a2a_subscribe_task`
+Souscrit aux mises à jour d'une tâche via SSE (SubscribeToTask RC v1.0).
+Diffuse TaskStatusUpdateEvent et TaskArtifactUpdateEvent.
+
+**Paramètres :**
+- `task_id` (str, required) — ID de la tâche à surveiller
+- `callback_url` (str, optional) — URL de callback pour les events
+
 ### `openclaw_a2a_discovery`
 Découvre les agents A2A via leurs endpoints Agent Card ou scan local de SOUL.md.
 
@@ -130,6 +154,10 @@ SOUL.md files                    A2A Protocol v1.0 RC
      │                                  │
      ├── task_status ──────► GetTask / ListTasks
      │                                  │
+     ├── cancel_task ──────► CancelTask (→ canceled)
+     │                                  │
+     ├── subscribe_task ───► SubscribeToTask (SSE events)
+     │                                  │
      ├── push_config ──────► CRUD webhook configs (SSRF-safe)
      │                                  │
      └── discovery ────────► Agent Card endpoint probe + local SOUL.md scan
@@ -149,12 +177,14 @@ SOUL.md files                    A2A Protocol v1.0 RC
 python -m pytest tests/test_smoke.py -k "TestA2aBridge" -v
 ```
 
-15 tests couvrent :
-- Génération de carte depuis un SOUL.md valide
+17 tests couvrent :
+- Génération de carte depuis un SOUL.md valide (avec signature JCS+JWS)
 - Gestion des fichiers manquants
 - Protection path traversal
-- Validation de cartes valides/invalides
+- Validation de cartes valides/invalides (détection patterns v0.4.0 dépréciés)
 - Envoi de tâches avec SSRF protection
+- Annulation de tâches (CancelTask)
+- Souscription SSE (SubscribeToTask)
 - Statut de tâches (GetTask/ListTasks)
 - Configuration push notifications (CRUD + SSRF)
 - Découverte locale d'agents
