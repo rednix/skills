@@ -44,10 +44,34 @@ Users can invoke these slash commands directly in chat:
 
 ## Behaviour During Sleep Hours
 
+**Before sending ANY message to the user — including proactive notifications, summaries, heartbeats, weekly recaps, stock alerts, backup confirmations, or any other automated report — first check sleep state:**
+
+```bash
+node ~/.openclaw/skills/sleep-snooze/scripts/status.js
+```
+
+If `isSleeping` is `true`, do NOT send. Queue it instead (see below). This applies to both incoming messages from others AND outgoing messages you are about to send proactively.
+
+### Incoming messages during sleep
+
 When a message or notification arrives during the sleep window:
 1. Do **not** deliver a push notification or respond immediately.
 2. Call `node ~/.openclaw/skills/sleep-snooze/scripts/queue-message.js` with the message payload to store it in the local queue.
 3. Acknowledge silently — do not send any reply to the sender during sleep hours unless the message is tagged as urgent (see Urgency Rules below).
+
+### Outgoing messages you generate during sleep
+
+When you (or any agent) are about to send a proactive message to the user during the sleep window — status updates, recaps, reports, heartbeats — queue them instead of sending:
+
+```bash
+node ~/.openclaw/skills/sleep-snooze/scripts/queue-message.js \
+  --provider <provider> \
+  --sender-id <agent-id> \
+  --sender-name "<Agent Name>" \
+  --message "<full message text>"
+```
+
+Exit code 0 = queued, do not send. Exit code 2 = urgent, send immediately with 🚨 prefix.
 
 ## Urgency Rules
 
