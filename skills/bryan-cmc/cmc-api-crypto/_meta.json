@@ -1,0 +1,11 @@
+{
+  "owner": "bryan-cmc",
+  "slug": "cmc-api-crypto",
+  "displayName": "CoinMarketCap Crypto APIs",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772469526116,
+    "commit": null
+  },
+  "history": []
+}
