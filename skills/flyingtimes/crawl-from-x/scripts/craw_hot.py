@@ -42,7 +42,7 @@ class Config:
     results_dir: Path = None
 
     # 超时配置（秒）
-    page_load_timeout: int = 5
+    page_load_timeout: int = 10  # 增加页面加载超时：5s → 10s
     scroll_check_interval: float = 0.5
     scroll_max_attempts: int = 10
     scroll_no_new_threshold: int = 2  # 连续 2 次没新帖就停止（优化：从 3 次降为 2 次）
@@ -439,7 +439,8 @@ class TwitterApiClient:
         """通过 fxtwitter API 获取内容"""
         api_url = re.sub(r'(x\.com|twitter\.com)', 'api.fxtwitter.com', url)
         try:
-            resp = requests.get(api_url, headers=self.config.request_headers, timeout=15)
+            # 增加超时时间：15s → 30s
+            resp = requests.get(api_url, headers=self.config.request_headers, timeout=30)
             if resp.status_code == 200:
                 return resp.json()
             self.logger.warning(f"fxtwitter API returned {resp.status_code}")
@@ -451,7 +452,8 @@ class TwitterApiClient:
         """通过 syndication API 获取内容"""
         url = f"https://cdn.syndication.twimg.com/tweet-result?id={tweet_id}&token=0"
         try:
-            resp = requests.get(url, headers=self.config.request_headers, timeout=10)
+            # 增加超时时间：10s → 20s
+            resp = requests.get(url, headers=self.config.request_headers, timeout=20)
             if resp.status_code == 200:
                 return resp.json()
             self.logger.warning(f"syndication API returned {resp.status_code}")
@@ -512,7 +514,9 @@ class PostFormatter:
             return self._format_fxtwitter(post_data, url)
         elif source == "syndication":
             return self._format_syndication(post_data, url)
-        return ""
+        # 兜底方案：如果 source 不识别，返回一个基本的格式
+        self.logger.warning(f"Unknown source: {source}, using basic format")
+        return f"# Unknown Source\n\n> 原文链接: {url}\n\n---\n\n> ⚠️ 无法解析帖子内容\n"
 
     def _format_fxtwitter(self, data: Dict, url: str) -> str:
         """格式化 fxtwitter 数据"""
@@ -943,7 +947,8 @@ class ResultFileManager:
 
     def save_markdown(self, results: Dict[str, List[str]], timestamp: datetime,
                       api_client: TwitterApiClient, formatter: PostFormatter) -> Path:
-        """生成 Markdown 文件（并发获取内容）"""
+        """生成 Markdown 文件（并发获取内容，使用单一占位符字符串）"""
+        import uuid
         _, md_filepath = self._get_filename(timestamp)
 
         # 准备标题
@@ -958,6 +963,7 @@ class ResultFileManager:
         # 收集所有帖子信息
         post_infos = []
         content = list(header)
+        placeholders = {}
 
         for user, urls in results.items():
             if not urls:
@@ -966,16 +972,26 @@ class ResultFileManager:
             content.extend([f"\n## @{user} 的帖子 ({len(urls)} 条)\n", "---\n"])
 
             for i, url in enumerate(urls, 1):
-                section_start = len(content)
-                post_infos.append({'user': user, 'url': url, 'index': i, 'total': len(urls), 'section_start': section_start})
+                # 生成唯一占位符字符串（单一字符串）
+                placeholder = f"PLACEHOLDER_{uuid.uuid4().hex[:8]}"
+                placeholders[placeholder] = None
 
-                # 占位符
-                content.extend([
-                    f"\n### 帖子 {i}\n\n",
-                    "> 正在获取内容...\n\n",
-                    f"- URL: {url}\n\n",
-                    "---\n\n"
-                ])
+                # 占位符内容（单一字符串，包含占位符）
+                placeholder_content = f"\n### 帖子 {i}\n\n{placeholder}\n\n- URL: {url}\n\n---\n\n"
+
+                # 添加占位符字符串到 content
+                content.append(placeholder_content)
+                # 调试：打印占位符内容
+                self.logger.debug(f"Appended placeholder for post {i}: {placeholder[:20]}...")
+                self.logger.debug(f"Content length: {len(content)}")
+
+                post_infos.append({
+                    'user': user,
+                    'url': url,
+                    'index': i,
+                    'total': len(urls),
+                    'placeholder': placeholder
+                })
 
         # 并发获取内容
         from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -1003,29 +1019,36 @@ class ResultFileManager:
                 try:
                     _, markdown = future.result()
                     if markdown:
-                        content[info['section_start']] = markdown + "\n\n---\n\n"
+                        placeholders[info['placeholder']] = markdown + "\n\n---\n\n"
                         self.logger.info(f"Fetched {info['user']} post {info['index']}/{info['total']} [{completed}/{len(post_infos)}]")
                     else:
-                        content[info['section_start']] = (
-                            f"\n### 帖子 {info['index']}\n\n"
-                            "> ⚠️ 无法获取帖子内容\n\n"
-                            f"- URL: {info['url']}\n\n"
-                            "---\n\n"
+                        placeholders[info['placeholder']] = (
+                            f"\n### 帖子 {info['index']}\n\n> ⚠️ 无法获取帖子内容\n\n- URL: {info['url']}\n\n---\n\n"
                         )
+                        self.logger.warning(f"Failed to fetch {info['url']}")
                 except Exception as e:
                     self.logger.error(f"Error fetching {info['url']}: {str(e)}")
 
+        # 一次性替换所有占位符
+        final_content = "".join(content)
+        self.logger.debug(f"Final content length before replacement: {len(final_content)}")
+        self.logger.debug(f"Placeholders dict size: {len(placeholders)}")
+        self.logger.debug(f"Placeholders keys: {list(placeholders.keys())}")
+
+        for placeholder, replacement in placeholders.items():
+            self.logger.debug(f"Replacing placeholder: {placeholder[:20]}..., has replacement: {replacement is not None}")
+            final_content = final_content.replace(placeholder, replacement)
+
+        self.logger.debug(f"Final content length after replacement: {len(final_content)}")
+        self.logger.debug(f"'正在获取内容' count in final_content: {final_content.count('正在获取内容')}")
+        self.logger.debug(f"'PLACEHOLDER' count in final_content: {final_content.count('PLACEHOLDER')}")
+
         # 保存
         with open(md_filepath, "w", encoding="utf-8") as f:
-            f.write("".join(content))
+            f.write(final_content)
 
         self.logger.info(f"Markdown saved to {md_filepath}")
         return md_filepath
-
-
-# ============================================================================
-# 主控制器
-# ============================================================================
 
 class CrawlHot:
     """Crawl Hot 主控制器（协调所有模块）"""
