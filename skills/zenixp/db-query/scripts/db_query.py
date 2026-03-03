@@ -30,7 +30,7 @@ def load_config(config_path: str = CONFIG_PATH) -> Dict:
         print(json.dumps({
             "databases": [
                 {
-                    "name": "name",
+                    "name": "Database Name",
                     "host": "localhost",
                     "port": 3306,
                     "database": "db_name",
@@ -74,7 +74,7 @@ def start_ssh_tunnel(tunnel_config: Dict) -> Optional[subprocess.Popen]:
         print("Error: Incomplete SSH tunnel configuration")
         return None
 
-    # Build SSH command
+    # Build SSH command with secure options
     ssh_cmd = [
         'ssh',
         '-N',  # No remote command
@@ -82,20 +82,24 @@ def start_ssh_tunnel(tunnel_config: Dict) -> Optional[subprocess.Popen]:
         '-p', str(ssh_port),
         '-o', 'ServerAliveInterval=60',
         '-o', 'ServerAliveCountMax=3',
-        '-o', 'StrictHostKeyChecking=no',
-        '-o', 'UserKnownHostsFile=/dev/null',
+        '-o', 'StrictHostKeyChecking=accept-new',  # Accept new host keys, verify known ones
         f'{ssh_user}@{ssh_host}'
     ]
 
-    # Use sshpass if password is provided
+    # Use sshpass with environment variable for password (more secure than command-line)
     if ssh_password:
-        ssh_cmd = ['sshpass', '-p', ssh_password] + ssh_cmd
+        env = os.environ.copy()
+        env['SSHPASS'] = ssh_password
+        ssh_cmd = ['sshpass', '-e'] + ssh_cmd  # -e reads from SSHPASS environment variable
+    else:
+        env = None
 
     try:
         process = subprocess.Popen(
             ssh_cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            env=env
         )
 
         # Wait briefly for SSH to establish
@@ -134,13 +138,16 @@ def stop_ssh_tunnel(process: subprocess.Popen) -> bool:
 
 
 def execute_mysql_query(host: str, port: int, database: str, user: str, password: str, query: str) -> bool:
-    """Execute MySQL query using mysql command-line client."""
+    """Execute MySQL query using mysql command-line client with environment variable for password."""
+    # Use environment variable for password to avoid exposure in process list
+    env = os.environ.copy()
+    env['MYSQL_PWD'] = password
+
     mysql_cmd = [
         'mysql',
         '-h', host,
         '-P', str(port),
         '-u', user,
-        f'-p{password}',
         database,
         '-e', query
     ]
@@ -150,7 +157,8 @@ def execute_mysql_query(host: str, port: int, database: str, user: str, password
             mysql_cmd,
             capture_output=True,
             text=True,
-            check=True
+            check=True,
+            env=env
         )
         print(result.stdout)
         return True
@@ -176,6 +184,16 @@ def list_databases(config: Dict):
     print("-" * 60)
 
 
+def get_password(db_config: Dict, env_var_prefix: str) -> str:
+    """Get password from environment variable or fall back to config file."""
+    db_name = db_config.get('name', '').replace(' ', '_').upper()
+    env_var = f"{env_var_prefix}_{db_name}"
+    env_password = os.environ.get(env_var)
+    if env_password:
+        return env_password
+    return db_config.get('password', '')
+
+
 def query_database(description: str, query: str, config_path: str = None):
     """Query a database by description."""
     config = load_config(config_path or CONFIG_PATH)
@@ -193,6 +211,10 @@ def query_database(description: str, query: str, config_path: str = None):
 
     # Start SSH tunnel if needed
     if tunnel_config.get('enabled'):
+        # Get SSH password from environment or config
+        ssh_password = get_password(db, 'SSH_PASSWORD')
+        if ssh_password:
+            tunnel_config['ssh_password'] = ssh_password
         ssh_process = start_ssh_tunnel(tunnel_config)
         if not ssh_process:
             sys.exit(1)
@@ -206,13 +228,16 @@ def query_database(description: str, query: str, config_path: str = None):
             host = db.get('host')
             port = db.get('port', 3306)
 
+        # Get DB password from environment or config
+        db_password = get_password(db, 'DB_PASSWORD')
+
         # Execute query
         success = execute_mysql_query(
             host=host,
             port=port,
             database=db.get('database'),
             user=db.get('user'),
-            password=db.get('password'),
+            password=db_password,
             query=query
         )
 
