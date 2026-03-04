@@ -1,6 +1,6 @@
 ---
 name: task-specialist
-version: 1.1.5
+version: 1.2.2
 author: OBODA0
 homepage: https://github.com/OBODA0/task-specialist-skill
 tags: ["task", "management", "sqlite", "workflow", "productivity", "project", "planning", "breakdown", "local", "cli"]
@@ -41,6 +41,7 @@ When using the `task-specialist` CLI, follow these principles to ensure high-qua
 
 ```bash
 task create "description" [--priority=N] [--parent=ID] [--project=NAME]  # → prints task ID
+task edit    ID [--desc="new text"] [--priority=N] [--project=NAME]      # adjust task details
 task start   ID                                          # pending → in_progress
 task block   ID "reason"                                 # → blocked (reason in notes)
 task complete ID                                         # → done + auto-unblocks dependents
@@ -57,7 +58,8 @@ task delete  ID [--force]                                # remove task (--force 
 
 ```bash
 task list [--status=S] [--parent=ID] [--project=N] [--since=YYYY-MM-DD] [--search="regex"]
-task show ID                                # full detail, duration, deps + subtasks
+task export [--status=STATUS] [--project=NAME]                           # generates markdown table
+task show ID                                                             # full details & deps
 task stuck                                  # in_progress tasks inactive >30min
 ```
 
@@ -109,9 +111,9 @@ dependencies: task_id, depends_on_task_id (composite PK)
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `TASK_DB` | Auto-detected (next to script) | Path to SQLite database |
+| `TASK_DB` | `$PWD/.tasks.db` | Path to SQLite database |
 
-The DB is auto-located by resolving symlinks back to the real script location. No configuration needed if you used `install.sh`.
+The DB defaults to a hidden `.tasks.db` file in the **current working directory** where the command is executed. This natively supports separate task lists for different projects/workspaces without data collision.
 
 ## Security
 
