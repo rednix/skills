@@ -2,7 +2,7 @@
 name: klientenportal
 description: "Automate RZL Klientenportal.at — a web-based portal by RZL Software for exchanging receipts, invoices, and reports with your tax accountant. Login/logout, upload documents (Belegübergabe), list released files, and download Kanzleidokumente via Playwright."
 summary: "RZL Klientenportal automation: upload receipts, download reports."
-version: 1.5.0
+version: 1.5.1
 homepage: https://github.com/odrobnik/klientenportal-skill
 metadata:
   openclaw:
@@ -56,16 +56,39 @@ Show files your accountant has released (freigegebene Dokumente):
 python3 {baseDir}/scripts/klientenportal.py released
 ```
 
-### Download Kanzleidokumente
+### Received Files (from Accountant)
 
-Download all available documents from your accountant:
+List files received from your accountant (Kanzleidokumente / Auswertungen):
+
+```bash
+python3 {baseDir}/scripts/klientenportal.py received              # List all
+python3 {baseDir}/scripts/klientenportal.py received -n 5          # Latest 5
+python3 {baseDir}/scripts/klientenportal.py received --json         # JSON output
+```
+
+Output columns: Datei, Von, Dokumentbereich, Empfangen
+
+### Download Received Files
+
+Download specific files from the received files list:
+
+```bash
+python3 {baseDir}/scripts/klientenportal.py received-download --latest                  # Latest file
+python3 {baseDir}/scripts/klientenportal.py received-download 1 2 3                     # By index (1=latest)
+python3 {baseDir}/scripts/klientenportal.py received-download "10-12_2025"              # By name pattern
+python3 {baseDir}/scripts/klientenportal.py received-download "10-12_2025" -o ~/Downloads  # Custom output
+```
+
+Single-file downloads are auto-extracted from ZIP wrapper.
+
+### Download Kanzleidokumente (Legacy)
+
+Download all available Kanzleidokumente at once:
 
 ```bash
 python3 {baseDir}/scripts/klientenportal.py download                    # To default dir
 python3 {baseDir}/scripts/klientenportal.py download -o /path/to/dir    # Custom output dir
 ```
-
-Downloads all available Kanzleidokumente at once. Individual document selection is not yet supported.
 
 Default output: `/tmp/openclaw/klientenportal/`
 
