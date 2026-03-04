@@ -1,17 +1,19 @@
 ---
-name: agenthub
+name: rwagenthub
 description: Call 32 real-world APIs — flights, hotels, weather, crypto prices, DeFi yields, stock quotes, web search, geocoding, IP reputation, blockchain data, code execution, and email — paying per call in USDC on Base via x402. Requires Node.js 20+ and a Base wallet with USDC.
 homepage: https://agents-production-73c1.up.railway.app
 user-invocable: true
-metadata: '{"openclaw": {"requires": {"env": ["MCP_WALLET_PRIVATE_KEY"], "bins": ["node", "npm"], "primaryCredential": "MCP_WALLET_PRIVATE_KEY"}}}'
+metadata: {"openclaw":{"emoji":"🤖","requires":{"env":["AGENTHUB_WALLET_KEY"],"bins":["node","npm"]},"primaryEnv":"AGENTHUB_WALLET_KEY","install":[{"id":"sdk","kind":"node","package":"rwagenthub-sdk","label":"Install AgentHub SDK"}]}}
 ---
 
 # AgentHub — 32 AI APIs, pay per call in USDC
 
-You have access to **AgentHub**, a gateway that lets you call real-world data APIs.
-Payment is handled automatically via the x402 protocol — gasless USDC on Base Mainnet.
+You have access to **AgentHub**, a paid API gateway for real-world data.
 
-**Gateway URL:** `https://agents-production-73c1.up.railway.app`
+- **What it does:** Routes API calls to 32 data providers (flights, weather, stocks, etc.)
+- **How payment works:** Each call costs $0.01–$0.06 USDC, charged automatically via the x402 micropayment protocol on Base Mainnet. The wallet credential signs a gasless USDC transfer locally — no gas fees, no custody of funds by the gateway.
+- **SDK source:** [npmjs.com/package/rwagenthub-sdk](https://www.npmjs.com/package/rwagenthub-sdk) — open source, auditable, no obfuscation. Only calls `https://agents-production-73c1.up.railway.app/v1/call` and the Base Mainnet RPC.
+- **Gateway URL:** `https://agents-production-73c1.up.railway.app`
 
 ---
 
@@ -20,61 +22,58 @@ Payment is handled automatically via the x402 protocol — gasless USDC on Base 
 ### 1. Install the SDK
 
 ```bash
-npm install --prefix ~/.openclaw/workspace/skills/rwagenthub rwagenthub-sdk
+npm install --prefix ~/.openclaw/workspace/skills/rwagenthub rwagenthub-sdk@1.0.2
 ```
 
-This installs the SDK inside the skill's own folder — no global install, no permission issues, works on any system.
+Installs the pinned SDK version into the skill's own folder. No global install required.
 
-SDK package: [npmjs.com/package/rwagenthub-sdk](https://www.npmjs.com/package/rwagenthub-sdk)
+### 2. Configure your wallet credential
 
-### 2. Configure your wallet private key
-
-> ⚠️ Use a **dedicated wallet** with only the USDC you need. Never use your main wallet.
+> ⚠️ Use a **dedicated wallet** funded only with the USDC you need for API calls. Do not use a primary wallet.
 
 ```bash
-openclaw config set env.MCP_WALLET_PRIVATE_KEY "0xYOUR_PRIVATE_KEY_HERE"
+openclaw config set env.AGENTHUB_WALLET_KEY "YOUR_WALLET_CREDENTIAL"
 ```
 
-**Security note:** The private key never leaves your device. The SDK uses it to sign an EIP-3009 gasless authorization locally — only the signed authorization (not the key) is sent to the payment network. The key is used solely to sign USDC micropayments on Base Mainnet.
+The credential is used locally to sign a USDC micropayment authorization. Only the signed authorization (not the credential itself) is sent over the network. The gateway never receives or stores the credential.
 
 ### 3. Add USDC to your wallet on Base Mainnet
 
-- Min recommended: $1 USDC (covers 100+ calls at $0.01 each)
-- Buy USDC and withdraw to Base network via [Coinbase](https://coinbase.com) or any exchange
+- Minimum recommended: $1 USDC (covers 100+ calls at $0.01 each)
+- Acquire USDC via [Coinbase](https://coinbase.com) or any exchange, withdraw to Base network
 
 ---
 
 ## Before every call — verify SDK is installed
 
-Run this check before making any API call. If the SDK is missing, install it automatically:
+Run this check before making any API call. Installs automatically if missing:
 
 ```bash
-[ -f "$HOME/.openclaw/workspace/skills/rwagenthub/node_modules/rwagenthub-sdk/index.js" ] || \
-  npm install --prefix "$HOME/.openclaw/workspace/skills/rwagenthub" rwagenthub-sdk --silent
+SDK_DIR="$HOME/.openclaw/workspace/skills/rwagenthub"
+[ -f "$SDK_DIR/node_modules/rwagenthub-sdk/index.js" ] || \
+  npm install --prefix "$SDK_DIR" rwagenthub-sdk@1.0.2 --silent
 ```
 
-If `MCP_WALLET_PRIVATE_KEY` is not set, tell the user:
-> "Please run: `openclaw config set env.MCP_WALLET_PRIVATE_KEY \"0xYOUR_PRIVATE_KEY\"`"
+If `AGENTHUB_WALLET_KEY` is not set, tell the user:
+> "Please run: `openclaw config set env.AGENTHUB_WALLET_KEY \"YOUR_WALLET_CREDENTIAL\"`"
 
 ---
 
 ## How to call an API
 
-For every API call, create a temporary script and run it with node:
+For every API call, write a temporary script and run it with Node.js:
 
 ```bash
 cat > /tmp/agenthub-call.mjs << SCRIPT
-import AgentHub from '$HOME/.openclaw/workspace/skills/rwagenthub/node_modules/rwagenthub-sdk/index.js';
-
-const hub = new AgentHub({ privateKey: process.env.MCP_WALLET_PRIVATE_KEY });
+import AgentHub from "$HOME/.openclaw/workspace/skills/rwagenthub/node_modules/rwagenthub-sdk/index.js";
+const hub = new AgentHub({ privateKey: process.env.AGENTHUB_WALLET_KEY });
 const result = await hub.call('API_NAME', { ...inputs... });
 console.log(JSON.stringify(result, null, 2));
 SCRIPT
-
 node /tmp/agenthub-call.mjs
 ```
 
-Replace `API_NAME` and `{ ...inputs... }` with the API and parameters from the list below.
+Replace `API_NAME` and `{ ...inputs... }` with the API name and parameters from the list below.
 
 ---
 
@@ -285,12 +284,11 @@ Ask: *"What's the price of Bitcoin?"*
 
 ```bash
 cat > /tmp/agenthub-call.mjs << SCRIPT
-import AgentHub from '$HOME/.openclaw/workspace/skills/rwagenthub/node_modules/rwagenthub-sdk/index.js';
-const hub = new AgentHub({ privateKey: process.env.MCP_WALLET_PRIVATE_KEY });
+import AgentHub from "$HOME/.openclaw/workspace/skills/rwagenthub/node_modules/rwagenthub-sdk/index.js";
+const hub = new AgentHub({ privateKey: process.env.AGENTHUB_WALLET_KEY });
 const result = await hub.call('crypto_price', { coins: 'btc', vs_currency: 'usd' });
 console.log(JSON.stringify(result, null, 2));
 SCRIPT
-
 node /tmp/agenthub-call.mjs
 ```
 
@@ -303,4 +301,4 @@ node /tmp/agenthub-call.mjs
 | `payment failed` | Insufficient USDC on Base | Top up wallet balance |
 | `AgentHub: API error — unknown_api` | Wrong API name | Check spelling against the list above |
 | `AgentHub: API error — invalid_inputs` | Missing or wrong parameters | Check the inputs for that API |
-| `Cannot find module` / `ERR_MODULE_NOT_FOUND` | SDK not installed | Run `npm install --prefix ~/.openclaw/workspace/skills/rwagenthub rwagenthub-sdk` |
+| `Cannot find module` / `ERR_MODULE_NOT_FOUND` | SDK not installed | Run `npm install --prefix ~/.openclaw/workspace/skills/rwagenthub rwagenthub-sdk@1.0.2` |
