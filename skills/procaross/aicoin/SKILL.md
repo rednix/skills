@@ -1,6 +1,6 @@
 ---
 name: aicoin
-description: "Crypto data & trading skill. Use node scripts in this skill for ALL crypto operations. CRITICAL: For Freqtrade deploy/backtest, ALWAYS use `node scripts/ft-deploy.mjs` — NEVER use Docker, NEVER run freqtrade commands directly. Read SKILL.md for all available commands before acting."
+description: "This skill should be used when the user asks about crypto prices, market data, K-line charts, funding rates, open interest, whale orders, long/short ratios, crypto news, exchange balances, trading, or any crypto-related query. Use when user says: 'BTC price', 'check price', 'show K-line', 'funding rate', 'whale orders', 'place order', 'check balance', 'crypto news', '查行情', '看价格', '大饼多少钱', 'K线', '资金费率', '多空比', '鲸鱼单', '查余额', '下单', '空投', '新闻快讯', '合约', '做多做空'. Covers 200+ exchanges with real-time data. MUST run node scripts to fetch real data — NEVER generate fake prices or hallucinate market data."
 metadata: { "openclaw": { "primaryEnv": "AICOIN_ACCESS_KEY_ID", "requires": { "bins": ["node"] }, "homepage": "https://www.aicoin.com/opendata", "source": "https://github.com/aicoincom/aicoin-skills", "license": "MIT" } }
 ---
 
@@ -8,7 +8,7 @@ metadata: { "openclaw": { "primaryEnv": "AICOIN_ACCESS_KEY_ID", "requires": { "b
 
 Crypto data & trading toolkit powered by [AiCoin Open API](https://www.aicoin.com/opendata).
 
-**Version:** 1.5.29 | **Last Updated:** 2026-03-05
+**Version:** 1.6.0 | **Last Updated:** 2026-03-05
 
 ---
 
@@ -515,6 +515,9 @@ Requires `npm install ccxt` and exchange API keys.
 | `balance` | Account balance | `{"exchange":"binance"}` |
 | `positions` | Open positions | `{"exchange":"binance","market_type":"swap"}` |
 | `open_orders` | Open orders | `{"exchange":"binance","symbol":"BTC/USDT"}` |
+| `closed_orders` | Order history | `{"exchange":"binance","symbol":"BTC/USDT","limit":50}` |
+| `my_trades` | Trade history | `{"exchange":"binance","symbol":"BTC/USDT","limit":50}` |
+| `fetch_order` | Order by ID | `{"exchange":"binance","symbol":"BTC/USDT","order_id":"xxx"}` |
 
 #### Trading (API key required)
 
@@ -572,6 +575,7 @@ node scripts/exchange.mjs balance '{"exchange":"okx"}'
 | `transfer` | Transfer funds | `{"exchange":"binance","code":"USDT","amount":100,"from_account":"spot","to_account":"future"}` |
 
 **Notes on `transfer`:**
+- **Account names MUST use these exact values**: `spot`, `future`, `delivery`, `margin`, `funding`. Do NOT use `futures`, `usdm`, `coinm`, or other aliases — they may cause errors.
 - **OKX unified account (重要)**: OKX uses a **unified trading account** — spot and derivatives share the SAME balance. **Do NOT ask the user to transfer funds between accounts.** If transfer returns error 58123, tell the user: "你的 OKX 是统一账户，现货和合约共用同一个余额，不需要划转。" Do NOT suggest manual transfer in the app.
 - **Binance**: Requires explicit transfer between spot/futures accounts.
 
@@ -662,6 +666,8 @@ The `open` action automatically:
 | `check` | Check prerequisites (Python 3.11+, git, exchange keys) | None |
 | `deploy` | Deploy Freqtrade (clone, setup.sh, config, start) | `{"dry_run":true,"pairs":["BTC/USDT:USDT","ETH/USDT:USDT"]}` |
 | `backtest` | Run backtest (no running process needed) | `{"strategy":"SampleStrategy","timeframe":"1h","timerange":"20250101-20260301"}` |
+| `hyperopt` | Parameter optimization | `{"strategy":"FundingRateStrategy","timeframe":"1h","timerange":"20250101-20260301","epochs":100}` |
+| `strategy_list` | List available strategies | None |
 | `update` | Update Freqtrade to latest version | None |
 | `status` | Process status | None |
 | `start` | Start stopped process | None |
@@ -670,6 +676,11 @@ The `open` action automatically:
 | `remove` | Remove process (preserves config) | None |
 
 **Deploy defaults to dry-run mode** (simulated trading, no real money). Pass `{"dry_run":false}` for live trading.
+
+**AiCoin-powered strategies** (auto-installed on deploy, use AiCoin data in live/dry-run mode, fall back to technical indicators in backtest):
+- `FundingRateStrategy` — Exploit extreme funding rates for mean reversion (Basic tier)
+- `WhaleFollowStrategy` — Follow whale order flow + contrarian L/S ratio (Normal tier)
+- `LiquidationHunterStrategy` — Profit from liquidation cascades (Premium tier)
 
 **IMPORTANT: NEVER use Docker for Freqtrade.** The deploy script uses `git clone` + `setup.sh -i` (official Freqtrade installation method). Do NOT fall back to Docker, do NOT write custom install scripts, do NOT try `pip install freqtrade` directly. Just run `node scripts/ft-deploy.mjs deploy` — it handles everything.
 
@@ -779,7 +790,7 @@ This automatically:
 ### When User Mentions These Keywords → Use Freqtrade
 
 - 回测 / backtest → **MUST use `ft-deploy.mjs backtest`** (does NOT require Freqtrade to be running). NEVER write custom Python backtest scripts, NEVER manually run freqtrade commands.
-- 写策略 / write strategy → Write a `.py` file to `~/.freqtrade/user_data/strategies/`, then `ft-deploy.mjs backtest`
+- 写策略 / write strategy → **FIRST read an existing template** (e.g. `FundingRateStrategy.py`), then write `.py` based on it. See "Writing Custom Strategies with AiCoin Data" below.
 - 量化策略 / strategy → `ft-dev.mjs strategy_list` (requires running process)
 - 部署机器人 / deploy bot → `ft-deploy.mjs deploy`
 - 实盘 / live trading → `ft-deploy.mjs deploy '{"dry_run":false}'`
@@ -787,6 +798,77 @@ This automatically:
 - 停止机器人 / stop bot → `ft.mjs stop` or `ft-deploy.mjs stop`
 
 **IMPORTANT: For backtesting, use `ft-deploy.mjs backtest`. Do NOT write custom Python backtest scripts. The Freqtrade backtester is production-grade with proper slippage, fees, and position sizing simulation.**
+
+### Writing Custom Strategies with AiCoin Data
+
+**🚨 BEFORE writing ANY strategy, ALWAYS read an existing template first:**
+```bash
+cat ~/.freqtrade/user_data/strategies/FundingRateStrategy.py
+```
+Copy the pattern exactly. Do NOT invent your own approach.
+
+**Required strategy structure:**
+```python
+class MyStrategy(IStrategy):
+    INTERFACE_VERSION = 3          # MUST be 3
+    timeframe = '15m'
+    can_short = True               # MUST set for short trading
+    minimal_roi = {"0": 0.05}
+    stoploss = -0.05
+
+    def populate_indicators(self, dataframe, metadata):
+        # ... compute indicators ...
+        # AiCoin data (live/dry_run only):
+        if self.dp and self.dp.runmode.value in ('live', 'dry_run'):
+            self._update_data(metadata)
+        return dataframe
+
+    def populate_entry_trend(self, dataframe, metadata):   # NO 's' at end!
+        # ... entry logic ...
+        return dataframe
+
+    def populate_exit_trend(self, dataframe, metadata):    # NO 's' at end!
+        # ... exit logic ...
+        return dataframe
+```
+
+**⚠️ Common mistakes (NEVER do these):**
+- ❌ `populate_entry_trends` → ✅ `populate_entry_trend` (no 's')
+- ❌ `populate_exit_trades` → ✅ `populate_exit_trend`
+- ❌ `for x in self.param.range` → ✅ `self.param.value` (single value, not loop)
+- ❌ Missing `INTERFACE_VERSION = 3` or `can_short = True`
+
+**AiCoin data import (MUST use this exact pattern):**
+```python
+def _update_data(self, metadata):
+    try:
+        import sys, os
+        _sd = os.path.dirname(os.path.abspath(__file__))
+        if _sd not in sys.path:
+            sys.path.insert(0, _sd)
+        from aicoin_data import AiCoinData, ccxt_to_aicoin
+        ac = AiCoinData(cache_ttl=300)
+        pair = metadata.get('pair', 'BTC/USDT:USDT')
+        exchange = self.config.get('exchange', {}).get('name', 'binance')
+        symbol = ccxt_to_aicoin(pair, exchange)
+        # ... call ac.xxx() methods ...
+    except ImportError:
+        logger.warning("aicoin_data module not found.")
+    except Exception as e:
+        logger.warning(f"AiCoin data error: {e}")
+```
+
+**aicoin_data.py API quick reference:**
+| Method | Returns | Use case |
+|--------|---------|----------|
+| `ac.funding_rate(symbol, weighted=True, limit='5')` | `{data: [{time,open,high,low,close}]}` close=rate | Funding rate strategy |
+| `ac.ls_ratio()` | `{data: {detail: {last: "0.87"}}}` | Contrarian L/S signal |
+| `ac.big_orders(symbol)` | `{data: [{side,amount,...}]}` | Whale order flow |
+| `ac.open_interest(coin, interval='15m', limit='10')` | `{data: [{openInterest,...}]}` | OI trend detection |
+| `ac.liquidation_map(symbol, cycle='24h')` | `{data: {longLiquidation, shortLiquidation}}` | Liquidation bias |
+| `ac.coin_ticker(coin_list='bitcoin')` | Price data | Current price |
+
+---
 
 ### Troubleshooting
 
