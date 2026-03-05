@@ -138,7 +138,37 @@ When something fails:
 4. Combine tools: CLI + browser + web search + sub-agents
 5. "Can't" = exhausted all options, not "first try failed"
 
-### 11. Error Documentation
+### 11. TOOLS.md Skill Inventory
+
+**Problem:** Agent wakes up fresh each session, doesn't know what skills/tools are installed. Tries `which` or `npm list` instead of checking workspace — wastes time and looks incompetent.
+
+**Solution:** Maintain a categorized skill inventory in `TOOLS.md`. Update it every time a skill is installed or removed.
+
+**Format:**
+```markdown
+## Installed Skills (N total)
+
+### 🔍 Search & Research
+- **tavily-search** — AI-optimized search (primary)
+- **deepwiki** — GitHub repo documentation queries
+
+### 📞 Communication
+- **poku** — AI phone calls, `npx poku`, requires `POKU_API_KEY`
+```
+
+**Rules:**
+- Add a maintenance note at the top: "Update this list every time a skill is installed or removed"
+- Include invocation method if non-obvious (e.g. `npx poku`, `uv run --script`)
+- Include required env vars (e.g. `POKU_API_KEY`)
+- On session start, read TOOLS.md to know your capabilities — don't guess
+
+**Lookup priority when searching for a tool:**
+1. TOOLS.md skill inventory
+2. `skills/` directory
+3. `memory/` files for prior usage
+4. System-level search (`which`, `npm list`, etc.) — last resort only
+
+### 12. Error Documentation
 
 When you solve a problem, write it down:
 - What went wrong
