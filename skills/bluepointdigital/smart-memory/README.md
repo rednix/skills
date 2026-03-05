@@ -1,254 +1,284 @@
-# Smart Memory for OpenClaw
+# Smart Memory v2 - Cognitive Architecture for OpenClaw
 
-**Context-aware memory system with dual retrieval modes** — fast vector search when you need speed, curated Focus Agent when you need depth.
+<p>
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Persistent%20Local%20API-009688?logo=fastapi&logoColor=white">
+  <img alt="Embeddings" src="https://img.shields.io/badge/Embeddings-nomic--embed--text--v1.5-blue">
+  <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-CPU--Only-critical?logo=pytorch">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-black">
+</p>
+
+> **Not a basic RAG cache.**  
+> Smart Memory v2 is a persistent, local cognitive engine for OpenClaw with schema-versioned long-term memory, hot working memory, background cognition, strict token-bounded prompt composition, and a continuously running FastAPI process.
+
+---
+
+## Quick Value (60 seconds)
+
+| You Need | Smart Memory v2 Gives You |
+|---|---|
+| Continuity across sessions | Typed long-term memory (`episodic`, `semantic`, `belief`, `goal`) |
+| Fast local recall | Nomic embeddings + vector search + reranking |
+| Stable context quality | Strict prompt token enforcement with deterministic eviction priority |
+| Better long-run memory quality | Semantic dedup, reinforcement, consolidation, decay, and conflict resolution |
+| Lightweight installs | CPU-only PyTorch standard (no CUDA wheel bloat) |
+| Operational visibility | `/health`, `/memories`, `/memory/{id}`, `/insights/pending` |
+
+---
+
+## Why This Exists
+
+Most memory plugins are retrieval wrappers. They do not behave like cognition.  
+Smart Memory v2 is designed as a **cognitive pipeline**:
+
+- `Ingestion`: Decide what is memory-worthy.
+- `Retrieval`: Find relevant memories with entity and time bias.
+- `Working Memory`: Keep a small, high-signal mind state.
+- `Background Cognition`: Reflect, consolidate, decay, and resolve conflicts.
+- `Prompt Composition`: Assemble bounded, coherent context for the model.
+
+---
+
+## Architecture At A Glance
+
+```mermaid
+flowchart LR
+  A["OpenClaw Runtime (Node.js)"] --> B["smart-memory/index.js\nAdapter + lifecycle manager"]
+  B --> C["FastAPI server.py\nPersistent local API"]
+  C --> D["CognitiveMemorySystem"]
+  D --> E["ingestion/"]
+  D --> F["retrieval/"]
+  D --> G["hot_memory/"]
+  D --> H["cognition/"]
+  D --> I["prompt_engine/"]
+  D --> J["storage/ + embeddings/ + entities/"]
+```
+
+### Request Flow
+
+```mermaid
+flowchart TD
+  U["User Message"] --> ING["/ingest\nHeuristic filter -> scoring -> classification -> semantic dedup"]
+  U --> RET["/retrieve\nEntity bias -> vector search -> rerank -> access tracking"]
+  RET --> COM["/compose\nIdentity + temporal + hot memory + selected LTM + history"]
+  BG["/run_background"] --> COG["Reflection + consolidation + decay + belief conflict resolution"]
+```
+
+---
+
+## Phase 8 Production Polish
+
+### CPU-Only Standard (lightweight)
+- Install now explicitly forces CPU wheels:
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu`
+- `requirements-cognitive.txt` includes `einops>=0.8.0` for Nomic compatibility.
+
+### Strict Token Enforcement
+`max_prompt_tokens` is now hard-enforced at render time. If over budget, eviction happens in this exact order:
+1. Oldest conversation history
+2. Lower-ranked retrieved memories
+3. Insight queue items
+4. Working memory
+5. Temporal state
+6. Agent identity (never evicted)
+
+### Access Tracking Fixed
+Selected retrieval memories now persist:
+- `last_accessed = now()`
+- `access_count += 1`
+
+### Semantic Dedup in Ingestion
+Before creating a new memory:
+- Embed candidate content
+- Search top-1 nearest vector
+- If cosine similarity `> 0.85`, skip new memory creation and reinforce existing memory:
+- update `last_accessed`
+- increment `access_count`
+- increment `reinforced_count` for belief memories
+
+### Conflict Resolver Thresholds Relaxed
+Belief conflicts are now flagged when:
+- beliefs share at least one entity
+- and stances or sentiment are opposing
+
+### Observability Endpoints
+- `GET /health` includes embedder-loaded status and model/backend metadata
+- `GET /memories?type=` lists memory objects (optional type filter)
+- `GET /memory/{memory_id}` fetches one memory object
+- `GET /insights/pending` inspects pending hot-memory insights
+
+### Prompt Compose Input Improvement
+`hot_memory` is optional in `PromptComposerRequest`; a safe default object is used when omitted.
+
+---
+
+## Feature Highlights
+
+### Hybrid Node + Python Design
+- OpenClaw stays in Node.
+- Heavy cognitive operations run in Python.
+- `index.js` is a thin adapter that talks HTTP to `localhost:8000`.
+
+### Cold-Start Prevention
+- The adapter launches `uvicorn` once and keeps it alive.
+- Nomic embeddings and storage connections remain warm between calls.
+
+### REM-Style Background Cognition
+Periodic background cycle handles:
+- reflection + associative insights
+- memory consolidation
+- decay + vector pruning
+- belief conflict resolution
+
+### Curiosity Triggers
+Associative insight generation computes curiosity from emotional intensity and familiarity.
+High-curiosity memories can become proactive working questions.
+
+### Schema-First Memory Objects
+- JSON documents validated with Pydantic.
+- Schema versioning + entity IDs + relations + emotional metadata.
+
+---
+
+## Memory Layers
+
+| Layer | Purpose | Example Content |
+|---|---|---|
+| Agent Identity | Stable behavior anchor | role, mission, style |
+| Temporal State | Time continuity | current time, last interaction delta, state |
+| Hot Memory | Current cognitive focus | active projects, top-of-mind, working questions |
+| Long-Term Memory | Durable history | episodic/semantic/belief/goal objects |
+| Insight Queue | Background reflections | confidence-scored insight objects |
+| Conversation Context | Immediate grounding | recent turns + current user input |
+
+---
+
+## Repository Layout
+
+```text
+.
++- server.py
++- cognitive_memory_system.py
++- prompt_engine/
++- ingestion/
++- retrieval/
++- hot_memory/
++- cognition/
++- storage/
++- embeddings/
++- entities/
++- smart-memory/
+   +- index.js
+   +- postinstall.js
+```
+
+---
+
+## Installation
+
+### Option A: ClawHub
 
 ```bash
-# Install and it just works
 npx clawhub install smart-memory
-
-# Optional: sync for better quality
-node smart-memory/smart_memory.js --sync
 ```
 
-## ✨ The Magic
+### Option B: From GitHub
 
-**Same function call. Two modes. You choose.**
-
-```javascript
-// Fast mode (default): Direct vector search
-memory_search("User principles values")
-
-// Focus mode: Multi-pass curation for complex decisions
-memory_mode('focus')
-memory_search("What did we decide about the architecture?")
-```
-
-| Mode | Best For | How It Works |
-|------|----------|--------------|
-| **Fast** | Quick lookups, facts | Direct vector similarity (~10ms) |
-| **Focus** | Decisions, synthesis | Retrieve → Rank → Synthesize (~100ms) |
-
-## 🚀 Quick Start
-
-### From ClawHub (Recommended)
-```bash
-npx clawhub install smart-memory
-```
-Done. `memory_search` now works with automatic mode selection.
-
-### From GitHub
-```bash
-curl -sL https://raw.githubusercontent.com/BluePointDigital/smart-memory/main/install.sh | bash
-```
-
-### Manual
 ```bash
 git clone https://github.com/BluePointDigital/smart-memory.git
-cd smart-memory/smart-memory && npm install
+cd smart-memory/smart-memory
+npm install
 ```
 
-## 🎯 How It Works
+### What `npm install` Does
 
-### Dual Retrieval Modes
+`postinstall.js` automatically:
+1. Creates `.venv` at repository root.
+2. Upgrades `pip`.
+3. Installs CPU-only PyTorch wheels.
+4. Installs `requirements-cognitive.txt` (including FastAPI, sentence-transformers, qdrant-client, einops).
 
-```
-User searches
-      │
-      ▼
-┌─────────────┐
-│  Fast Mode? │
-└──────┬──────┘
-   Yes │    │ No (Focus Mode)
-      ▼     ▼
-┌────────┐ ┌─────────────┐
-│ Vector │ │ Retrieve 20+│
-│ Search │ │ chunks      │
-└────┬───┘ └──────┬──────┘
-     │            ▼
-     │     ┌─────────────┐
-     │     │ Rank &      │
-     │     │ Synthesize  │
-     │     └──────┬──────┘
-     │            ▼
-     │     ┌─────────────┐
-     │     │ Curated     │
-     │     │ Narrative   │
-     └─────┴──────┬──────┘
-                  ▼
-           ┌────────────┐
-           │  Results   │
-           └────────────┘
-```
+Works on both Windows and Unix path conventions.
 
-### Zero Config Philosophy
-1. **Install** → Works immediately (built-in fallback)
-2. **Sync** → Gets better (vector embeddings)
-3. **Choose mode** → Fast for speed, Focus for depth
-4. **Use** → Always best available
+---
 
-## 🎛️ Toggle Modes
+## How To Use
 
-```bash
-# Enable Focus mode (curated retrieval)
-node smart-memory/smart_memory.js --focus
+```js
+import memory from "smart-memory";
 
-# Disable Focus mode (back to fast)
-node smart-memory/smart_memory.js --unfocus
+await memory.start();
 
-# Check current mode
-node smart-memory/smart_memory.js --mode
+await memory.ingestMessage({
+  user_message: "I started migrating our database today.",
+  assistant_message: "Track risks and rollback strategy.",
+  timestamp: new Date().toISOString()
+});
+
+const retrieval = await memory.retrieveContext({
+  user_message: "How is the migration going?",
+  conversation_history: "..."
+});
+
+const composed = await memory.getPromptContext({
+  agent_identity: "You are a persistent cognitive assistant.",
+  conversation_history: "...",
+  current_user_message: "Continue from where we left off."
+  // hot_memory optional
+});
+
+await memory.runBackground(true);
+await memory.stop();
 ```
 
-## 📊 Before & After
+---
 
-| Query | Without Skill | With Skill (Fast) | With Skill (Focus) |
-|-------|--------------|-------------------|-------------------|
-| "User collaboration style" | ⚠️ Weak | ✅ Better | ✅ "work with me, not just for me" + context |
-| "What did we decide?" | ⚠️ Scattered | ✅ Related chunks | ✅ Synthesized decision narrative |
-| "Compare options A and B" | ⚠️ Manual work | ✅ Related hits | ✅ Structured comparison with sources |
+## API Surface
 
-## 🛠️ Usage
+### JavaScript Adapter Methods
 
-### In OpenClaw
+| Method | Purpose |
+|---|---|
+| `init()` / `start()` | Ensure API process is running and healthy |
+| `ingestMessage(interaction)` | Send interaction to ingestion pipeline |
+| `retrieveContext({ user_message, conversation_history })` | Retrieve ranked memory context |
+| `getPromptContext(request)` | Compose final bounded prompt context |
+| `runBackground(scheduled)` | Trigger cognition cycle |
+| `stop()` | Stop managed Python server process |
 
-```javascript
-// Fast search (default)
-const results = await memory_search("deployment config", 5);
+### FastAPI Endpoints
 
-// Enable focus for complex queries
-memory_mode('focus');
-const deepResults = await memory_search("architecture decisions", 5);
-// Returns: { synthesis, facts, sources, confidence }
-```
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | `GET` | Basic service status |
+| `/health` | `GET` | Health + embedder loaded metadata |
+| `/ingest` | `POST` | Ingest incoming interaction |
+| `/retrieve` | `POST` | Retrieve relevant long-term memories |
+| `/compose` | `POST` | Compose prompt context payload |
+| `/run_background` | `POST` | Execute background cognition cycle |
+| `/memories` | `GET` | List memories (`?type=` optional) |
+| `/memory/{memory_id}` | `GET` | Fetch one memory by ID |
+| `/insights/pending` | `GET` | View pending hot-memory insights |
 
-### CLI
+---
 
-```bash
-# Search (uses current mode)
-node smart-memory/smart_memory.js --search "your query"
+## Security and Privacy
 
-# Search with mode override
-node smart-memory/smart_memory.js --search "your query" --focus
-node smart-memory/smart_memory.js --search "your query" --fast
+- Memory data is designed for local operation.
+- `.gitignore` excludes runtime memory stores, virtualenvs, caches, and `node_modules`.
+- Review ignored paths before publishing any fork.
 
-# Toggle modes
-node smart-memory/smart_memory.js --focus      # Enable focus
-node smart-memory/smart_memory.js --unfocus    # Disable focus
+---
 
-# Check status
-node smart-memory/smart_memory.js --status
-```
+## Requirements
 
-## 📁 What's Included
+- Node.js `>=18`
+- Python `>=3.11`
+- Local disk for model cache + memory storage
 
-```
-smart-memory/
-├── smart_memory.js        ← Main entry (auto-selects mode)
-├── focus_agent.js         ← Curated retrieval engine
-├── memory_mode.js         ← Mode toggle commands
-├── db.js                  ← SQLite + hybrid search
-├── memory.js              ← OpenClaw wrapper
-├── package.json           ← Dependencies
-└── references/
-    ├── integration.md     ← Setup guide
-    └── pgvector.md        ← Scale guide
+---
 
-skills/
-└── vector-memory/         ← OpenClaw skill manifest
-    ├── skill.json
-    └── README.md
-```
-
-## 🔧 Requirements
-
-- Node.js 18+
-- ~80MB disk space (for model, cached after download)
-- OpenClaw (or any Node.js agent)
-
-## 🎛️ Tools
-
-| Tool | Purpose |
-|------|---------|
-| `memory_search` | Smart search with mode awareness |
-| `memory_get` | Retrieve full content |
-| `memory_sync` | Index for vector search |
-| `memory_mode` | Toggle fast/focus modes |
-| `memory_status` | Check mode and database stats |
-
-## 🔄 Auto-Sync (Optional)
-
-Add to `HEARTBEAT.md`:
-```bash
-if [ -n "$(find memory MEMORY.md -newer smart-memory/.last_sync 2>/dev/null)" ]; then
-    node smart-memory/smart_memory.js --sync && touch smart-memory/.last_sync
-fi
-```
-
-## 📈 Performance
-
-| Mode | Quality | Speed | Best For |
-|------|---------|-------|----------|
-| Fast | ⭐⭐⭐⭐ | ~10ms | Quick lookups, facts |
-| Focus | ⭐⭐⭐⭐⭐ | ~100ms | Decisions, synthesis, planning |
-
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| **"Vector not ready"** | Run: `node smart_memory.js --sync` |
-| **No results found** | Check that MEMORY.md exists; try broader query |
-| **First sync slow** | Normal - downloading ~80MB model; subsequent syncs fast |
-| **Focus mode too slow** | Switch to fast: `node smart_memory.js --unfocus` |
-| **Want pure built-in?** | Don't sync - built-in always available as fallback |
-
-## 🧪 Verify Installation
-
-```bash
-node smart-memory/smart_memory.js --status
-```
-
-Checks: dependencies, vector index, search functionality, memory files, current mode.
-
-## 📋 For Agent Developers
-
-Add to your `AGENTS.md`:
-```markdown
-## Memory Recall
-Before answering about prior work, decisions, preferences:
-1. Run memory_search with relevant query
-2. Use memory_get for full context
-3. Enable focus mode for complex decisions: memory_mode('focus')
-4. If low confidence, say you checked
-```
-
-See full template in `AGENTS.md`.
-
-## 🗂️ Suggested Memory Structure
-
-```
-workspace/
-├── MEMORY.md              # Curated long-term memory
-└── memory/
-    ├── logs/              # Daily activity (YYYY-MM-DD.md)
-    ├── projects/          # Project-specific notes
-    ├── decisions/         # Important choices
-    └── lessons/           # Mistakes learned
-```
-
-See `MEMORY_STRUCTURE.md` for templates.
-
-## 🔗 Links
-
-- **GitHub**: https://github.com/BluePointDigital/smart-memory
-- **ClawHub**: https://clawhub.ai/BluePointDigital/smart-memory
-- **Issues**: https://github.com/BluePointDigital/smart-memory/issues
-
-## 📜 License
+## License
 
 MIT
-
-## 🙏 Acknowledgments
-
-- Embeddings: [Xenova Transformers](https://github.com/xenova/transformers.js)
-- Model: `sentence-transformers/all-MiniLM-L6-v2`
-- Inspired by OpenClaw's memory system and Cognee's knowledge graphs
