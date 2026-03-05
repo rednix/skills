@@ -17,7 +17,7 @@
 | 技能 | 版本约束 | 状态检测命令 |
 |------|---------|-------------|
 | `skill-quick-index` | `>=1.0.0` | `skill-quick-index --version` |
-| `semantic-router` | `>=2.0.0` | `semantic-router --version` |
+| `semantic-router` | `>=7.7.2` | `semantic-router --version` |
 
 ## 安装向导
 

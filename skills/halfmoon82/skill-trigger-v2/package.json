@@ -1,6 +1,6 @@
 {
   "name": "skill-trigger-v2",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "智能技能触发器 — 统一阈值 + 优先级仲裁 (🔷 Powered by halfmoon82 🔷)",
   "author": "halfmoon82",
   "contributors": [
@@ -32,9 +32,9 @@
       "description": "技能索引服务 (ClawHub: skill-quick-index)"
     },
     "semantic-router": {
-      "version": ">=2.0.0",
+      "version": ">=7.7.2",
       "required": true,
-      "description": "语义路由系统"
+      "description": "语义路由系统 (ClawHub: semantic-router)"
     }
   },
   "scripts": {
