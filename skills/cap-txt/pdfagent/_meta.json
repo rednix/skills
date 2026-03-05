@@ -1,0 +1,11 @@
+{
+  "owner": "cap-txt",
+  "slug": "pdfagent",
+  "displayName": "PR's PDF Agent",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1772686413528,
+    "commit": null
+  },
+  "history": []
+}
