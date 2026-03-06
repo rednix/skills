@@ -1,7 +1,7 @@
 ---
 name: ogment
 description: Invoke MCP tools via Ogment CLI — secure access to Linear, Notion, Gmail, PostHog, and 100+ SaaS integrations through Ogment's governance layer.
-version: 1.0.5
+version: 1.0.2
 metadata:
   openclaw:
     requires:
@@ -170,18 +170,26 @@ ogment catalog <serverId> <toolName>
 
 Returns `inputSchema` with properties, types, required fields, and descriptions.
 
-### 5. Invoke a tool
+### 5. Get example input (optional)
 
 ```bash
-ogment invoke <serverId>/<toolName> --input '<json>'
+ogment catalog <serverId> <toolName> --example
+```
+
+Returns schema plus a generated `exampleInput` payload with placeholders.
+
+### 6. Invoke a tool
+
+```bash
+ogment invoke <serverId> <toolName> --input '<json>'
 ```
 
 Input is provided as inline JSON via the `--input` flag.
 
-### 6. Debug errors
+### 7. Debug errors
 
 ```bash
-ogment invoke <serverId>/<toolName> --input '{}' --debug
+ogment invoke <serverId> <toolName> --input '{}' --debug
 ```
 
 The `--debug` flag surfaces raw MCP error messages with field-level validation details.
@@ -232,19 +240,19 @@ ogment catalog <serverId> | jq '.data.tools[] | select(.name + .description | te
 ### List issues assigned to user
 
 ```bash
-ogment invoke openclaw/Linear_list_issues --input '{"assignee": "me"}'
+ogment invoke openclaw Linear_list_issues --input '{"assignee": "me"}'
 ```
 
 ### Search Notion
 
 ```bash
-ogment invoke openclaw/Notion_notion-search --input '{"query": "quarterly review", "query_type": "internal"}'
+ogment invoke openclaw Notion_notion-search --input '{"query": "quarterly review", "query_type": "internal"}'
 ```
 
 ### Get Gmail messages
 
 ```bash
-ogment invoke openclaw/gmail_listMessages --input '{"q": "is:unread", "maxResults": 10}'
+ogment invoke openclaw gmail_listMessages --input '{"q": "is:unread", "maxResults": 10}'
 ```
 
 ## Error Recovery
@@ -298,11 +306,9 @@ If a tool you expect isn't available (e.g., `gmail_createDraft` not in catalog):
 | Flag | Effect |
 |------|--------|
 | `--debug` | Include raw error diagnostics |
-| `--human` | Human-readable output |
-| `--yes` | Auto-confirm prompts |
+| `--quiet` | Minimal JSON output (ok + data/error) |
 | `--api-key <key>` | Override API key |
-
-**Avoid:** `--quiet` (suppresses all output including data)
+| `--example` | Generate example input (catalog only) |
 
 ## Pre-flight Checklist
 
