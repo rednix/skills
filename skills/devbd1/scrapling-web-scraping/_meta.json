@@ -1,11 +1,17 @@
 {
   "owner": "devbd1",
   "slug": "scrapling-web-scraping",
-  "displayName": "Scrapling Web Scraping",
+  "displayName": "Scrapling MCP",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1771964675654,
-    "commit": "https://github.com/openclaw/skills/commit/33c17705d2a1aba1f92e04f41e5ab7cd7a47383c"
+    "version": "1.2.0",
+    "publishedAt": 1772790291269,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1771964675654,
+      "commit": "https://github.com/openclaw/skills/commit/33c17705d2a1aba1f92e04f41e5ab7cd7a47383c"
+    }
+  ]
 }

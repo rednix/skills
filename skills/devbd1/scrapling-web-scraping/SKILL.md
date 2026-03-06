@@ -1,9 +1,9 @@
 ---
-name: scrapling
-description: Advanced web scraping with Scrapling — MCP-native guidance for extraction, crawling, and anti-bot handling. Use via mcporter (MCP) for execution; this skill provides strategy, recipes, and best practices.
+name: scrapling-mcp
+description: Advanced web scraping with Scrapling — MCP-native guidance for extraction, crawling, and anti-bot handling. Use via mcporter (MCP) to call the `scrapling` MCP server for execution; this skill provides strategy, recipes, and best practices.
 ---
 
-# Scrapling Web Scraping — MCP-Native Guidance
+# Scrapling MCP — Web Scraping Guidance
 
 > **Guidance Layer + MCP Integration**  
 > Use this skill for **strategy and patterns**. For execution, call Scrapling's MCP server via `mcporter`.
