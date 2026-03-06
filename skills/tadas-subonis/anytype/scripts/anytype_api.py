@@ -10,18 +10,20 @@ import json, os, sys, urllib.request, urllib.error
 
 BASE = "http://127.0.0.1:31012"
 
-def load_env():
+def load_api_key():
+    """Read only ANYTYPE_API_KEY from the workspace .env — nothing else."""
+    if "ANYTYPE_API_KEY" in os.environ:
+        return os.environ["ANYTYPE_API_KEY"]
     env_path = os.path.expanduser("~/.openclaw/workspace/.env")
     if os.path.exists(env_path):
         with open(env_path) as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
+                if line.startswith("ANYTYPE_API_KEY="):
+                    return line.split("=", 1)[1].strip()
+    return ""
 
-load_env()
-API_KEY = os.environ.get("ANYTYPE_API_KEY", "")
+API_KEY = load_api_key()
 
 def request(method, path, body=None):
     if not API_KEY:
