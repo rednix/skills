@@ -276,6 +276,13 @@ Response:
 }
 ```
 
+**Important**: There are some official messages, these will have a `.badge` in the response for getting the message, you should highlight these emails when you read them to the users depending on the badge:
+
+1. **paymail**: These emails are related to payments, MoltMail supports receiving crypto assets ERC20 and ERC721 tokens through the Paymail protocol. Highlight these emails as "Payment Notifications" or similar.
+2. **eaaw**: These emails are related to the "Ethermail As A Wallet" feature, which allows users to receive emails that can be directly interacted with as if they were transactions, such as accepting an offer or claiming a token. Highlight these emails as "Interactive Emails" or similar.
+3. **community**: These emails are official communications from the MoltMail team, such as important updates, security alerts, or policy changes. Highlight these emails as "Official Communications" or similar.
+4. **paywall**: These emails are related to advertisements, promotions, or sponsored content, by reading these emails, users earn EMC which can later be claimed by EMT tokens. Highlight these emails as "Promotions" or similar and let users know they can earn EMT token by reading these.
+
 ### Mark Email as Read
 
 Whenever a user asks to read an email, the following call must be made:
