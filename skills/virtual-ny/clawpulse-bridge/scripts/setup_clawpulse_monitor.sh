@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_DEFAULT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 WORKSPACE="${WORKSPACE:-$WORKSPACE_DEFAULT}"
 ENV_FILE="$WORKSPACE/.clawpulse.env"
+MONITOR_SRC="$SCRIPT_DIR/clawpulse-monitor.py"
 MONITOR_PY="$WORKSPACE/clawpulse-monitor.py"
 LOG_FILE="$WORKSPACE/clawpulse-monitor.log"
 
@@ -53,7 +54,30 @@ MONITOR_TOKEN=${MONITOR_TOKEN}
 EOF
 chmod 600 "$ENV_FILE"
 
-ENDPOINT="http://$(hostname -s | tr '[:upper:]' '[:lower:]').tail57ebf1.ts.net:${MONITOR_PORT}/health"
+if [[ ! -f "$MONITOR_SRC" ]]; then
+  echo "Missing monitor source: $MONITOR_SRC" >&2
+  exit 1
+fi
+cp "$MONITOR_SRC" "$MONITOR_PY"
+chmod 700 "$MONITOR_PY"
+
+TS_DNS=""
+TS_IP=""
+if command -v tailscale >/dev/null 2>&1; then
+  TS_IP="$(tailscale ip -4 2>/dev/null | head -n1 || true)"
+  TS_DNS="$(tailscale status --json 2>/dev/null | python3 -c 'import json,sys
+try:
+ j=json.load(sys.stdin); print(((j.get("Self") or {}).get("DNSName") or "").rstrip("."))
+except Exception:
+ print("")')"
+fi
+if [[ -n "$TS_DNS" ]]; then
+  ENDPOINT="http://${TS_DNS}:${MONITOR_PORT}/health"
+elif [[ -n "$TS_IP" ]]; then
+  ENDPOINT="http://${TS_IP}:${MONITOR_PORT}/health"
+else
+  ENDPOINT="http://127.0.0.1:${MONITOR_PORT}/health"
+fi
 SETUP_LINK=$(python3 - <<PY
 from urllib.parse import quote
 u = quote("$ENDPOINT", safe="")
