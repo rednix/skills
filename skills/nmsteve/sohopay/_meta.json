@@ -3,11 +3,16 @@
   "slug": "sohopay",
   "displayName": "SOHO Pay",
   "latest": {
-    "version": "1.0.14",
-    "publishedAt": 1772560024754,
-    "commit": "https://github.com/openclaw/skills/commit/03ced2f862fe8e10ba412fdcf503d5a930c8b690"
+    "version": "1.0.15",
+    "publishedAt": 1772651089844,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.14",
+      "publishedAt": 1772560024754,
+      "commit": "https://github.com/openclaw/skills/commit/03ced2f862fe8e10ba412fdcf503d5a930c8b690"
+    },
     {
       "version": "1.0.10",
       "publishedAt": 1772490277386,

@@ -1,6 +1,6 @@
 {
   "name": "sohopay",
-  "version": "1.0.13",
+  "version": "1.0.15",
   "description": "Initiate payments on the SOHO Pay credit layer using EIP-712 signatures.",
   "author": "Steve",
   "env": [
