@@ -1,6 +1,6 @@
 {
   "name": "@lucasygu/ttc",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for Toronto Transit Commission — real-time bus & streetcar arrivals, vehicle tracking, and alerts from the terminal",
   "type": "module",
   "main": "./dist/lib/client.js",
@@ -48,7 +48,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lucasygu/ttc.git"
+    "url": "git+https://github.com/lucasygu/ttc-cli.git"
   },
   "dependencies": {
     "commander": "^13.1.0",

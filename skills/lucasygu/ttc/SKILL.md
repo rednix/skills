@@ -13,7 +13,7 @@ metadata:
         package: "@lucasygu/ttc"
         bins: [ttc]
     os: [macos, linux, windows]
-    homepage: https://github.com/lucasygu/ttc
+    homepage: https://github.com/lucasygu/ttc-cli
 tags:
   - ttc
   - toronto

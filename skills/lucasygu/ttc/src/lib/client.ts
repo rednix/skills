@@ -9,7 +9,7 @@ import type { VehiclePosition, TripUpdate, StopTimeUpdate, ServiceAlert } from "
 
 const BUSTIME_BASE = "https://bustime.ttc.ca/gtfsrt";
 const ALERTS_BASE = "https://gtfsrt.ttc.ca";
-const USER_AGENT = "ttc-cli (https://github.com/lucasygu/ttc)";
+const USER_AGENT = "ttc-cli (https://github.com/lucasygu/ttc-cli)";
 
 // ─── Error ───────────────────────────────────────────────────────────────────
 

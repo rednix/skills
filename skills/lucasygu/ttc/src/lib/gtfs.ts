@@ -71,7 +71,6 @@ const NOISE_WORDS = new Set([
   "st", "ave", "rd", "dr", "blvd", "cres", "ct", "pl", "ln",
   "at", "the", "and", "&", "of", "near",
   "east", "west", "north", "south", "e", "w", "n", "s",
-  "station", "stn",
 ]);
 
 function normalizeName(name: string): string {

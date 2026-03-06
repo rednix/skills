@@ -60,7 +60,7 @@ Installs as a `/ttc` skill automatically. Use it in Claude Code:
 ## Development
 
 ```bash
-git clone https://github.com/lucasygu/ttc.git
+git clone https://github.com/lucasygu/ttc-cli.git
 cd ttc
 npm install --ignore-scripts
 npm run update-gtfs    # download fresh GTFS data
