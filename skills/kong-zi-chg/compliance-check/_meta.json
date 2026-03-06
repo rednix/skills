@@ -1,0 +1,11 @@
+{
+  "owner": "kong-zi-chg",
+  "slug": "compliance-check",
+  "displayName": "违规词·发帖前合规检查",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1772818110140,
+    "commit": null
+  },
+  "history": []
+}
