@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 
 const { ethers } = require('ethers');
-const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { getPrivateKey } = require('./utils.js');
 
 const CONFIG = {
   BSC_RPC: process.env.BSC_RPC || 'https://bsc-dataseed.binance.org',
-  PANKCAKESWAP_ROUTER: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
-  WBNB_ADDRESS: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
-  MONITOR_INTERVAL: 3000,
-  DEFAULT_DURATION: 3600
+  MONITOR_INTERVAL: 3000, // 3 seconds
+  DEFAULT_DURATION: 3600,
+  WBNB_ADDRESS: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'
 };
 
 const LOG_DIR = path.join(__dirname, 'logs-bsc');
@@ -56,21 +53,16 @@ function log(message, level = 'INFO') {
 }
 
 async function monitorBSC(input) {
-  const { address, duration, autoBuy } = input;
+  const { address, duration } = input;
   const monitorDuration = duration || CONFIG.DEFAULT_DURATION;
   const startTime = Date.now();
   
   log(`📊 Starting BSC monitoring for address: ${address}`);
   log(`📊 Monitoring duration: ${monitorDuration} seconds`);
+  log(`📊 Mode: Monitor only - no auto-buy`);
+  log(`📊 User can manually buy using PancakeSwap`);
   
   const provider = new ethers.JsonRpcProvider(CONFIG.BSC_RPC);
-  const autoBuyEnabled = autoBuy?.enabled === true;
-  
-  if (autoBuyEnabled) {
-    log(`🛒 Auto-Buy enabled`);
-    log(`💰 Amount: ${autoBuy.amount || '0.1'} BNB`);
-    log(`⚡ Slippage: ${autoBuy.slippage || 5}%`);
-  }
   
   let lastBlockNumber = await provider.getBlockNumber();
   log(`📊 Starting block number: ${lastBlockNumber}`);
@@ -78,7 +70,6 @@ async function monitorBSC(input) {
   const endTime = startTime + (monitorDuration * 1000);
   let blocksScanned = 0;
   let detections = loadDetections();
-  let autoBuys = [];
   
   while (Date.now() < endTime) {
     try {
@@ -91,39 +82,26 @@ async function monitorBSC(input) {
           
           if (block && block.transactions) {
             for (const tx of block.transactions) {
-              if (tx.from.toLowerCase() === address.toLowerCase()) {
-                const detected = await checkTransaction(tx, address);
+              const detected = await checkTransaction(tx, address, provider);
+              
+              if (detected) {
+                log(`🎉 Detection found! Block: ${i}, Hash: ${tx.hash}`);
                 
-                if (detected) {
-                  log(`🎉 Detection found! Block: ${i}, Hash: ${tx.hash}`);
-                  
-                  const detection = {
-                    chain: 'BSC',
-                    blockNumber: i,
-                    hash: tx.hash,
-                    from: tx.from,
-                    to: tx.to,
-                    tokenAddress: tx.to,
-                    timestamp: new Date().toISOString()
-                  };
-                  
-                  detections.push(detection);
-                  saveDetections(detections);
-                  
-                  if (autoBuyEnabled && tx.to) {
-                    log(`🛒 Attempting auto-buy...`);
-                    const autoBuyResult = await autoBuyToken(
-                      tx.to,
-                      autoBuy.amount || '10',
-                      autoBuy.slippage || 5
-                    );
-                    
-                    autoBuys.push({
-                      detectionHash: tx.hash,
-                      autoBuy: autoBuyResult
-                    });
-                  }
-                }
+                const detection = {
+                  chain: 'BSC',
+                  blockNumber: i,
+                  hash: tx.hash,
+                  from: tx.from,
+                  to: tx.to,
+                  tokenAddress: tx.to,
+                  timestamp: new Date().toISOString()
+                };
+                
+                detections.push(detection);
+                saveDetections(detections);
+                
+                log(`✅ Detection logged for token: ${tx.to}`);
+                log(`💰 User can buy at: https://exchange.pancakeswap.finance/#/swap`)
               }
             }
           }
@@ -147,7 +125,7 @@ async function monitorBSC(input) {
   log(`📊 Duration: ${actualDuration} seconds`);
   log(`📊 Blocks scanned: ${blocksScanned}`);
   log(`📊 Total detections: ${detections.length}`);
-  log(`📊 Auto-buys executed: ${autoBuys.length}`);
+  log(`📊 Mode: Monitor only - no auto-buy`);
   
   return {
     success: true,
@@ -159,20 +137,19 @@ async function monitorBSC(input) {
       duration: monitorDuration,
       actualDuration,
       blocksScanned,
-      detections,
-      autoBuys
+      detections
     }
   };
 }
 
-async function checkTransaction(tx, targetAddress) {
+async function checkTransaction(tx, targetAddress, provider) {
   try {
+    // Check if transaction is from target address to a contract (token)
     if (tx.from.toLowerCase() === targetAddress.toLowerCase()) {
       if (tx.to && tx.to !== targetAddress) {
-        const tokenInfo = await getTokenInfo(tx.to);
+        log(`💰 Transaction from ${tx.from} to ${tx.to}`);
         
-        log(`💰 Token transfer detected from ${tx.from} to ${tx.to}`);
-        log(`📝 Token: ${tokenInfo.name || 'Unknown'} (${tokenInfo.symbol || 'UNKNOWN'})`);
+        const tokenInfo = await getTokenInfo(tx.to, provider);
         
         return {
           hash: tx.hash,
@@ -188,18 +165,21 @@ async function checkTransaction(tx, targetAddress) {
     
     return null;
   } catch (error) {
-    log(`❌ Error checking transaction: ${error.message}`);
     return null;
   }
 }
 
-async function getTokenInfo(tokenAddress) {
+async function getTokenInfo(tokenAddress, provider) {
   try {
-    const tokenContract = new ethers.Contract(tokenAddress, [
-      'function name() external view returns (string)',
-      'function symbol() external view returns (string)',
-      'function decimals() external view returns (uint8)'
-    ], new ethers.JsonRpcProvider(CONFIG.BSC_RPC));
+    const tokenContract = new ethers.Contract(
+      tokenAddress,
+      [
+        'function name() external view returns (string)',
+        'function symbol() external view returns (string)',
+        'function decimals() external view returns (uint8)'
+      ],
+      provider
+    );
     
     const [name, symbol, decimals] = await Promise.all([
       tokenContract.name().catch(() => Promise.resolve('Unknown')),
@@ -214,69 +194,7 @@ async function getTokenInfo(tokenAddress) {
   }
 }
 
-async function autoBuyToken(tokenAddress, amount, slippage) {
-  try {
-    const privateKey = await getPrivateKey('WALLET_PRIVATE_KEY', 'Enter your BSC wallet private key (0x...)');
-    if (!privateKey) {
-      log(`❌ Wallet private key not provided`);
-      return { success: false, error: 'Wallet private key not provided' };
-    }
-    
-    const provider = new ethers.JsonRpcProvider(CONFIG.BSC_RPC);
-    const wallet = new ethers.Wallet(privateKey, provider);
-    
-    const router = new ethers.Contract(
-      CONFIG.PANKCAKESWAP_ROUTER,
-      [
-        'function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)',
-        'function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)'
-      ],
-      wallet
-    );
-    
-    const amountIn = ethers.utils.parseEther(amount);
-    const path = [CONFIG.WBNB_ADDRESS, tokenAddress];
-    
-    // Get expected output amount
-    const amountsOut = await router.getAmountsOut(amountIn, path);
-    const minAmountOut = amountsOut[1].mul(100 - slippage).div(100);
-    
-    log(`🛒 Swapping ${amount} BNB for token...`);
-    
-    const gasPrice = await provider.getGasPrice();
-    const gasLimit = ethers.utils.hexlify(300000);
-    
-    const swapTx = await router.swapExactETHForTokens(
-      minAmountOut,
-      path,
-      wallet.address,
-      Math.floor(Date.now() / 1000) + 60 * 20,
-      {
-        value: amountIn,
-        gasPrice: gasPrice,
-        gasLimit: gasLimit
-      }
-    );
-    
-    const receipt = await swapTx.wait();
-    log(`✅ Auto-buy completed! Hash: ${receipt.transactionHash}`);
-    
-    return {
-      success: true,
-      transactionHash: receipt.transactionHash,
-      gasUsed: receipt.gasUsed.toString(),
-      gasPrice: gasPrice.toString(),
-      amountIn: amount,
-      amountOut: minAmountOut.toString()
-    };
-    
-  } catch (error) {
-    log(`❌ Auto-buy failed: ${error.message}`);
-    return { success: false, error: error.message };
-  }
-}
-
-module.exports = { monitorBSC, autoBuyToken };
+module.exports = { monitorBSC };
 
 if (require.main === module) {
   const action = process.argv[2] || 'monitor';

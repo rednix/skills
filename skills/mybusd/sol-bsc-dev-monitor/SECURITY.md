@@ -1,225 +1,161 @@
-# Security Information
+# Security Information - Monitor Only Version
 
-## 🔒 Private Key Input Methods
+## 🔒 No Private Keys Required
 
-This tool offers **two secure ways** to provide your private key:
+This is a **monitor-only tool**. No private keys are required and no transactions are executed.
 
-### Option 1: Interactive Input (Recommended for Manual Use)
-
-**How it works:**
-- Run the tool without environment variables
-- The tool will prompt you to enter your private key
-- Your input is handled securely and never stored
-
-**Example:**
-```bash
-node index-sol-safe.js monitor <ADDRESS> SOL 3600
-```
-
-**You'll see:**
-```
-Enter your Solana wallet private key (Base64 encoded): [you type here]
-✅ Using WALLET_PRIVATE_KEY_BASE64 from input
-📊 Starting Solana monitoring...
-```
-
-**Benefits:**
-- ✅ No environment variables needed
-- ✅ Private key is never stored anywhere
-- ✅ Private key is never logged
-- ✅ Perfect for one-off operations
-- ✅ Reduced risk of accidental exposure
-
-**Best for:**
-- Manual, one-time monitoring
-- Testing and experimentation
-- Users who prefer not to set environment variables
+**Security Benefits:**
+- ✅ No private keys needed - zero risk of accidental transactions
+- ✅ Safe to run on any machine
+- ✅ Perfect for research and information gathering
+- ✅ Zero financial risk
 
 ---
 
-### Option 2: Environment Variables (Recommended for Automation)
+## 📊 What This Tool Does
 
-**How it works:**
-- Set environment variables before running
-- The tool will automatically detect and use them
-- Private key is kept in process memory only
-
-**Example:**
-```bash
-export WALLET_PRIVATE_KEY_BASE64=$(cat wallet.key | base64)
-export SOLANA_RPC=https://api.mainnet-beta.solana.com
-export WALLET_PRIVATE_KEY=0x...
-export BSC_RPC=https://bsc-dataseed.binance.org
-
-node index-sol-safe.js monitor <ADDRESS> SOL 3600
-```
-
-**You'll see:**
-```
-✅ Using WALLET_PRIVATE_KEY_BASE64 from environment
-📊 Starting Solana monitoring...
-```
-
-**Benefits:**
-- ✅ Perfect for automation and scripts
-- ✅ Easy to integrate with CI/CD
-- ✅ Can be set per session
-- ✅ Compatible with `.env` files
-
-**Best for:**
-- Automated monitoring
-- Scheduled tasks
-- CI/CD integration
+- ✅ Monitors blockchain for token transfers
+- ✅ Records detections with timestamps
+- ✅ Saves detection history
+- ✅ Provides detailed logs
+- ✅ Offers manual buy links (Jupiter, PancakeSwap)
 
 ---
 
-## 🔒 Security Best Practices
+## 🚫 What This Tool Does NOT Do
 
-### 1. Never Commit Private Keys
-
-**❌ Don't do this:**
-```bash
-git add .env
-git commit -m "Add config"
-```
-
-**✅ Do this instead:**
-```bash
-echo ".env" >> .gitignore
-echo "*.key" >> .gitignore
-```
+- ❌ No auto-buy functionality
+- ❌ No private keys required
+- ❌ No transactions executed
+- ❌ No wallet interactions
+- ❌ No spending of funds
+- ❌ No transaction signing
 
 ---
 
-### 2. Use a Dedicated Trading Wallet
+## 🔍 Privacy and Data
 
-**Why:**
-- Never use your main wallet for automated trading
-- Only keep funds you're willing to risk
-- Transfer profits regularly to your main wallet
+### Data Collected
 
-**How:**
-- Create a new wallet specifically for this tool
-- Fund it with test amounts first
-- Only increase amounts after successful tests
+- Blockchain data (public)
+- Token transfer information (public)
+- Detection timestamps
+- Log files for monitoring
+- User ID (for billing)
 
----
+### Data Stored Locally
 
-### 3. Start with Small Amounts
+- `logs-sol/sol-monitor.log` - Solana monitoring logs
+- `logs-bsc/bsc-monitor.log` - BSC monitoring logs
+- `detections-sol/detections.json` - Solana detection history
+- `detections-bsc/detections.json` - BSC detection history
 
-**Recommended testing amounts:**
-- Solana: 0.001 SOL
-- BSC: 0.001 BNB
+### Data NOT Collected
 
-**Only increase after:**
-- ✅ Successful test transactions
-- ✅ Verified on blockchain explorer
-- ✅ Confirmed received expected tokens
-
----
-
-### 4. Verify Every Transaction
-
-**For Solana:**
-- Visit: https://explorer.solana.com/
-- Check: Transaction signature from logs
-- Verify: Token mint addresses and amounts
-
-**For BSC:**
-- Visit: https://bscscan.com/
-- Check: Transaction hash from logs
-- Verify: Token contract addresses and amounts
+- ❌ No private keys
+- ❌ No wallet information
+- ❌ No personal data (except user ID for billing)
+- ❌ No transaction signing keys
+- ❌ No sensitive financial information
 
 ---
 
-### 5. Monitor Logs Regularly
+## 💳 Billing System
 
-**View logs in real-time:**
-```bash
-# Solana
-tail -f logs-sol/sol-monitor.log
+### How Billing Works
 
-# BSC
-tail -f logs-bsc/bsc-monitor.log
-```
+1. **Before Monitoring**: Checks user balance
+2. **If Sufficient**: Deducts tokens, starts monitoring
+3. **If Insufficient**: Returns payment link
 
-**What to look for:**
-- ✅ Successful detections
-- ✅ Auto-buy completions
-- ❌ Any errors or warnings
-- ❌ Failed transactions
+### Token Pricing
+
+- **1 USDT = 200 tokens**
+- **1 call = 1 token = 0.005 USDT**
+- **Minimum deposit: 8 USDT (1600 tokens)**
 
 ---
 
-## 🔍 How Private Keys Are Handled
+## 🔒 Billing Security
 
-### In Memory Only
+### API Key Protection
 
-- Private keys are **never written to disk**
-- Private keys are **never logged**
-- Private keys are only kept in **process memory**
-- Memory is cleared when process exits
+- API key is stored in code
+- API key is used only for billing authentication
+- No sensitive data transmitted
 
-### No Storage
+### Payment Processing
 
-- No database storage
-- No file storage
-- No environment variable storage (unless you set them)
-- No caching
+- All payments are processed by SkillPay.me
+- No credit card information is handled by this tool
+- Payment links are generated securely
+- Minimum deposit: 8 USDT
 
-### Secure Input
+### Balance Management
 
-Interactive input uses Node.js `readline`:
-- Input is handled securely
-- Not echoed to terminal
-- Not recorded in shell history
-- Cleaned from memory after use
+- Balance is checked via API
+- Tokens are deducted before monitoring
+- Insufficient balance triggers payment link
+- No negative balances possible
 
 ---
 
-## ⚠️ Important Security Notes
+## 📊 Technical Details
 
-### What This Tool Does Not Do
+### How It Works
 
-- ❌ It does not store your private key
-- ❌ It does not log your private key
-- ❌ It does not send your private key to any server
-- ❌ It does not share your private key with anyone
+1. **Connect to RPC**: Connects to blockchain RPC endpoints
+2. **Scan Blocks**: Scans blockchain blocks/slots
+3. **Filter Transactions**: Filters transactions from monitored address
+4. **Detect Tokens**: Detects token transfers
+5. **Record Detections**: Saves detections to local files
+6. **Log Events**: Writes events to log files
+7. **Provide Buy Links**: Offers manual buy links (Jupiter, PancakeSwap)
 
-### What This Tool Does
+### Network Traffic
 
-- ✅ It uses your private key only to sign transactions
-- ✅ It keeps your private key in memory only
-- ✅ It signs transactions locally on your machine
-- ✅ It broadcasts signed transactions to the blockchain
+- **Outbound only**: Only makes read-only RPC queries
+- **Billing API**: Makes billing API calls (HTTPS)
+- **No inbound connections**: Does not accept connections
+- **No data exfiltration**: No sensitive data is sent anywhere
 
 ---
 
-## 📊 Trading Mechanisms
+## 💡 Manual Buy Links
+
+After detection, provide users with manual buy links:
 
 ### Solana
-- **DEX**: Jupiter Aggregator
-- **API**: https://quote-api.jup.ag/v6
-- **Payment Token**: SOL (native)
-- **Swap Method**: Token swap via Jupiter
-- **Authorization**: Not required (native token)
+- **Jupiter:** https://jup.ag
+- **Raydium:** https://raydium.io/
+- **Orca:** https://www.orca.so/
 
 ### BSC
-- **DEX**: PancakeSwap
-- **Router**: 0x10ED43C718714eb63d5aA57B78B54704E256024E
-- **Payment Token**: BNB (native)
-- **Swap Method**: swapExactETHForTokens
-- **Authorization**: Not required (native token)
+- **PancakeSwap:** https://exchange.pancakeswap.finance/#/swap
+- **1inch:** https://app.1inch.io/
 
 ---
 
-## 🚨 Important Notes
+## ⚠️ Important Notes
 
-- This is a trading tool for educational and research purposes
-- Use at your own risk
-- Only trade with funds you can afford to lose
-- Always verify transactions independently
-- Keep private keys secure at all times
+### Financial Risk
+
+- ✅ **Zero financial risk** - No transactions are executed
+- ✅ No spending of funds
+- ✅ No wallet interactions
+
+### Privacy
+
+- ✅ No private keys required
+- ✅ Logs contain only public blockchain data
+- ✅ User ID used only for billing
+- Logs can be safely shared for debugging
+
+### Transparency
+
+- ✅ Source code is open and readable
+- ✅ No obfuscated code
+- All functionality is transparent
 
 ---
 
@@ -234,19 +170,151 @@ Interactive input uses Node.js `readline`:
 - `detections-bsc/detections.json` - BSC detection history
 
 **Important:**
-- Private keys are **never logged**
+- Private keys are never logged
 - Only transaction data is logged
 - Logs can be safely shared for debugging
 
 ---
 
+## 🔍 Transaction Verification
+
+### Solana
+
+```bash
+# From logs, get transaction signature
+# Then verify on Solana Explorer
+https://explorer.solana.com/?signature=<TRANSACTION_SIGNATURE>
+```
+
+### BSC
+
+```bash
+# From logs, get transaction hash
+# Then verify on BSCScan
+https://bscscan.com/tx/<TRANSACTION_HASH>
+```
+
+---
+
+## 📊 Example Outputs
+
+### Detection Logs
+
+**Solana:**
+```
+💰 New token detected!
+✅ Detection logged for token: TOKEN_SYMBOL
+💰 User can buy at: https://jup.ag
+```
+
+**BSC:**
+```
+💰 Transaction from 0x... to 0x...
+✅ Detection logged for token: 0x...
+💰 User can buy at: https://exchange.pancakeswap.finance/#/swap
+```
+
+### Summary
+
+After monitoring completes, you'll get a summary:
+
+```json
+{
+  "success": true,
+  "chain": "SOL",
+  "monitoring": {
+    "address": "<ADDRESS>",
+    "startTime": "2026-03-06T10:00:00.000Z",
+    "endTime": "2026-03-06T11:00:00.000Z",
+    "duration": 3600,
+    "actualDuration": "3600.12",
+    "slotsScanned": 1234,
+    "detections": [
+      {
+        "chain": "SOL",
+        "slot": 123456789,
+        "signature": "...",
+        "timestamp": "2026-03-06T10:30:00.000Z",
+        "from": "<ADDRESS>",
+        "to": "<TOKEN_ADDRESS>",
+        "tokenMint": "...",
+        "tokenSymbol": "TOKEN",
+        "amount": "1000"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 🔒 Security Best Practices
+
+### 1. Safe to Run Anywhere
+
+Since no private keys are required:
+- ✅ Safe to run on any machine
+- ✅ Safe to share logs (contain only public blockchain data)
+- ✅ Perfect for research and testing
+
+### 2. Logging
+
+**Log files contain:**
+- Public blockchain data
+- Token addresses and symbols
+- Transaction signatures/hashes
+- Timestamps
+
+**Log files do NOT contain:**
+- ❌ Private keys
+- ❌ Wallet information
+- ❌ Personal data
+- ❌ Sensitive information
+
+### 3. Detection Files
+
+**Detection files contain:**
+- Public blockchain data
+- Token information
+- Timestamps
+- Transaction data
+
+**Detection files do NOT contain:**
+- ❌ Private keys
+- ❌ Wallet information
+- ❌ Personal data
+- ❌ Sensitive financial information
+
+---
+
+## 🚨 Important Notes
+
+- This is a trading tool for educational and research purposes only
+- Use at your own risk
+- Only trade with funds you can afford to lose
+- Always verify transactions independently
+- Manual buying should be done through verified DEX platforms
+
+---
+
 ## ⚖️ Disclaimer
 
-This tool is provided for educational and research purposes only. The user assumes all risks associated with trading cryptocurrency. The developers are not responsible for any financial losses.
+This tool is provided for educational and research purposes only. The user assumes all risks associated with trading cryptocurrency.
 
-**Always:**
-- Start with small test amounts
-- Verify every transaction
-- Use a dedicated trading wallet
-- Keep your private keys secure
-- Never share your private key with anyone
+**Important:**
+- Always verify transactions independently
+- Use only for legitimate monitoring purposes
+- This is a monitor-only tool - no transactions are executed
+- Manual buying should be done through verified DEX platforms
+- Check your balance before monitoring
+
+---
+
+## 📄 License
+
+MIT
+
+---
+
+**Version**: 1.0.0
+**Security Model**: Monitor only, no private keys, no transactions

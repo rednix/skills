@@ -1,27 +1,75 @@
 ---
-name: unified-dev-monitor-autobuy
-description: Unified Dev Monitor with Auto-Buy for BSC and Solana
+name: unified-dev-monitor
+description: Unified Dev Wallet Monitor for BSC and Solana - Monitor only, manual buy only, no private keys
 version: "1.0.0"
 author: Your Name
-tags: [bsc, solana, monitor, trading, auto-buy, crypto, defi, multi-chain]
+tags: [bsc, solana, monitor, research, crypto, blockchain, multi-chain]
 payment:
   provider: skillpay.me
   api_key: sk_f072a786149bc07fc8730b4683dc00f3e050e72441922284ca803cdee2b994b5
-  price: 0.01
+  price: 0.005
   currency: USDT
   billing_mode: per_call
 ---
-# Unified Dev Monitor with Auto-Buy
+# Unified Dev Monitor
 
 ## 🎯 Overview
 
-Comprehensive Dev Wallet Monitor for BSC and Solana with automatic buy functionality. Monitor token transfers from developer addresses and automatically buy new tokens via PancakeSwap (BSC) and PumpSwap (Solana).
+Multi-chain developer wallet monitor for BSC and Solana. Monitor token transfers from developer addresses and get real-time notifications of new token deployments.
 
-## 💰 Pricing
+## 🔒 Security First - No Private Keys Required
 
-- **Per Call**: 0.01 USDT
-- **Payment Method**: SkillPay.me
-- **Billing Mode**: Per call
+**Important:** This is a **monitor-only tool** with **manual buy only**. No private keys are required and no auto-buy functionality is included.
+
+**Benefits:**
+- ✅ No private keys needed
+- ✅ Zero risk of accidental transactions
+- ✅ Safe to run on any machine
+- ✅ Perfect for research and information gathering
+
+---
+
+## 💰 Pricing & Billing
+
+### Pricing Model
+
+- **Per Call**: 0.005 USDT (1/2 token)
+- **1 USDT = 200 tokens**
+- **1 call = 0.5 tokens**
+- **Minimum deposit: 8 USDT (1600 tokens)**
+
+### Platform Fees
+
+- **Handling fee:** 5%
+- **Withdrawal:** Automatic to your wallet
+- **Configuration:** No payment setup required
+
+---
+
+## 🔒 Manual Buy Only
+
+### How It Works
+
+1. **Monitor detects token transfer**
+   - Scans blockchain blocks/slots
+   - Filters transactions from monitored address
+   - Detects new token transfers
+
+2. **System provides buy links**
+   - Solana: Jupiter Aggregator (https://jup.ag)
+   - BSC: PancakeSwap (https://pancakeswap.finance/swap)
+
+3. **User decides whether to buy**
+   - User reviews token information
+   - User clicks buy link
+   - User authorizes transaction in their wallet
+   - User confirms transaction
+
+4. **System continues monitoring**
+   - Transaction completes, system continues monitoring
+   - Logs all detections
+
+---
 
 ## 🚀 Quick Start
 
@@ -37,317 +85,442 @@ npm install
 # Test environment
 npm test
 
-# Test BSC monitoring with auto-buy disabled
-node index.js test
+# Test BSC monitoring
+node index-bsc.js test
 
-# Test BSC monitoring with auto-buy enabled
-AUTO_BUY_ENABLED="true" AUTO_BUY_AMOUNT="1" WALLET_PRIVATE_KEY="your-key" node index-bsc.js test
-
-# Test Solana monitoring (use index-sol-safe.js)
+# Test Solana monitoring
 node index-sol-safe.js test
-
-# Test Solana monitoring with auto-buy enabled (use index-sol-safe.js)
-AUTO_BUY_ENABLED="true" AUTO_BUY_AMOUNT="0.1" WALLET_PRIVATE_KEY="your-sol-key-base64" node index-sol-safe.js test
 ```
+
+---
+
+## 📖 Usage
+
+### Monitor Solana Address
+
+```bash
+node index-sol-safe.js monitor <ADDRESS> SOL <DURATION>
+```
+
+### Monitor BSC Address
+
+```bash
+node index-bsc.js monitor <ADDRESS> BSC <DURATION>
+```
+
+### Check Balance
+
+```bash
+node index.js '{"action":"balance","userId":"your-user-id"}'
+```
+
+---
 
 ## 📊 Supported Chains
 
 ### 1. BSC (Binance Smart Chain)
 
 - **Native Token**: BNB
-- **DEX**: PancakeSwap
-- **Payment Token**: USDT (0x55d398326f9955f0bEb)
-- **Router Address**: 0x10ED43C718714eb63d5aA57B78B54704E256024E
 - **Block Time**: ~3 seconds
 - **Address Format**: 0x... (42 hex characters)
+- **DEX**: PancakeSwap
+- **Router Address**: 0x10ED43C718714eb63d5aA57B78B54704E256024E
 
 ### 2. Solana
 
 - **Native Token**: SOL
-- **DEX**: PumpSwap
-- **Payment Token**: SOL (WSOL)
-- **Router Address**: Auto-detected
 - **Block Time**: ~400ms
 - **Address Format**: Base58 (32-44 characters)
+- **DEX**: Jupiter Aggregator
+- **API**: https://quote-api.jup.ag/v6
 
-## 📖 Usage
+---
 
-### Monitor BSC with Auto-Buy
+## 📝 Manual Buy Links
 
-```javascript
-{
-  "action": "monitor",
-  "chain": "BSC",
-  "address": "YourBSCDevAddress",
-  "duration": 3600,
-  "autoBuy": {
-    "enabled": true,
-    "amount": "10",
-    "slippage": 5
-  }
-}
-```
+### Solana
 
-**Response (Detection + Auto-Buy)**:
-```json
-{
-  "success": true,
-  "chain": "BSC",
-  "detected": true,
-  "transaction": {
-    "hash": "0x...",
-    "blockNumber": 12345678,
-    "timestamp": "2026-03-05T10:30:00Z",
-    "from": "DevAddress",
-    "to": "RecipientAddress",
-    "tokenAddress": "0x...",
-    "tokenSymbol": "PEPE",
-    "tokenName": "Pepe Token",
-    "amount": "1000000000000000000000000",
-    "decimals": 18
-  },
-  "autoBuy": {
-    "enabled": true,
-    "success": true,
-    "transactionHash": "0x...",
-    "gasUsed": "0.005 BNB",
-    "actualAmount": "10 USDT"
-  }
-}
-```
+After detecting a token, users can buy via:
+- **Jupiter Aggregator**: https://jup.ag
+- **Raydium**: https://raydium.io
+- **Orca**: https://www.orca.so
+- **1inch**: https://app.1inch.io
+- **其他 DEX**
 
-### Monitor Solana with Auto-Buy
+### BSC
 
-```javascript
-{
-  "action": "monitor",
-  "chain": "SOL",
-  "address": "YourSolanaDevAddress",
-  "duration": 3600,
-  "autoBuy": {
-    "enabled": true,
-    "amount": 0.1,
-    "slippage": 5
-  }
-}
-```
+After detecting a token, users can buy via:
+- **PancakeSwap**: https://pancakeswap.finance/swap
+- **1inch**: https://app.1inch.io
+- **其他 DEX**
 
-**Response (Detection + Auto-Buy)**:
-```json
-{
-  "success": true,
-  "chain": "SOL",
-  "detected": true,
-  "transaction": {
-    "signature": "3h1y...",
-    "slot": 12345678,
-    "timestamp": "2026-03-05T10:30:00Z",
-    "from": "DevAddress",
-    "to": "RecipientAddress",
-    "tokenMint": "TokenMintAddress...",
-    "tokenSymbol": "TOKEN",
-    "amount": "1000000",
-    "decimals": 9
-  },
-  "autoBuy": {
-    "enabled": true,
-    "success": true,
-    "transactionHash": "3h1y...",
-    "feePaid": 0.001 SOL"
-  }
-}
-```
+---
 
-## 🔧 Configuration
+## 🔍 Viewing Results
 
-### Environment Variables
+### View Logs
 
 ```bash
-# BSC RPC
-export BSC_RPC="https://bsc-dataseed.binance.org"
+# Solana
+tail -f logs-sol/sol-monitor.log
 
-# Solana RPC
-export SOLANA_RPC="https://api.mainnet-beta.solana.com"
-export SOLANA_RPC_API_KEY="your-api-key"
-
-# Wallet Private Keys
-export WALLET_PRIVATE_KEY="your-bsc-private-key"               # BSC
-export WALLET_PRIVATE_KEY_BASE64="your-solana-key-base64"   # Solana (Base64)
-
-# Auto-Buy Configuration
-export AUTO_BUY_ENABLED="true"
-export AUTO_BUY_AMOUNT="10"                      # USDT for BSC
-export AUTO_BUY_AMOUNT_SOL="0.1"                # SOL for Solana
-export AUTO_BUY_SLIPPAGE="5"                     # Default: 5%
+# BSC
+tail -f logs-bsc/bsc-monitor.log
 ```
 
-### Monitor Intervals
+### View Detections
 
-```javascript
-// BSC: 3 seconds per block
-const BSC_MONITOR_INTERVAL = 3000;
+```bash
+# Solana
+cat detections-sol/detections.json
 
-// Solana: 10 seconds (Solana block time ~400ms)
-const SOL_MONITOR_INTERVAL = 10000;
+# BSC
+cat detections-bsc/detections.json
 ```
 
-## 📊 Auto-Buy Configuration
+---
 
-### BSC Auto-Buy (PancakeSwap)
+## 💰 Billing Guide
 
-- **Router**: `0x10ED43C718714eb63d5aA57B78B54704E256024E`
-- **Payment Token**: USDT (`0x55d398326f9955f0bEb`)
-- **Slippage Default**: 5%
-- **Gas Price**: ~0.005 BNB (default)
-- **Min Amount**: 1 USDT
-- **Recommended Amount**: 10-100 USDT
+### Check Balance
 
-### Solana Auto-Buy (PumpSwap)
+```bash
+node index.js '{"action":"balance","userId":"your-user-id"}'
+```
 
-- **Router**: Auto-detected from PumpSwap
-- **Payment Token**: SOL (WSOL)
-- **Slippage Default**: 5%
-- **Fee**: ~0.001 SOL (default)
-- **Min Amount**: 0.01 SOL
-- **Recommended Amount**: 0.1-1 SOL
-
-## 🎯 Use Cases
-
-### 1. Alpha Hunters with Auto-Buy
-
-Monitor popular dev addresses and automatically buy new tokens:
-
-```javascript
+**Response:**
+```json
 {
-  "action": "monitor",
-  "chain": "BSC",
-  "address": "0x4f0f84abd0b2d8a7ae5e252fb96e07946dbbb1a4",
-  "duration": 3600,
-  "autoBuy": {
-    "enabled": true,
-    "amount": 10,
-    "slippage": 5
-  }
+  "success": true,
+  "action": "balance",
+  "userId": "your-user-id",
+  "balance": 1000,
+  "tokens": 1000,
+  "usdt": "5.000"
 }
 ```
 
-### 2. Risk-Managed Trading
+### Get Payment Link
+
+```bash
+node index.js '{"action":"payment-link","userId":"your-user-id","amount":8}'
+```
+
+### Monitor with Auto-Charge
+
+```bash
+# Solana
+node index.js '{"action":"monitor","chain":"SOL","address":"...","duration":3600,"userId":"your-user-id"}'
+
+# BSC
+node index.js '{"action":"monitor","chain":"BSC","address":"...","duration":3600,"userId":"your-user-id"}'
+```
+
+**Insufficient Balance:**
+```json
+{
+  "success": false,
+  "action": "billing",
+  "error": "Insufficient balance",
+  "balance": 0,
+  "paymentUrl": "https://skillpay.me/payment/...",
+  "message": "余额不足。最低充值: 8 USDT (1600 tokens)\n充值链接: https://..."
+}
+```
+
+---
+
+## 💳 Billing Flow
+
+### Complete Flow
+
+```
+用户请求监控
+    ↓
+检查余额 (0.5 tokens)
+    ↓
+余额 >= 0.5? 
+  是 → 扣除 0.5 token → 开始监控
+  ↓
+检测到代币 → 提供购买链接
+  ↓
+用户决定是否购买
+    ↓
+交易完成
+  ↓
+继续监控
+    ↓
+返回检测结果
+    ↓
+  No → 返回充值链接
+```
+
+---
+
+## 📊 Configuration
+
+### Solana
 
 ```javascript
 {
-  "action": "monitor",
-  "chain": "BOTH",
-  "addresses": {
-    "BSC": [
-      "0x4f0f84abd0b2d8a7ae5e252fb96e07946dbbb1a4",
-      "0x10ED43C718714eb63d5aA57B78B54704E256024E"
-    ],
-    "SOL": [
-      "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-      "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm"
+  SOLANA_RPC: 'https://api.mainnet-beta.solana.com',
+  JUPITER_API: 'https://quote-api.jup.ag/v6',
+  MONITOR_INTERVAL: 10000,  // 10 seconds
+  DEFAULT_DURATION: 3600,      // 1 hour
+  WSOL_MINT: 'So11111111111111111111111111111111111112'
+}
+```
+
+### BSC
+
+```javascript
+{
+  BSC_RPC: 'https://bsc-dataseed.binance.org',
+  PANKCAKESWAP_ROUTER: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+  WBNB_ADDRESS: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+  MONITOR_INTERVAL: 3000,   // 3 seconds
+  DEFAULT_DURATION: 3600,      // 1 hour
+}
+```
+
+---
+
+## 📝 Output
+
+### Detection Example
+
+When a token transfer is detected:
+
+**Solana:**
+```
+💰 Token transfer detected from <ADDRESS>
+✅ Detection logged for token: TOKEN_SYMBOL
+💰 User can buy at: https://jup.ag
+```
+
+**BSC:**
+```
+💰 Token transfer detected from <ADDRESS> to <TOKEN_ADDRESS>
+✅ Detection logged for token: <TOKEN_ADDRESS>
+💰 User can buy at: https://pancakeswap.finance/swap
+```
+
+### Summary
+
+After monitoring completes, you'll get a summary:
+
+```json
+{
+  "success": true,
+  "chain": "SOL",
+  "monitoring": {
+    "address": "<ADDRESS>",
+    "startTime": "2026-03-06T10:00:00.000Z",
+    "endTime": "2026-03-06T11:00:00.000Z",
+    "duration": 3600,
+    "actualDuration": "3600.12",
+    "slotsScanned": 1234,
+    "detections": [
+      {
+        "chain": "SOL",
+        "slot": 123456789,
+        "signature": "...",
+        "timestamp": "2026-03-06T10:30:00.000Z",
+        "from": "<ADDRESS>",
+        "to": "<TOKEN_ADDRESS>",
+        "tokenMint": "...",
+        "tokenSymbol": "TOKEN",
+        "amount": "1000",
+        "decimals": 9
+      }
     ]
-  },
-  "duration": 3600,
-  "autoBuy": {
-    "enabled": true,
-    "amount": 0.1,
-    "slippage": 5
   }
 }
 ```
 
-## 📋 Logs
+---
 
-### BSC Logs
+## 📊 What Gets Detected
 
-- Monitor: `logs-bsc/bsc-monitor.log`
-- Detections: `detections-bsc/detections.json`
-- Auto-Buy: `logs-bsc/autobuy.log`
+- Token transfers from monitored address
+- Token mint addresses
+- Token symbols (when available)
+- Transfer amounts
+- Timestamps
+- Transaction signatures/hashes
 
-### Solana Logs
+---
 
-- Monitor: `logs-sol/sol-monitor.log`
-- Detections: `detections-sol/detections.json`
-- Auto-Buy: `logs-sol/autobuy.log`
+## 🔍 Viewing Results
 
-## 🛠️ Development
-
-### Dependencies
-
-```json
-{
-  "dependencies": {
-    "ethers": "^5.0.0",
-    "@solana/web3.js": "^1.87.0",
-    "axios": "^1.6.0",
-    "@solana/token": "^0.2.0",
-    "@solana/spl-token": "^0.2.0"
-  }
-}
-```
-
-### Install Dependencies
+### View Logs
 
 ```bash
-npm install
+# Solana
+tail -f logs-sol/sol-monitor.log
+
+# BSC
+tail -f logs-bsc/bsc-monitor.log
 ```
 
-### Tests
+### View Detections
 
 ```bash
-# Test BSC monitoring
-node index.js test
+# Solana
+cat detections-sol/detections.json
 
-# Test BSC monitoring with auto-buy
-AUTO_BUY_ENABLED="false" node index-bsc.js YourBSCDevAddress 60
-
-# Test Solana monitoring (use index-sol-safe.js)
-node index-sol-safe.js test
-
-# Test Solana monitoring with auto-buy (use index-sol-safe.js)
-AUTO_BUY_ENABLED="false" node index-sol-safe.js YourSolanaDevAddress 60
+# BSC
+cat detections-bsc/detections.json
 ```
 
-## 🔒 Security Recommendations
+---
 
-### 1. Wallet Security
+## 🔒 Security & Privacy
 
-- ❌ Never hardcode wallet private keys in code
-- ✅ Always use environment variables
-- ✅ Use separate wallets for trading
-- ✅ Start with small test amounts
+### Data Collected
 
-### 2. Risk Management
+- Blockchain data (public)
+- Token transfer information (public)
+- Detection timestamps
+- Log files for monitoring
+- User ID (for billing)
 
-- Set reasonable auto-buy amounts
-- Set daily loss limits
-- Use stop-loss orders
-- Monitor gas prices
+### Data Stored Locally
 
-### 3. Gas Optimization
+- `logs-sol/sol-monitor.log` - Solana monitoring logs
+- `logs-bsc/bsc-monitor.log` - BSC monitoring logs
+- `detections-sol/detections.json` - Solana detection history
+- `detections-bsc/detections.json` - BSC detection history
 
-- Adjust slippage to reduce failed transactions
-- Monitor gas fees before trading
-- Set max gas prices
+### Data NOT Collected
 
-### 4. Token Safety
+- ❌ No private keys
+- ❌ No wallet information
+- ❌ No personal data
+- ❌ No transaction signing keys
+- ❌ No sensitive financial information
 
-- Verify token contracts before buying
-- Check liquidity depth
-- Avoid low-liquidity tokens
+---
 
-## 📈 References
+## 💳 Billing SDK (billing-final.js)
 
-- [BSC Documentation](https://docs.bscscan.com/)
-- [PancakeSwap Docs](https://docs.pancakeswap.finance/)
-- [Solana Web3.js](https://solana-labs.github.io/solana-web3.js/)
-- [SPL Token](https://spl.solana.com/token/)
-- [Pump.fun](https://pump.fun/)
+### Core Functions
 
-## 🤝 Contributing
+```javascript
+// 查询余额
+const balance = await checkBalance(userId);
 
-Issues and Pull Requests are welcome!
+// 扣费（每次调用 0.5 token = 0.005 USDT）
+const charge = await chargeUser(userId, 0.005);
+
+// 获取充值链接（最低 8 USDT = 1600 tokens）
+const paymentUrl = await getPaymentLink(userId, 8);
+
+// 检查并自动扣费
+const result = await checkAndCharge(userId);
+```
+
+### Billing Flow
+
+```
+监控请求
+    ↓
+检查余额（0.005 token）
+    ↓
+余额 >= 0.005? 
+  是 → 扣除 0.005 token → 开始监控
+  ↓
+检测到代币 → 提供购买链接
+  ↓
+用户决定是否购买
+  ↓
+交易完成
+  ↓
+继续监控
+  ↓
+返回检测结果
+    ↓
+  否 → 返回充值链接
+```
+
+---
+
+## 🔒 Trading Safety
+
+### What This Tool Does
+
+- ✅ Monitors blockchain for token transfers
+- ✅ Records detections with timestamps
+- ✅ Saves detection history
+- ✅ Provides buy links for manual trading
+- ✅ Integrates with billing system
+
+### What This Tool Does NOT Do
+
+- ❌ No auto-buy functionality
+- ❌ No private keys required
+- ❌ No transactions executed
+- ❌ No wallet interactions
+- ❌ No spending of funds
+- ❌ No transaction signing
+
+---
+
+## 💡 Platform Fees
+
+- **Handling fee:** 5%
+- **Withdrawal:** Automatic to your wallet
+- **Configuration:** No payment setup required
+
+---
+
+## ⚠️ Important Notes
+
+### This Tool Does
+- ✅ Monitors blockchain for token transfers
+- ✅ Records detections with timestamps
+- ✅ Saves detection history
+- ✅ Provides manual buy links (Jupiter, PancakeSwap, etc.)
+- ✅ Integrates with billing system
+
+### This Tool Does NOT Do
+- ❌ No auto-buy functionality
+- ❌ No private keys required
+- ❌ No transactions executed
+- ❌ No wallet interactions
+- ❌ No spending of funds
+- ❌ No transaction signing
+- ❌ No sensitive financial information
+
+---
+
+## ⚖️ Disclaimer
+
+This tool is provided for educational and research purposes only. The user assumes all risks associated with trading cryptocurrency.
+
+**Always:**
+- Always verify transactions independently
+- Use only for legitimate monitoring purposes
+- Check your balance before monitoring
+- Manual trading should be done through verified DEX platforms
+- This is a monitor-only tool - no transactions are executed
+
+---
+
+## 📦 Dependencies
+
+- `@solana/web3.js` (^1.98.4) - Solana blockchain interaction
+- `axios` (^1.13.6) - HTTP requests (Billing API)
+- `ethers` (^5.0.0) - EVM blockchain interaction (BSC)
+
+---
 
 ## 📄 License
 
-MIT License
+MIT
+
+---
+
+**Version**: 1.0.0
+**Node.js**: >=14.0.0
+**Security Model**: Monitor only, no private keys, manual buy only

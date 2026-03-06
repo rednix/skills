@@ -4,14 +4,13 @@ const { Connection, PublicKey, Keypair, SystemProgram, Transaction, sendAndConfi
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { getPrivateKey } = require('./utils.js');
 
 const CONFIG = {
   SOLANA_RPC: process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com',
   JUPITER_API: 'https://quote-api.jup.ag/v6',
   MONITOR_INTERVAL: 10000,
   DEFAULT_DURATION: 3600,
-  WSOL_MINT: 'So11111111111111111111111111111111111111112'
+  WSOL_MINT: 'So11111111111111111111111111111111111112'
 };
 
 const LOG_DIR = path.join(__dirname, 'logs-sol');
@@ -64,20 +63,12 @@ async function monitorSOL(input) {
   
   log(`📊 Starting Solana monitoring for address: ${address}`);
   log(`📊 Monitoring duration: ${monitorDuration} seconds`);
-  
-  const autoBuyEnabled = autoBuy?.enabled === true;
-  
-  if (autoBuyEnabled) {
-    log(`🛒 Auto-Buy enabled`);
-    log(`💰 Amount: ${autoBuy.amount || '0.1'} SOL`);
-    log(`⚡ Slippage: ${autoBuy.slippage || 5}%`);
-    log(`🔒 Using Jupiter Aggregator (SAFE)`);
-  }
+  log(`📊 Mode: Monitor only - no auto-buy`);
+  log(`📊 User can manually buy using Jupiter Aggregator`);
   
   let lastSlot = 0;
   let slotsScanned = 0;
   let detections = loadDetections();
-  let autoBuys = [];
   
   const endTime = startTime + (monitorDuration * 1000);
   
@@ -91,7 +82,7 @@ async function monitorSOL(input) {
           
           if (block && block.transactions && block.transactions.length > 0) {
             for (const tx of block.transactions) {
-              const detected = await checkTransaction(tx, address);
+              const detected = await checkTransaction(tx, address, connection);
               
               if (detected) {
                 log(`🎉 Detection found! Slot: ${i}, Signature: ${detected.signature}`);
@@ -112,19 +103,8 @@ async function monitorSOL(input) {
                 detections.push(detection);
                 saveDetections(detections);
                 
-                if (autoBuyEnabled && detected.tokenMint) {
-                  log(`🛒 Attempting auto-buy via Jupiter...`);
-                  const autoBuyResult = await autoBuyToken(
-                    detected.tokenMint,
-                    autoBuy.amount || 0.1,
-                    autoBuy.slippage || 5
-                  );
-                  
-                  autoBuys.push({
-                    detectionSignature: detected.signature,
-                    autoBuy: autoBuyResult
-                  });
-                }
+                log(`✅ Detection logged for token: ${detected.tokenSymbol}`);
+                log(`💰 User can buy at: https://jup.ag`);
               }
             }
           }
@@ -147,7 +127,7 @@ async function monitorSOL(input) {
   log(`📊 Duration: ${actualDuration} seconds`);
   log(`📊 Slots scanned: ${slotsScanned}`);
   log(`📊 Total detections: ${detections.length}`);
-  log(`📊 Auto-buys executed: ${autoBuys.length}`);
+  log(`📊 Mode: Monitor only - no auto-buy`);
   
   return {
     success: true,
@@ -159,37 +139,50 @@ async function monitorSOL(input) {
       duration: monitorDuration,
       actualDuration,
       slotsScanned,
-      detections,
-      autoBuys
+      detections
     }
   };
 }
 
-async function checkTransaction(tx, targetAddress) {
+async function checkTransaction(tx, targetAddress, connection) {
   try {
     const transaction = await connection.getTransaction(tx.transaction.signature);
     
-    if (transaction && transaction.meta && transaction.meta.preBalances) {
+    if (transaction && transaction.meta && transaction.meta.preBalances && transaction.meta.postBalances) {
       const preBalances = transaction.meta.preBalances;
+      const postBalances = transaction.meta.postBalances;
       
-      for (const account of preBalances) {
-        if (account.address === targetAddress) {
-          if (account.tokenAmounts && account.tokenAmounts.length > 0) {
-            for (const tokenAmount of account.tokenAmounts) {
-              if (tokenAmount.mint && tokenAmount.amount) {
-                log(`💰 Token transfer detected from ${targetAddress}`);
+      // Find sender's balance
+      const senderBalance = preBalances.find(b => b.address === targetAddress);
+      
+      if (senderBalance) {
+        // Check if balance decreased (token transfer out)
+        for (const account of postBalances) {
+          if (account.address !== targetAddress) {
+            // Check for new token in this account
+            const preBalance = preBalances.find(b => b.address === account.address);
+            
+            if (preBalance && preBalance.tokenAmounts && account.tokenAmounts) {
+              for (const tokenAmount of account.tokenAmounts) {
+                // Find if this is a new token (not in sender's preBalance)
+                const preToken = preBalance.tokenAmounts.find(t => t.mint === tokenAmount.mint);
                 
-                const tokenInfo = await getTokenInfo(tokenAmount.mint);
-                
-                return {
-                  signature: tx.transaction.signature,
-                  from: targetAddress,
-                  to: account.address,
-                  tokenMint: tokenAmount.mint,
-                  tokenSymbol: tokenInfo.symbol,
-                  amount: tokenAmount.uiTokenAmount.amount,
-                  decimals: tokenAmount.uiTokenAmount.decimals || 9
-                };
+                if (!preToken && tokenAmount.uiTokenAmount && tokenAmount.uiTokenAmount.amount > 0) {
+                  // New token received by target address
+                  log(`💰 New token detected!`);
+                  
+                  const tokenInfo = await getTokenInfo(tokenAmount.mint);
+                  
+                  return {
+                    signature: tx.transaction.signature,
+                    from: targetAddress,
+                    to: account.address,
+                    tokenMint: tokenAmount.mint,
+                    tokenSymbol: tokenInfo.symbol,
+                    amount: tokenAmount.uiTokenAmount.amount,
+                    decimals: tokenAmount.uiTokenAmount.decimals || 9
+                  };
+                }
               }
             }
           }
@@ -206,16 +199,40 @@ async function checkTransaction(tx, targetAddress) {
 async function getTokenInfo(mintAddress) {
   try {
     const accountInfo = await connection.getAccountInfo(mintAddress);
-    if (accountInfo) {
+    if (accountInfo && accountInfo.data) {
       const data = accountInfo.data;
       
-      const nameLength = data.readUInt32LE(0);
-      const symbolLength = data.readUInt32LE(4);
+      // Try to parse token name and symbol
+      // Standard Solana Token Account layout:
+      // - 32 bytes: padding
+      - 4 bytes: mint authority
+      - 4 bytes: freeze authority
+      - 1 byte: decimals
+      - 1 byte: reserved
+      - 1 byte: state
+      - 32 bytes: name
+      // ... (more fields)
       
-      const name = data.slice(32, 32 + nameLength).toString().replace(/\0/g, '');
-      const symbol = data.slice(32 + nameLength, 32 + nameLength + symbolLength).toString().replace(/\0/g, '');
-      
-      return { name, symbol, decimals: 9 };
+      if (data.length > 44) {
+        const decimals = data[44];
+        const nameLength = data[45];
+        const symbolLength = data[46];
+        
+        let name = 'Unknown';
+        let symbol = 'UNKNOWN';
+        
+        if (nameLength > 0 && nameLength <= 32) {
+          const nameBytes = data.slice(52, 52 + nameLength);
+          name = nameBytes.toString('utf8').replace(/\0/g, '');
+        }
+        
+        if (symbolLength > 0 && symbolLength <= 10) {
+          const symbolBytes = data.slice(52 + nameLength, 52 + nameLength + symbolLength);
+          symbol = symbolBytes.toString('utf8').replace(/\0/g, '');
+        }
+        
+        return { name, symbol, decimals };
+      }
     }
   } catch (error) {
     log(`❌ Error getting token info: ${error.message}`);
@@ -224,134 +241,7 @@ async function getTokenInfo(mintAddress) {
   return { name: 'Unknown', symbol: 'UNKNOWN', decimals: 9 };
 }
 
-/**
- * 🛡️ SAFE: 使用 Jupiter Aggregator 进行代币交换
- * 这是一个合法的 DEX 交换，不是直接转账
- */
-async function autoBuyToken(tokenMint, amount, slippage) {
-  try {
-    const privateKeyBase64 = await getPrivateKey('WALLET_PRIVATE_KEY_BASE64', 'Enter your Solana wallet private key (Base64 encoded)');
-    if (!privateKeyBase64) {
-      log(`❌ Wallet private key (Base64) not provided`);
-      return { success: false, error: 'Wallet private key not provided' };
-    }
-    
-    const keypairData = Buffer.from(privateKeyBase64, 'base64');
-    const keypair = Keypair.fromSecretKey(keypairData);
-    const connection = new Connection(CONFIG.SOLANA_RPC);
-    
-    const walletPublicKey = keypair.publicKey.toString();
-    const inputMint = CONFIG.WSOL_MINT;
-    const outputMint = tokenMint;
-    const amountInLamports = Math.floor(amount * LAMPORTS_PER_SOL);
-    
-    log(`🔍 Getting quote from Jupiter...`);
-    log(`📥 Input: ${amount} SOL`);
-    log(`📤 Output Mint: ${outputMint}`);
-    log(`⚡ Slippage: ${slippage}%`);
-    
-    // Step 1: Get quote from Jupiter
-    const quoteResponse = await axios.get(
-      `${CONFIG.JUPITER_API}/quote`,
-      {
-        params: {
-          inputMint: inputMint,
-          outputMint: outputMint,
-          amount: amountInLamports,
-          slippageBps: slippage * 100, // Convert percentage to basis points
-          onlyDirectRoutes: false,
-          asLegacyTransaction: false
-        }
-      }
-    );
-    
-    const quoteData = quoteResponse.data;
-    
-    if (!quoteData || !quoteData.outAmount) {
-      log(`❌ Failed to get quote from Jupiter`);
-      return { success: false, error: 'Failed to get quote' };
-    }
-    
-    log(`✅ Quote received`);
-    log(`💰 Expected output: ${quoteData.outAmount} tokens`);
-    log(`📊 Price impact: ${quoteData.priceImpactPct || 'N/A'}%`);
-    
-    // Step 2: Get swap transaction
-    const swapResponse = await axios.post(
-      `${CONFIG.JUPITER_API}/swap`,
-      {
-        quoteResponse: quoteData,
-        userPublicKey: walletPublicKey,
-        wrapAndUnwrapSol: true,
-        dynamicComputeUnitLimit: true,
-        prioritizationFeeLamports: {
-          priorityLevelWithMaxLamports: {
-            maxLamports: 10000000,
-            priorityLevel: 'veryHigh'
-          }
-        }
-      }
-    );
-    
-    const swapTransaction = swapResponse.data;
-    
-    if (!swapTransaction || !swapTransaction.swapTransaction) {
-      log(`❌ Failed to get swap transaction`);
-      return { success: false, error: 'Failed to get swap transaction' };
-    }
-    
-    log(`📝 Swap transaction received`);
-    
-    // Step 3: Deserialize and sign transaction
-    const transactionBuf = Buffer.from(swapTransaction.swapTransaction, 'base64');
-    const transaction = Transaction.from(transactionBuf);
-    transaction.sign(keypair);
-    
-    // Step 4: Send transaction
-    log(`🚀 Sending swap transaction...`);
-    const signature = await connection.sendRawTransaction(
-      transaction.serialize(),
-      {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      }
-    );
-    
-    log(`⏳ Waiting for confirmation...`);
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-    
-    if (confirmation.value.err) {
-      log(`❌ Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
-      return { 
-        success: false, 
-        error: `Transaction failed: ${JSON.stringify(confirmation.value.err)}`,
-        signature
-      };
-    }
-    
-    log(`✅ Auto-buy completed!`);
-    log(`📋 Signature: ${signature}`);
-    log(`💰 Swapped ${amount} SOL for ${quoteData.outAmount} tokens`);
-    
-    return {
-      success: true,
-      transactionSignature: signature,
-      amountIn: amount,
-      amountOut: quoteData.outAmount,
-      tokenMint: tokenMint,
-      priceImpact: quoteData.priceImpactPct
-    };
-    
-  } catch (error) {
-    log(`❌ Auto-buy failed: ${error.message}`);
-    if (error.response) {
-      log(`❌ API Error: ${JSON.stringify(error.response.data)}`);
-    }
-    return { success: false, error: error.message };
-  }
-}
-
-module.exports = { monitorSOL, autoBuyToken };
+module.exports = { monitorSOL };
 
 if (require.main === module) {
   const action = process.argv[2] || 'monitor';

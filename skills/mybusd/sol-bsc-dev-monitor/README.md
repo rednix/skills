@@ -1,55 +1,18 @@
-# Unified Dev Monitor with Auto-Buy
+# Unified Dev Monitor - Monitor Only Version
 
 ## 🎯 Overview
 
-Multi-chain developer wallet monitor with automatic buy functionality for BSC and Solana. Monitor token transfers from developer addresses and automatically buy new tokens via PancakeSwap (BSC) and Jupiter (Solana).
+Multi-chain developer wallet monitor for BSC and Solana. Monitor token transfers from developer addresses and get real-time notifications of new token deployments.
 
-## 🔒 Security First
+## 🔒 Security First - No Private Keys Required
 
-### Private Key Management
+**Important:** This is a **monitor-only tool**. No private keys are required and no auto-buy functionality is included.
 
-This tool offers **two ways** to provide your private key:
-
-#### Option 1: Environment Variables (Recommended for Automation)
-
-```bash
-export WALLET_PRIVATE_KEY_BASE64=$(cat wallet.key | base64)
-export SOLANA_RPC=https://api.mainnet-beta.solana.com
-export WALLET_PRIVATE_KEY=0x...
-export BSC_RPC=https://bsc-dataseed.binance.org
-```
-
-#### Option 2: Interactive Input (More Secure for Manual Use)
-
-When you run the tool without environment variables set, it will **prompt you** to enter your private key securely:
-
-```bash
-# For BSC
-Enter your BSC wallet private key (0x...): [you type here]
-
-# For Solana
-Enter your Solana wallet private key (Base64 encoded): [you type here]
-```
-
-**Benefits of Interactive Input:**
-- ✅ No need to set environment variables
-- ✅ Private key is not stored anywhere
-- ✅ More secure for manual, one-off operations
-- ✅ Reduced risk of accidentally committing secrets
-
----
-
-## 📊 Supported Chains
-
-### 1. BSC (Binance Smart Chain)
-- **Native Token**: BNB
-- **DEX**: PancakeSwap
-- **Router Address**: 0x10ED43C718714eb63d5aA57B78B54704E256024E
-
-### 2. Solana
-- **Native Token**: SOL
-- **DEX**: Jupiter Aggregator
-- **API**: https://quote-api.jup.ag/v6
+**Benefits:**
+- ✅ No private keys needed
+- ✅ Zero risk of accidental transactions
+- ✅ Safe to run on any machine
+- ✅ Perfect for research and information gathering
 
 ---
 
@@ -63,105 +26,153 @@ npm install
 
 ### 2. Run Monitoring
 
-**Option A: Use Environment Variables (Automation)**
+**Solana:**
 ```bash
-# Set environment variables first
-export WALLET_PRIVATE_KEY_BASE64=$(cat wallet.key | base64)
-export SOLANA_RPC=https://api.mainnet-beta.solana.com
-export WALLET_PRIVATE_KEY=0x...
-export BSC_RPC=https://bsc-dataseed.binance.org
-
-# Run
 node index-sol-safe.js monitor <ADDRESS> SOL 3600
-node index-bsc.js monitor <ADDRESS> BSC 3600
 ```
 
-**Option B: Interactive Input (More Secure)**
+**BSC:**
 ```bash
-# Just run - the tool will prompt for private key
-node index-sol-safe.js monitor <ADDRESS> SOL 3600
-node index-bsc.js monitor <ADDRESS> BSC 3600
+node index-bsc.js monitor <ADDRESS> BSC  60
 ```
+
+**Example:**
+```bash
+node index-sol-safe.js monitor 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU SOL 3600
+```
+
+---
+
+## 📊 Supported Chains
+
+### 1. BSC (Binance Smart Chain)
+
+- **Native Token**: BNB
+- **DEX**: PancakeSwap
+- **Router Address**: 0x10ED43C718714eb63d5aA57B78B54704E256024E
+
+### 2. Solana
+
+- **Native Token**: SOL
+- **DEX**: Jupiter Aggregator
+- **API**: https://quote-api.jup.ag/v6
 
 ---
 
 ## 📖 Usage
 
-### Monitor with Auto-Buy (Interactive)
+### Monitor with Manual Buy
 
+**Solana:**
 ```bash
-# Solana - will prompt for private key
 node index-sol-safe.js monitor <ADDRESS> SOL 3600
+```
 
-# BSC - will prompt for private key
+**BSC:**
+```bash
 node index-bsc.js monitor <ADDRESS> BSC 3600
 ```
 
-**You'll see:**
-```
-Enter your Solana wallet private key (Base64 encoded): [type here]
-📊 Starting Solana monitoring for address: <ADDRESS>
-...
-```
+### Monitor Only (No Buy)
 
-### Monitor with Auto-Buy (Environment Variables)
+```javascript
+const { monitorSOL } = require('./index-sol-safe.js');
 
-```bash
-# Set environment variables
-export WALLET_PRIVATE_KEY_BASE64=$(cat wallet.key | base64)
-export WALLET_PRIVATE_KEY=0x...
-
-# Run - will use environment variables
-node index-sol-safe.js monitor <ADDRESS> SOL 3600
-node index-bsc.js monitor <ADDRESS> BSC 3600
-```
-
-**You'll see:**
-```
-✅ Using WALLET_PRIVATE_KEY_BASE64 from environment
-📊 Starting Solana monitoring for address: <ADDRESS>
-...
+await monitorSOL({
+  address: 'YourAddress',
+  duration: 3600
+});
 ```
 
 ---
 
-## ⚙️ Configuration Parameters
+## 📝 Output
 
-| Parameter | Description | Default | Example |
-|-----------|-------------|---------|---------|
-| `address` | Target address to monitor | Required | `'7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU'` |
-| `duration` | Monitoring duration in seconds | `3600` (1 hour) | `3600` |
-| `autoBuy.enabled` | Enable auto-buy | `false` | `true` |
-| `autoBuy.amount` | Amount per buy | `0.1` | `0.05` |
-| `autoBuy.slippage` | Slippage tolerance (%) | `5` | `3` |
+### Detection Example
+
+When a token transfer is detected:
+
+**Solana:**
+```
+💰 New token detected!
+✅ Detection logged for token: TOKEN_SYMBOL
+💰 User can buy at: https://jup.ag
+```
+
+**BSC:**
+```
+💰 Transaction from 0x... to 0x...
+✅ Detection logged for token: 0x...
+💰 User can buy at: https://exchange.pancakeswap.finance/#/swap
+```
 
 ---
 
-## 🔒 Security Best Practices
+## 🔍 Viewing Results
 
-### For Interactive Input
+### View Logs
 
-✅ **Most secure for manual use:**
-- Private key is never stored
-- Private key is never logged
-- Private key is used only in memory
-- Perfect for one-off operations
+```bash
+# Solana
+tail -f logs-sol/sol-monitor.log
 
-### For Environment Variables
+# BSC
+tail -f logs-bsc/bsc-monitor.log
+```
 
-✅ **Best for automation:**
-- Set private key per session
-- Never commit to version control
-- Use `.env` files with restricted permissions
-- Clear environment variables after use
+### View Detections
 
-### General Security
+```bash
+# Solana
+cat detections-sol/detections.json
 
-- ✅ Use a dedicated trading wallet
-- ✅ Start with small test amounts (0.001 SOL/BNB)
-- ✅ Verify transactions on blockchain explorers
-- ✅ Never share your private key
-- ✅ Keep backups in secure locations
+# BSC
+cat detections-bsc/detections.json
+```
+
+---
+
+## ⚙️ Configuration
+
+### Solana
+
+```javascript
+{
+  SOLANA_RPC: 'https://api.mainnet-beta.solana.com',
+  MONITOR_INTERVAL: 10000,  // 10 seconds
+  DEFAULT_DURATION: 3600      // 1 hour
+}
+```
+
+### BSC
+
+```javascript
+{
+  BSC_RPC: 'https://bsc-dataseed.binance.org',
+  MONITOR_INTERVAL: 3000,   // 3 seconds
+  DEFAULT_DURATION: 3600      // 1 hour
+}
+```
+
+---
+
+## 🔒 Privacy & Security
+
+### What This Tool Does
+
+- ✅ Monitors blockchain for token transfers
+- ✅ Records detections with timestamps
+- ✅ Saves detection history
+- ✅ Provides detailed logs
+- ✅ Offers manual buy links (Jupiter, PancakeSwap)
+
+### What This Tool Does NOT Do
+
+- ❌ No auto-buy functionality
+- ❌ No private keys required
+- ❌ No transactions executed
+- ❌ No wallet interactions
+- ❌ No spending of funds
 
 ---
 
@@ -169,27 +180,36 @@ node index-bsc.js monitor <ADDRESS> BSC 3600
 
 Logs are written to:
 - `logs-sol/sol-monitor.log` - Solana monitoring logs
-- `logs-bsc/bsc-monitor.log` - BSC monitoring logs
-
-**Important:** Private keys are **never logged**.
-
-View logs:
-```bash
-tail -f logs-sol/sol-monitor.log
-tail -f logs-bsc/bsc-monitor.log
-```
+- `logs-bsc/ ⚠️ No private keys are logged
 
 ---
 
 ## 🔍 Transaction Verification
 
 ### Solana
-- Explorer: https://explorer.solana.com/
-- Check transaction signatures in logs
+
+**Explorer:** https://explorer.solana.com/
+- **Check:** Transaction signatures in logs
 
 ### BSC
-- Explorer: https://bscscan.com/
-- Check transaction hashes in logs
+
+**Explorer:** https://bscscan.com/
+- **Check:** Transaction hashes in logs
+
+---
+
+## 💡 Manual Buy Links
+
+After detection, users can manually buy tokens:
+
+### Solana
+- **Jupiter:** https://jup.ag
+- **Raydium:** https://raydium.io/
+- **Orca:** https://www.orca.so/
+
+### BSC
+- **PancakeSwap:** https://exchange.pancakeswap.finance/#/swap
+- **1inch:** https://app.1inch.io/
 
 ---
 
@@ -201,23 +221,40 @@ tail -f logs-bsc/bsc-monitor.log
 
 ---
 
-## ⚠️ Disclaimer
+## 💰 Billing Integration
 
-This tool is provided for educational and research purposes only. The user assumes all risks associated with trading cryptocurrency. Always verify transactions independently and only trade with funds you can afford to lose.
+### Pricing
 
-**Important:**
-- Always start with small test amounts
-- Verify every transaction
-- Use a dedicated trading wallet
-- Keep your private keys secure
+- **1 call = 1 token = 0.005 USDT**
+- **1 USDT = 200 tokens**
+- **Minimum deposit: 8 USDT = 1600 tokens**
+
+### Check Balance
+
+```bash
+node index.js '{"action":"balance","userId":"your-id"}'
+```
+
+### Get Payment Link
+
+```bash
+node index.js '{"action":"payment-link","userId":"your-id","amount":8}'
+```
 
 ---
 
-## 📄 License
+## ⚠️ Disclaimer
 
-MIT
+This tool is provided for educational and research purposes only. The user assumes all risks associated with trading cryptocurrency.
+
+**Important:**
+- Always verify transactions independently
+- Use only for legitimate monitoring purposes
+- This is a monitor-only tool - no transactions are executed
+- Manual buying should be done through verified DEX platforms
 
 ---
 
 **Version**: 1.0.0
 **Node.js**: >=14.0.0
+**Mode**: Monitor only, no private keys, no auto-buy
