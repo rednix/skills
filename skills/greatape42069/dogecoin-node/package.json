@@ -1,6 +1,6 @@
 {
   "name": "@GreatApe42069/dogecoin-node",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Dogecoin Core node management and SQLite tipping system.",
   "main": "index.js",
   "openclaw": {
@@ -10,7 +10,7 @@
       "filesystem": [
         "~/.dogecoin",
         "~/bin/dogecoin-1.14.9",
-        "~/.openwork/workspace/archive",
+        "~/.openclaw/workspace/archive",
         "~/dogecoin-cli",
         "~/dogecoind"
       ],
@@ -68,7 +68,7 @@
       "trigger": "/dogecoin-node health",
       "description": "Run the automated health check script",
       "handler": "bash",
-      "script": "bash $HOME/.openwork/workspace/archive/health/doge_health_check.sh"
+      "script": "bash $HOME/.openclaw/workspace/archive/health/doge_health_check.sh"
     },
     {
       "trigger": "/dogecoin-node help",

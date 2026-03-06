@@ -1,4 +1,4 @@
-# Dogecoin Node Skill Heartbeat version: 1.0.4
+# Dogecoin Node Skill Heartbeat version: 1.0.5
 This file is designed to periodically validate the operational state of the `/dogecoin` skill and its integration with the local node and tipping database.
 
 ### Monitoring and Validation Tasks
@@ -19,7 +19,7 @@ This file is designed to periodically validate the operational state of the `/do
 4. **Resource & Disk Management**
    - **Disk Space:** Dogecoin node data is heavy (~190GB+). Run `df -h ~/.dogecoin` to ensure at least 10GB of overhead remains.
    - **Database Integrity:** Verify the SQLite tipping database: 
-     `sqlite3 ~/.openwork/workspace/archive/tipping/dogecoin_tipping.db "PRAGMA integrity_check;"`
+     `sqlite3 ~/.openclaw/workspace/archive/tipping/dogecoin_tipping.db "PRAGMA integrity_check;"`
 
 5. **Command Trigger Parsing**
    - Verify that subcommands are correctly handled by testing in Telegram:
@@ -36,11 +36,11 @@ This file is designed to periodically validate the operational state of the `/do
 
 7. **File Persistence Check**
    - Ensure the required automation scripts exist at their declared paths:
-     - **Tipping Engine:** `~/.openwork/workspace/archive/tipping/dogecoin_tipping.py`
-     - **Health Monitor:** `~/.openwork/workspace/archive/health/doge_health_check.sh`
+     - **Tipping Engine:** `~/.openclaw/workspace/archive/tipping/dogecoin_tipping.py`
+     - **Health Monitor:** `~/.openclaw/workspace/archive/health/doge_health_check.sh`
 
 ### Automation & Cron Setup
-- **Automated Health Script:** `~/.openwork/workspace/archive/health/doge_health_check.sh`
+- **Automated Health Script:** `~/.openclaw/workspace/archive/health/doge_health_check.sh`
 - **Dashboard Integration:** Navigate to the [Cron Jobs](http://localhost:18789/cron-jobs) tab and add a new entry pointing to the health script.
 - **Recommended Interval:** `*/30 * * * *` (Every 30 minutes).
 
