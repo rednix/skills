@@ -1,23 +1,27 @@
 ---
 slug: strike163163-my-browser-control
 name: 我的浏览器控制工具
-version: 0.1.2
+version: 0.1.1
 author: strike163163
-description: 支持传参的macOS浏览器自动化工具，可打开任意指定网址，支持Safari/Chrome。
+description: 基于Python实现的macOS浏览器自动化工具，可一键打开指定网址，支持Safari/Chrome浏览器。
 tags:
-  - browser-automation
-  - macos
+  - 浏览器自动化
   - python
+  - macos
 ---
 
 # 我的浏览器控制工具
-本工具支持接收网址参数，可一键打开任意指定网址，适配ClawHub Agent调用。
+本工具专为macOS用户开发，核心功能是通过Python脚本自动打开指定网址，无需手动输入网址或点击浏览器。
 
-## 核心功能
-- 调用open_website(url)函数，传入任意网址即可打开；
-- 支持终端传参（python3 open_website.py 网址）；
-- 兼容Safari/Chrome浏览器。
-
-## 使用示例
-1. 终端运行：python3 open_website.py https://www.baidu.com
-2. Agent调用：发送“打开百度”指令，自动触发函数打开网页。
+## 核心功能说明
+### 1. 一键打开网址功能
+- 函数名：`open_website`
+- 入参：`url`（字符串类型，必填，例如："https://www.baidu.com"）
+- 返回值：无（直接触发浏览器打开操作）
+- 实际代码（来自open_website.py）：
+  ```python
+  import webbrowser
+  def open_website(url):
+      # 调用macOS默认浏览器打开网址
+      webbrowser.open(url)
+      print(f"已成功打开网址：{url}")
