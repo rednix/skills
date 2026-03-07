@@ -1,0 +1,11 @@
+{
+  "owner": "mvanhorn",
+  "slug": "last30days-official",
+  "displayName": "Last30days",
+  "latest": {
+    "version": "2.9.3",
+    "publishedAt": 1772850958867,
+    "commit": null
+  },
+  "history": []
+}
