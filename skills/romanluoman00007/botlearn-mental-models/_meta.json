@@ -1,11 +1,17 @@
 {
   "owner": "romanluoman00007",
   "slug": "botlearn-mental-models",
-  "displayName": "Botlearn Mental Models",
+  "displayName": "Mental Models",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772776794434,
-    "commit": "https://github.com/openclaw/skills/commit/413803df42196bdfe66a36c2875f91e533e053d2"
+    "version": "1.0.5",
+    "publishedAt": 1772789494951,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772776794434,
+      "commit": "https://github.com/openclaw/skills/commit/413803df42196bdfe66a36c2875f91e533e053d2"
+    }
+  ]
 }

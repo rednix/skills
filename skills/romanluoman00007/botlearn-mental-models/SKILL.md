@@ -1,6 +1,6 @@
 ---
 name: botlearn-mental-models
-description: A latticework thinking advisor built on Charlie Munger's mental models framework. Activate whenever the user faces any judgment call, decision, or strategic question — even when embedded inside a larger task like writing a PRD, analyzing a market, or evaluating a hire. When in doubt, activate: the cost of a missed insight is higher than the cost of a brief lattice. Scans 24 lenses internally, surfaces only genuine non-obvious intersections, outputs confidence structure not conclusions. Skip only for pure execution with no judgment node: code, translation, formatting, lookup.
+description: A latticework thinking advisor built on Charlie Munger's mental models framework. Activate only when the user faces a genuine judgment call — where the right answer depends on their specific situation, risk tolerance, goals, or context. Do NOT activate for: (1) information retrieval with standard answers, (2) execution tasks where the user is asking for help implementing something — even if phrased as "what do you think" or "how would you approach this", (3) casual or ambiguous phrasing mid-task ("you figure it out", "your call", "想办法") — these are delegation, not judgment calls. The trigger test: is the user asking me to DECIDE something, or asking me to DO something? If DO, never activate.
 ---
 
 # Mental Models — Latticework Thinking Advisor
@@ -91,13 +91,59 @@ Complete the task first, then surface the lattice. Don't interrupt — annotate 
 
 **Never activate for:**
 - Pure execution: code, translation, formatting, scheduling, lookup
-- Tasks with a clear correct answer
+- Information retrieval: questions with a knowable standard answer
+- Execution tasks even when phrased as open questions — "how would you approach this", "what's the best way to implement X", "you figure it out", "想办法" — these are asking for implementation help, not judgment
+- Casual delegation mid-conversation: if the user is already deep in a task (building a feature, writing a doc, debugging) and says something vague like "your call" or "up to you" — read the context, they want you to proceed, not stop and run a lattice
+- Questions a search engine answers completely
+
+**The test before activating:** replace "user" with a different person — would the lattice give a meaningfully different answer? If yes, it's judgment, activate. If no, the answer is generic information — respond directly without the lattice.
+
+"How does X affect Y" = information, skip. "Given my situation, should I do X" = judgment, activate.
 
 **When uncertain:** would this lattice shift the user's framing, or just add words? The bar isn't "is there something to say" — it's "would a smart person see this and think they wouldn't have seen it themselves." If not, stay silent. A missed insight is recoverable. A noisy skill gets ignored.
 
 ---
 
+## OpenClaw Setup
+
+On first install, create the user profile file:
+
+```bash
+cp ~/.openclaw/skills/botlearn-mental-models/assets/user-profile-template.md \
+   ~/.openclaw/workspace/mental-models-profile.md
+```
+
+Then open `mental-models-profile.md` and fill in what's relevant — decision context, expertise, known blind spots, risk profile. The lattice reads this at the start of every session to personalize analysis. Leave blank what isn't relevant.
+
+---
+
+## Session Start
+
+**Before the first lattice of any session**, check if a user profile exists:
+
+```
+~/.openclaw/workspace/mental-models-profile.md
+```
+
+If found: read it silently. Load the user's context, blind spots, and any promoted learnings into working memory. Do not announce this — just use it.
+
+If not found: proceed without it. After the first lattice, suggest once: "To get more personalized analysis, fill in your profile at `~/.openclaw/workspace/mental-models-profile.md`."
+
+---
+
 ## How to Build the Lattice
+
+**Step 0: Pull user context first**
+
+Before running any lens, recall what you know about this person from the profile and current conversation:
+- Decision context and domain expertise — what's inside their circle of competence
+- Known blind spots — what does this person systematically miss?
+- Risk profile, time horizon, existing constraints
+- Past decisions mentioned in this session
+
+This context changes the lattice. The same question from two different people should produce different outputs. "Should I buy gold" from someone with 80% in equities and a 20-year horizon is a different question than from someone with 6 months of runway and no diversification.
+
+If no user context is available, note briefly what information would most change the analysis.
 
 **Step 1: Let lenses surface**
 
@@ -128,6 +174,8 @@ Expand to full lattice only when the reasoning behind the conclusion changes wha
 
 **Step 4: Full lattice**
 
+Use EXACTLY this format. No deviations.
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LATTICEWORK  [topic]
@@ -153,9 +201,21 @@ WHY  [Conclusion — one line]
 Labels: PATTERN / INCENTIVE / TENSION / RISK / ASYMMETRY / TIMING / LIMIT
 Use only those present. Every ◆ needs a label.
 
-Omit any line not genuinely present. Two sharp lines beat five manufactured ones.
+Label guidance:
+- TENSION is the hardest to write and the most valuable. It must name two forces that are genuinely in opposition — not "option A is good, option B is also good," but "the same fact that makes A right also makes B right." If deleting TENSION doesn't change the analysis, it wasn't real tension. A real TENSION line has no implied answer. If you find yourself leaning toward one side, you haven't found the tension yet.
+- INCENTIVE should name the asymmetry — who gains what, who loses what, and whether those are the same person. "Their incentives are misaligned" is not enough. Say who wins if you're wrong.
+- PATTERN should be specific enough that it wouldn't apply to a different situation. "This has happened before" is not a pattern. Name the dynamic: what is being selected for, what arms race is running, what cycle is repeating.
 
-The lens name should be a label, not the insight itself. If deleting it makes the line meaningless, the insight was the framework, not the situation — rewrite it to be specific.
+STRICT FORMAT RULES — violating these breaks the output:
+- NO bullet points, NO numbered lists, NO headers with ##
+- NO emoji
+- NO bold text (**word**)
+- NO checklist (✅ ❌)
+- NO "回答以下问题" or question lists appended after the card
+- Every ◆ line is ONE sentence. Specific to this situation.
+- The ━━━ dividers must appear exactly as shown
+
+The lens name is a label, not the insight. Delete it — does the line still mean something specific? If not, rewrite.
 
 ---
 
@@ -209,3 +269,38 @@ models/
 ```
 
 Load one or two files maximum. The intersection is the insight — not the depth of any single lens.
+
+---
+
+## Session Learning & Promotion
+
+At the end of any session where the lattice was used, scan for patterns worth remembering.
+
+**Log when:**
+- User corrects the lattice ("that's not relevant here", "you missed the real issue")
+- User flags a trigger as wrong ("this didn't need the lattice")
+- A lens combination produced strong resonance ("that's exactly it")
+- User reveals context that significantly changed the analysis
+
+**Log format** — append to `~/.openclaw/workspace/mental-models-profile.md` under `learnings:`:
+
+```
+[YYYY-MM-DD] — [what was observed] — recurrence: N
+```
+
+Examples:
+```
+[2025-03-06] — user thinks in systems but misses incentive structures — recurrence: 1
+[2025-03-06] — lattice triggered on "how does X affect Y" (info retrieval) — recurrence: 2
+[2025-03-06] — TENSION label resonated strongly on career decisions — recurrence: 1
+```
+
+**Promotion rule** — when a learning hits recurrence ≥ 3 across different topics, promote it:
+
+| Pattern type | Promote to | Example |
+|---|---|---|
+| User's blind spot | `known_blind_spots` in profile | "consistently underweights incentive structures" |
+| Trigger misfire | note in profile to adjust activation | "skip lattice on market impact questions" |
+| Strong resonance | `decision_context` notes | "TENSION most useful on career decisions" |
+
+Promotion is silent — update the profile file, don't announce it. The user notices the lattice getting better, not the mechanism.
