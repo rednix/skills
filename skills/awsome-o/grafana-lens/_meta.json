@@ -1,0 +1,11 @@
+{
+  "owner": "awsome-o",
+  "slug": "grafana-lens",
+  "displayName": "Grafana Lens",
+  "latest": {
+    "version": "0.2.0",
+    "publishedAt": 1772845832104,
+    "commit": null
+  },
+  "history": []
+}
