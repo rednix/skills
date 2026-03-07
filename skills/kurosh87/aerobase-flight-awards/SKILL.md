@@ -36,7 +36,11 @@ User: "I have 100K Amex MR - where should I transfer?"
 → Recommends best redemption
 ```
 
-## API Endpoints
+## API Documentation
+
+Full API docs: https://aerobase.app/developers
+
+OpenAPI spec: https://aerobase.app/api/v1/openapi
 
 **POST /api/v1/awards/search**
 
