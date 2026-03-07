@@ -3,11 +3,16 @@
   "slug": "amber-voice-assistant",
   "displayName": "Phone Voice Assistant - Amber",
   "latest": {
-    "version": "5.5.2",
-    "publishedAt": 1772813870158,
-    "commit": "https://github.com/openclaw/skills/commit/3d03a7fd9b19bf4c8a821f0e5f3ee3138ea81a99"
+    "version": "5.5.5",
+    "publishedAt": 1772842135405,
+    "commit": null
   },
   "history": [
+    {
+      "version": "5.5.2",
+      "publishedAt": 1772813870158,
+      "commit": "https://github.com/openclaw/skills/commit/3d03a7fd9b19bf4c8a821f0e5f3ee3138ea81a99"
+    },
     {
       "version": "5.5.0",
       "publishedAt": 1772508685790,
