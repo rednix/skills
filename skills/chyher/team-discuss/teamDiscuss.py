@@ -34,12 +34,14 @@ async def quick_start():
     
     # 2. Create discussion
     print("\n[2] Creating discussion...")
+    import time
+    timestamp = int(time.time())
     
     discussion = Discussion(
-        id="quick-start-demo",
+        id=f"quick-start-demo",
         topic="Which frontend framework should we use?",
         description="React vs Vue technology selection",
-        created_at=0,
+        created_at=timestamp,
         status=DiscussionStatus.CREATED,
         current_round=0,
         max_rounds=2,
@@ -53,14 +55,14 @@ async def quick_start():
                 session_id="session_architect",
                 role_id=AgentRole.ARCHITECT,
                 status=ParticipantStatus.JOINED,
-                joined_at=0
+                joined_at=timestamp
             ),
             Participant(
                 agent_id="frontend-dev",
                 session_id="session_frontend",
                 role_id=AgentRole.DEVOPS,
                 status=ParticipantStatus.JOINED,
-                joined_at=0
+                joined_at=timestamp
             ),
         ]
     )
