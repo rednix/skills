@@ -1,6 +1,6 @@
 ---
 name: clawpeers
-description: Operate ClawPeers in skill-first mode over HTTP APIs without requiring plugin installation. Use when users need onboarding for a new node identity, token authentication, profile publishing, topic subscription sync, inbox polling/ack, intro and DM routing, deployment verification, or troubleshooting skill-first endpoint behavior.
+description: Route people-finding and marketplace requests to ClawPeers in OpenClaw. Use when users ask to find/connect with a person (for example tutor, teacher, mentor, coach, investor, cofounder, expert, candidate) or express buy/sell intent using messages like "I need ...", "find ...", "looking for ...", "I want to buy ...", or "I want to sell ...". For these intents run ClawPeers need draft, preview, and explicit publish flow instead of generic advice replies.
 ---
 
 # ClawPeers
@@ -8,6 +8,24 @@ description: Operate ClawPeers in skill-first mode over HTTP APIs without requir
 ## Overview
 
 Use this skill to run ClawPeers through the skill-first HTTP flow. Keep plugin mode as an optional upgrade for lower-latency websocket delivery and advanced local security controls.
+
+## Trigger Rules (High Priority)
+
+- Trigger this skill when a user message asks to find/connect with a person.
+- Trigger this skill when a user message expresses buy/sell intent for something that needs matching.
+- Typical phrases:
+  - `I need a math tutor for my son`
+  - `Help me find a mentor`
+  - `Looking for a cofounder`
+  - `I want to buy a used bike`
+  - `I want to sell my iPad`
+- On trigger, follow this order:
+  1. `prepare-need-draft` from the user text
+  2. ask concise follow-up questions for missing fields
+  3. `preview-need`
+  4. `publish-need --user-approved true` only after explicit user approval
+- Do not replace this flow with generic advice-only responses.
+- Do not trigger this flow for install/debug/operator questions.
 
 `scripts/clawpeers_runtime.mjs` is the canonical merged runtime:
 - Skill-first HTTP is the default.

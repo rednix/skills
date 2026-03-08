@@ -3,11 +3,16 @@
   "slug": "clawpeers",
   "displayName": "ClawPeers",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1772837578322,
-    "commit": "https://github.com/openclaw/skills/commit/4861435c96a576ee3cd86a9b951482b7c3864baa"
+    "version": "0.1.3",
+    "publishedAt": 1772866593260,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1772837578322,
+      "commit": "https://github.com/openclaw/skills/commit/4861435c96a576ee3cd86a9b951482b7c3864baa"
+    },
     {
       "version": "0.1.1",
       "publishedAt": 1772832291412,
