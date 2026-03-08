@@ -61,23 +61,15 @@ def get_credentials():
     if not secret_id or not secret_key or not appid:
         missing = []
         if not secret_id:
-            missing.append("TENCENTCLOUD_SECRET_ID")
+            missing.append("SecretId")
         if not secret_key:
-            missing.append("TENCENTCLOUD_SECRET_KEY")
+            missing.append("SecretKey")
         if not appid:
-            missing.append("TENCENTCLOUD_APPID")
+            missing.append("AppId")
         error_msg = {
             "error": "CREDENTIALS_NOT_CONFIGURED",
-            "message": f"Missing environment variables: {', '.join(missing)}",
-            "guide": {
-                "step1": "开通语音识别服务: https://console.cloud.tencent.com/asr",
-                "step2": "获取 API 密钥: https://console.cloud.tencent.com/cam/capi",
-                "step3": (
-                    'export TENCENTCLOUD_SECRET_ID="your_id"\n'
-                    'export TENCENTCLOUD_SECRET_KEY="your_key"\n'
-                    'export TENCENTCLOUD_APPID="your_appid"'
-                ),
-            },
+            "message": "Missing Tencent Cloud credentials required for Flash ASR.",
+            "missing_credentials": missing,
         }
         print(json.dumps(error_msg, ensure_ascii=False, indent=2))
         sys.exit(1)
@@ -211,7 +203,11 @@ def main():
     if len(audio_data) > 100 * 1024 * 1024:
         print(json.dumps({
             "error": "FILE_TOO_LARGE",
-            "message": f"Audio file is {len(audio_data)} bytes, exceeds 100MB limit. Use file_recognize.py for large files.",
+            "message": (
+                f"Audio file is {len(audio_data)} bytes, exceeds the 100MB Flash ASR limit. "
+                "Normalize and split the file, then recognize each segment with flash_recognize.py. "
+                "Use file_recognize.py only when async URL mode is explicitly required."
+            ),
         }, ensure_ascii=False, indent=2))
         sys.exit(1)
 

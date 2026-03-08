@@ -59,17 +59,15 @@ def get_credentials():
     secret_key = os.getenv("TENCENTCLOUD_SECRET_KEY")
 
     if not secret_id or not secret_key:
+        missing = []
+        if not secret_id:
+            missing.append("SecretId")
+        if not secret_key:
+            missing.append("SecretKey")
         error_msg = {
             "error": "CREDENTIALS_NOT_CONFIGURED",
-            "message": (
-                "Tencent Cloud API credentials not found. "
-                "Please set TENCENTCLOUD_SECRET_ID and TENCENTCLOUD_SECRET_KEY."
-            ),
-            "guide": {
-                "step1": "开通语音识别服务: https://console.cloud.tencent.com/asr",
-                "step2": "获取 API 密钥: https://console.cloud.tencent.com/cam/capi",
-                "step3": 'export TENCENTCLOUD_SECRET_ID="your_id" && export TENCENTCLOUD_SECRET_KEY="your_key"',
-            },
+            "message": "Missing Tencent Cloud credentials required for recording-file ASR.",
+            "missing_credentials": missing,
         }
         print(json.dumps(error_msg, ensure_ascii=False, indent=2))
         sys.exit(1)
@@ -146,7 +144,11 @@ def create_rec_task(client, input_value, engine, channel_num, res_text_format, s
         if file_size > 5 * 1024 * 1024:
             print(json.dumps({
                 "error": "FILE_TOO_LARGE",
-                "message": f"Local file is {file_size} bytes, exceeds 5MB limit for upload. Please use a URL instead.",
+                "message": (
+                    f"Local file is {file_size} bytes, exceeds the 5MB CreateRecTask body-upload limit. "
+                    "Prefer local normalize-and-split plus flash_recognize.py. "
+                    "Use a public URL only when async recording-file recognition is explicitly required."
+                ),
             }, ensure_ascii=False, indent=2))
             sys.exit(1)
         with open(input_value, "rb") as f:
@@ -189,7 +191,18 @@ def poll_task(client, task_id, poll_interval, max_poll_time):
             }, ensure_ascii=False, indent=2))
             sys.exit(1)
 
-        result = describe_task_status(client, task_id)
+        result = {}
+        for attempt in range(3):
+            try:
+                result = describe_task_status(client, task_id)
+                break
+            except TencentCloudSDKException as e:
+                if attempt < 2:
+                    print(f"[WARN] API error during polling, retrying... ({e})", file=sys.stderr)
+                    time.sleep(2)
+                else:
+                    raise
+
         data = result.get("Data", {})
         status = data.get("Status", -1)
         status_str = status_map.get(status, f"unknown({status})")

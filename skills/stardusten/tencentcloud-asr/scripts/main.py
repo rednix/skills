@@ -36,18 +36,15 @@ def get_credentials():
     secret_key = os.getenv("TENCENTCLOUD_SECRET_KEY")
 
     if not secret_id or not secret_key:
+        missing = []
+        if not secret_id:
+            missing.append("SecretId")
+        if not secret_key:
+            missing.append("SecretKey")
         error_msg = {
             "error": "CREDENTIALS_NOT_CONFIGURED",
-            "message": (
-                "Tencent Cloud API credentials not found in environment variables. "
-                "Please set TENCENTCLOUD_SECRET_ID and TENCENTCLOUD_SECRET_KEY."
-            ),
-            "guide": {
-                "step1": "开通语音识别服务: https://console.cloud.tencent.com/asr",
-                "step2": "获取 API 密钥: https://console.cloud.tencent.com/cam/capi",
-                "step3_linux": 'export TENCENTCLOUD_SECRET_ID="your_id" && export TENCENTCLOUD_SECRET_KEY="your_key"',
-                "step3_windows": '$env:TENCENTCLOUD_SECRET_ID="your_id"; $env:TENCENTCLOUD_SECRET_KEY="your_key"',
-            },
+            "message": "Missing Tencent Cloud credentials required for ASR.",
+            "missing_credentials": missing,
         }
         print(json.dumps(error_msg, ensure_ascii=False, indent=2))
         sys.exit(1)
