@@ -117,18 +117,16 @@ def main():
         print(data.get("caption", ""))
         return
 
-    # binance_announcements: plain markdown (bold header, numbered, blank line after each)
+    # binance_announcements: plain markdown (bold header, 🔸 bullets, blank line after each)
     if analysis_type == "binance_announcements" and items:
         print()
-        print("**📢 Binance Announcements (Top 10)**")
+        print("**📢 Binance Announcements**")
         print()
-        for i, it in enumerate(items, 1):
+        for it in items:
             name = (it.get("name") or "").strip()
             if name:
-                print(f"{i}. {name}")
+                print(f"🔸 {name}")
                 print()
-        if data.get("source"):
-            print("[Source](https://www.binance.com/en/messages/v2/group/announcement)")
         print()
         return
 
@@ -165,6 +163,29 @@ def main():
             for it in lose_items:
                 print(f"{it.get('rank',''):<3} | {(it.get('name') or '')[:8]:<10} | {it.get('price',''):<14} | {it.get('metric_value',''):<12}")
         print("\n" + sep)
+        if data.get("source"):
+            print(f"Source: {data['source']}")
+        print()
+        return
+
+    # fulleco: Name | Category | Users (no rank column)
+    if analysis_type == "fulleco" and items:
+        w2, w3 = 12, 8
+        sep_double = "=" * 40
+        sep_single = "-" * 40
+        print()
+        print(sep_double)
+        print("🚀 FULL ECOSYSTEM LEADERS")
+        print(sep_double)
+        print(sep_single)
+        print(f"{'NAME':<{w2}} | {'CATEGORY':<{w3}} | {'USERS'}")
+        print(sep_single)
+        for it in items:
+            name = (it.get("name") or "")[:w2]
+            cat = (it.get("category") or "—")[:w3]
+            users = it.get("metric_value", "")
+            print(f"{name:<{w2}} | {cat:<{w3}} | {users}")
+        print(sep_double)
         if data.get("source"):
             print(f"Source: {data['source']}")
         print()
@@ -214,9 +235,10 @@ def main():
     if interval and analysis_type in ("fees_rank", "revenue_rank", "dex_volume"):
         title_line = f"{title_line} ({interval})"
 
-    w2, w3 = 22, 16
-    sep_double = "=" * 80
-    sep_single = "-" * 80
+    # Mobile-friendly width (~40 chars) so table doesn't wrap on small screens
+    w2, w3 = 12, 8
+    sep_double = "=" * 40
+    sep_single = "-" * 40
 
     print()
     print(sep_double)

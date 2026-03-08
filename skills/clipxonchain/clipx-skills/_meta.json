@@ -3,11 +3,16 @@
   "slug": "clipx-skills",
   "displayName": "BNBCHAIN Protocol & Matrices Analysis — Powered by ClipX",
   "latest": {
-    "version": "1.0.18",
-    "publishedAt": 1772746412942,
-    "commit": "https://github.com/openclaw/skills/commit/0437eed915b56b7807acb0c89d67de6fa24e978a"
+    "version": "1.0.19",
+    "publishedAt": 1772819920153,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.18",
+      "publishedAt": 1772746412942,
+      "commit": "https://github.com/openclaw/skills/commit/0437eed915b56b7807acb0c89d67de6fa24e978a"
+    },
     {
       "version": "1.0.17",
       "publishedAt": 1772659581067,

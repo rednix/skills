@@ -8,9 +8,9 @@ metadata: { "openclaw": { "emoji": "🟡", "requires": { "bins": ["python"] }, "
 
 **Rule 1 — Menu format:** Always use numbered lines (1. 2. 3. …). See "Interactive menu" section.
 
-**Rule 2 — Table format:** Always wrap the table output inside a markdown code block (triple backticks). Start with a line containing only three backticks, then the table lines, then a line containing only three backticks. This is required so the table displays in monospace with aligned columns. **Exception:** For option 11 (Binance Announcements), do NOT wrap in code block — output as plain markdown (bold header, bullet list, normal text).
+**Rule 2 — Table format:** Always wrap the table output inside a markdown code block (triple backticks). Start with a line containing only three backticks, then the table lines, then a line containing only three backticks. This is required so the table displays in monospace with aligned columns. The API returns tables formatted at **40 chars per line** (mobile-friendly); do not reformat or truncate — pass through exactly. **Exception:** For option 11 (Binance Announcements), do NOT wrap in code block — pass through the API output as-is (plain markdown with **📢 Binance Announcements** header, 🔸 bullets, and blank line after each item).
 
-**Rule 3 — Response ends with the table.** After the closing triple backticks, your message is complete. Write nothing else.
+**Rule 3 — Response ends with the output.** After the table (or Binance list for option 11), your message is complete. Write nothing else.
 
 ---
 
@@ -70,24 +70,27 @@ The client prints a pre-formatted table. Your job:
 
 1. Run the command.
 2. Take the stdout output (the formatted table).
-3. Put it inside a markdown code block (three backticks on a line before, three backticks on a line after).
-4. Send it. Done. Your response is complete.
+3. **For options 1–10, 12:** Put it inside a markdown code block (three backticks on a line before, three backticks on a line after). Tables are formatted at **40 chars per line** (mobile-friendly); pass through exactly — do not reformat, truncate, or widen.
+4. **For option 11 (Binance Announcements):** Output the stdout as-is. Do NOT wrap in code block. Pass through exactly.
+5. Send it. Done. Your response is complete.
 
-Your response must look exactly like this:
+Your response must look exactly like this (API uses 40 chars/line for mobile):
 
 ```
-================================================================================
+========================================
 🚀 TOP 10 MEME TOKENS BY SCORE
-================================================================================
---------------------------------------------------------------------------------
-#   | NAME                 | —               | SCORE
---------------------------------------------------------------------------------
-1   | TokenA               | —               | 4.76
-2   | TokenB               | —               | 4.61
+========================================
+----------------------------------------
+#   | NAME         | —       | SCORE
+----------------------------------------
+1   | TokenA       | —       | 4.76
+2   | TokenB       | —       | 4.61
 ...
-================================================================================
+========================================
 Source: @ClipX0_
 ```
+
+Do not reformat. Pass through the 40-char output as-is.
 
 ---
 
@@ -103,7 +106,14 @@ Uses API `market_insight_live` — Volume Leaders + Top Gainers + Top Losers in 
 
 ## Binance Announcements — option 11
 
-Uses API `binance_announcements` — Top 10 newest announcements. Output as plain markdown (bold header, bullets) — do NOT wrap in code block.
+Uses API `binance_announcements` — Top 10 newest announcements.
+
+**Display rules:** Run the command, take the stdout output, and output it exactly as received. Do NOT wrap in a code block. The API returns plain markdown with:
+- Bold header: **📢 Binance Announcements**
+- 🔸 diamond bullet before each announcement
+- Blank line after each item
+
+Pass through the output unchanged. Your response ends after the last announcement.
 
 ## DEX Volume — option 12
 
