@@ -1,11 +1,17 @@
 {
   "owner": "mailnike",
   "slug": "healthclaw-dental",
-  "displayName": "HealthClaw-Dental - a specialized dental practice management module.",
+  "displayName": "Healthclaw Dental",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772817900296,
-    "commit": "https://github.com/openclaw/skills/commit/9a6f7ff88bc3be93f72013683f3dbb349159832b"
+    "version": "2.1.0",
+    "publishedAt": 1772907730197,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772817900296,
+      "commit": "https://github.com/openclaw/skills/commit/9a6f7ff88bc3be93f72013683f3dbb349159832b"
+    }
+  ]
 }
