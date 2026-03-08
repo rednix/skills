@@ -1,0 +1,11 @@
+{
+  "owner": "marcindudekdev",
+  "slug": "apify-substack-scraper",
+  "displayName": "Apify Substack Scraper",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772873163450,
+    "commit": null
+  },
+  "history": []
+}
