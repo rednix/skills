@@ -1,0 +1,11 @@
+{
+  "owner": "yinanping-cpu",
+  "slug": "yinan-data-analyzer",
+  "displayName": "Data Analyzer",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1772880036707,
+    "commit": null
+  },
+  "history": []
+}
