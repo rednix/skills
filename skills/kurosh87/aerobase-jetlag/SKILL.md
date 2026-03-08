@@ -1,4 +1,5 @@
 ---
+version: 3.1.0
 name: aerobase-jetlag
 description: Jetlag recovery optimization - score flights, generate recovery plans, optimize travel timing
 metadata: {"openclaw": {"emoji": "😴", "primaryEnv": "AEROBASE_API_KEY", "user-invocable": true, "homepage": "https://aerobase.app"}}
@@ -28,7 +29,7 @@ The science of arriving fresh. Aerobase.app generates personalized recovery plan
 
 This skill is **PREMIUM ONLY** — it comes with your Aerobase Concierge subscription:
 
-→ https://aerobase.app/concierge/pricing
+→ https://aerobase.app/openclaw-travel-agent/pricing
 
 Includes:
 - ✅ Unlimited jetlag scoring
@@ -102,4 +103,4 @@ This skill requires Aerobase Concierge subscription:
 - All other skills included
 - Personal AI travel agent
 
-→ https://aerobase.app/concierge/pricing
+→ https://aerobase.app/openclaw-travel-agent/pricing
