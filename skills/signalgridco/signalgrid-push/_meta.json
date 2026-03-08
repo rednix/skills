@@ -3,9 +3,15 @@
   "slug": "signalgrid-push",
   "displayName": "Signalgrid Push",
   "latest": {
-    "version": "1.0.18",
-    "publishedAt": 1772984803164,
-    "commit": "https://github.com/openclaw/skills/commit/f84b6b3664df08bb595641704c7c0289dd38acce"
+    "version": "1.0.19",
+    "publishedAt": 1772984831622,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.18",
+      "publishedAt": 1772984803164,
+      "commit": "https://github.com/openclaw/skills/commit/f84b6b3664df08bb595641704c7c0289dd38acce"
+    }
+  ]
 }

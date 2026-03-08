@@ -69,7 +69,7 @@ Use this skill when the user asks to:
 clawdhub --workdir ~/.openclaw install signalgrid-push
 ```
 
--   Ensure your OpenClaw **Tool Profile** is set to `full`
+-   Ensure your OpenClaw **Tool Profile** is set to `full`  
 -   Configure environment variables:
 
 ```
