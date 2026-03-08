@@ -3,9 +3,15 @@
   "slug": "accountant-ai",
   "displayName": "Accountant Ai",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772754387901,
-    "commit": "https://github.com/openclaw/skills/commit/b536c3fd4989a17f11eda3a11f06603c653fa3da"
+    "version": "1.0.2",
+    "publishedAt": 1772866109190,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772754387901,
+      "commit": "https://github.com/openclaw/skills/commit/b536c3fd4989a17f11eda3a11f06603c653fa3da"
+    }
+  ]
 }
