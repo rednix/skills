@@ -3,9 +3,15 @@
   "slug": "zeroexcore-trader",
   "displayName": "trader",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772699721783,
-    "commit": "https://github.com/openclaw/skills/commit/2fbe9948102723093fe0a1c5a1d6736e00840b27"
+    "version": "1.0.1",
+    "publishedAt": 1772897243160,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772699721783,
+      "commit": "https://github.com/openclaw/skills/commit/2fbe9948102723093fe0a1c5a1d6736e00840b27"
+    }
+  ]
 }
