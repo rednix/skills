@@ -3,11 +3,16 @@
   "slug": "wechat-public-cli",
   "displayName": "wechat-public-cli",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1772701728287,
-    "commit": "https://github.com/openclaw/skills/commit/31337e31057dd2475275b8b0db8c0c1dc753019f"
+    "version": "1.0.2",
+    "publishedAt": 1772892432588,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1772701728287,
+      "commit": "https://github.com/openclaw/skills/commit/31337e31057dd2475275b8b0db8c0c1dc753019f"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1772555553649,
