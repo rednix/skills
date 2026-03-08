@@ -1,0 +1,17 @@
+{
+  "name": "system-maintenance",
+  "version": "1.2.0",
+  "description": "Complete maintenance system for OpenClaw with unified architecture",
+  "main": "entry.js",
+  "keywords": ["openclaw", "maintenance", "monitoring", "automation", "cron"],
+  "author": "Claw (OpenClaw AI Assistant)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jazzqi/openclaw-system-maintenance.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jazzqi/openclaw-system-maintenance/issues"
+  },
+  "homepage": "https://github.com/jazzqi/openclaw-system-maintenance#readme"
+}
