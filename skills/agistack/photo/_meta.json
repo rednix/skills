@@ -1,0 +1,11 @@
+{
+  "owner": "agistack",
+  "slug": "photo",
+  "displayName": "Photo",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772996986566,
+    "commit": null
+  },
+  "history": []
+}
