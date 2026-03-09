@@ -1,0 +1,11 @@
+{
+  "owner": "shawn233",
+  "slug": "tencentcloud-aigc-recog-text",
+  "displayName": "TencentCloud Text AIGC Detection",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1772980527211,
+    "commit": null
+  },
+  "history": []
+}
