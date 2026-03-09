@@ -1,0 +1,45 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Skill Hub Gateway Skill API",
+    "version": "2.1.1",
+    "description": "Skill runtime contract for execute + poll with install-code onboarding."
+  },
+  "servers": [
+    {
+      "url": "https://gateway-api.binaryworks.app"
+    }
+  ],
+  "paths": {
+    "/agent/install-code/issue": {
+      "post": {
+        "summary": "Issue install code"
+      }
+    },
+    "/agent/bootstrap": {
+      "post": {
+        "summary": "Exchange install code for api key"
+      }
+    },
+    "/skill/execute": {
+      "post": {
+        "summary": "Submit async skill run"
+      }
+    },
+    "/skill/runs/{runId}": {
+      "get": {
+        "summary": "Poll skill run status"
+      }
+    },
+    "/SKILL.md": {
+      "get": {
+        "summary": "Read skill markdown (English)"
+      }
+    },
+    "/SKILL.zh-CN.md": {
+      "get": {
+        "summary": "Read skill markdown (Chinese)"
+      }
+    }
+  }
+}
