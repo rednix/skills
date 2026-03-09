@@ -3,9 +3,15 @@
   "slug": "escalate",
   "displayName": "Escalate",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770857328142,
-    "commit": "https://github.com/openclaw/skills/commit/3fbc1aa101607589706a80a59d60657440103261"
+    "version": "1.0.2",
+    "publishedAt": 1773049273163,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770857328142,
+      "commit": "https://github.com/openclaw/skills/commit/3fbc1aa101607589706a80a59d60657440103261"
+    }
+  ]
 }

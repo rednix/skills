@@ -25,6 +25,17 @@ confirmed → apply autonomy
 locked    → never re-ask
 ```
 
+## Decision Ladder
+
+Use the smallest escalation move that preserves safety:
+
+| Situation | Move |
+|-----------|------|
+| Reversible internal work with clear precedent | Act |
+| Reversible internal work with light uncertainty | Act, then inform |
+| Novel or higher-stakes work with a likely best path | Propose with recommendation |
+| External, irreversible, or third-party impact | Ask before acting |
+
 ## Context Matching
 
 Same category ≠ same context. Match on:

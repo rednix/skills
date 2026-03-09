@@ -13,6 +13,14 @@ Actions that never become autonomous, regardless of learned trust.
 | **Legal** | Liability | Contracts, terms acceptance, compliance |
 | **Production** | Business impact | Deploys, releases, public changes |
 
+## Workspace Steering Defaults
+
+If setup adds escalation reminders to workspace files, keep them aligned with these categories:
+
+- The workspace AGENTS file should remind the agent to ask before external, irreversible, or third-party actions.
+- The workspace SOUL file should reinforce that trust comes from moving fast on safe internal work and slowing down on risky actions.
+- Both additions should stay short and non-destructive.
+
 ## Why These Stay Blocked
 
 Even with high trust, these categories have:
