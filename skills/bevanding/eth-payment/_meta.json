@@ -1,0 +1,11 @@
+{
+  "owner": "bevanding",
+  "slug": "eth-payment",
+  "displayName": "Eth Payment",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772975775813,
+    "commit": null
+  },
+  "history": []
+}
