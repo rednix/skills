@@ -1,0 +1,11 @@
+{
+  "owner": "phy041",
+  "slug": "phy-openclaw-multibot-audit",
+  "displayName": "OpenClaw Multibot Audit",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772955371246,
+    "commit": null
+  },
+  "history": []
+}
