@@ -71,6 +71,10 @@ def cmd_store(args):
         body["source"] = args.source
     if args.content_type:
         body["content_type"] = args.content_type
+    if args.memory_type:
+        body["memory_type"] = args.memory_type
+    if args.retention:
+        body["retention"] = args.retention
     result = api_call("POST", "/v1/store", body)
     print(json.dumps(result, indent=2))
 
@@ -84,6 +88,8 @@ def cmd_recall(args):
         "min_score": args.min_score,
         "tags": tags,
     }
+    if args.memory_type:
+        body["memory_type"] = args.memory_type
     result = api_call("POST", "/v1/recall", body)
     if not result.get("results"):
         print("No relevant memories found.")
@@ -97,6 +103,18 @@ def cmd_recall(args):
 def cmd_stats(args):
     result = api_call("GET", "/v1/stats")
     print(json.dumps(result, indent=2))
+
+
+def cmd_reflect(args):
+    """Auto-reflection — scan recent chunks, find patterns, generate insights."""
+    body = {"hours_back": args.hours, "max_insights": args.max_insights}
+    result = api_call("POST", "/v1/reflect", body)
+    created = result.get("insights_created", 0)
+    patterns = result.get("patterns_found", [])
+    scanned = result.get("chunks_scanned", 0)
+    print(f"Scanned {scanned} chunks, found {len(patterns)} patterns, created {created} insights.\n")
+    for p in patterns:
+        print(f"  • {p}")
 
 
 def cmd_compact(args):
@@ -144,6 +162,10 @@ def main():
     p.add_argument("-t", "--tags", default="", help="Comma-separated tags")
     p.add_argument("-p", "--priority", default="warm", choices=["hot", "warm", "cold"])
     p.add_argument("--content-type", default=None, choices=["conversation", "code"])
+    p.add_argument("--memory-type", default=None,
+                   choices=["fact", "decision", "preference", "error", "goal", "episodic"])
+    p.add_argument("--retention", default=None,
+                   choices=["forever", "6m", "1y", "auto"])
     p.set_defaults(func=cmd_store)
 
     # recall
@@ -153,6 +175,8 @@ def main():
     p.add_argument("-l", "--limit", type=int, default=5)
     p.add_argument("--min-score", type=float, default=0.0)
     p.add_argument("-t", "--tags", default="", help="Comma-separated tags")
+    p.add_argument("--memory-type", default=None,
+                   choices=["fact", "decision", "preference", "error", "goal", "episodic"])
     p.set_defaults(func=cmd_recall)
 
     # stats
@@ -175,6 +199,12 @@ def main():
     # check
     p = sub.add_parser("check", help="Check context token usage")
     p.set_defaults(func=cmd_check)
+
+    # reflect
+    p = sub.add_parser("reflect", help="Auto-reflection — find patterns in recent memories")
+    p.add_argument("--hours", type=int, default=24, help="Hours to look back")
+    p.add_argument("--max-insights", type=int, default=5, help="Max insights to generate")
+    p.set_defaults(func=cmd_reflect)
 
     args = parser.parse_args()
     args.func(args)
