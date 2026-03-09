@@ -1,0 +1,11 @@
+{
+  "owner": "ethagent",
+  "slug": "tenant",
+  "displayName": "Tenant",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772978356172,
+    "commit": null
+  },
+  "history": []
+}
