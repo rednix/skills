@@ -3,11 +3,16 @@
   "slug": "command-center",
   "displayName": "Openclaw Command Center",
   "latest": {
-    "version": "1.4.0",
-    "publishedAt": 1772792239922,
-    "commit": "https://github.com/openclaw/skills/commit/ffda6e81d6afd9e5b9bc70fc4803eaa5e955d8d4"
+    "version": "1.4.1",
+    "publishedAt": 1772950188275,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.4.0",
+      "publishedAt": 1772792239922,
+      "commit": "https://github.com/openclaw/skills/commit/ffda6e81d6afd9e5b9bc70fc4803eaa5e955d8d4"
+    },
     {
       "version": "1.2.0",
       "publishedAt": 1772239760137,
