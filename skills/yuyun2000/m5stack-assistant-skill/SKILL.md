@@ -1,4 +1,3 @@
-
 ---
 name: m5stack-assistant
 description: 解决M5Stack相关的所有问题，包括产品查询、规格参数、Arduino/UIFlow/ESP-IDF编程、技术支持等。通过M5Stack官方MCP服务检索官方文档、产品规格、接口和示例，根据官方信息完成用户需求，过程中主动查询不清楚的内容。适用于：M5Stack全系列产品咨询、技术规格查询、代码编写、API查询、示例查找、故障排除等任务。
@@ -7,6 +6,36 @@ description: 解决M5Stack相关的所有问题，包括产品查询、规格参
 # M5Stack Assistant Skill
 
 通过M5Stack官方MCP服务解决所有M5Stack相关问题。
+
+## 快速使用（优化后）
+
+### 命令行工具直接调用
+```bash
+# 基础查询
+node m5-search.mjs "M5Stack CoreS3 引脚定义"
+
+# 带参数查询
+node m5-search.mjs "M5StickC Plus Arduino示例" --filter arduino --num 2
+node m5-search.mjs "ESP32-S3 寄存器说明" --chip
+```
+
+**参数说明：**
+- `--num <1-3>`：返回结果数量，默认1
+- `--filter <类型>`：过滤文档类型：`product`/`program`/`arduino`/`uiflow`/`esp-idf`/`esphome`，默认`product`
+- `--chip`：查询芯片相关数据手册
+
+### 代码中调用
+```javascript
+import { mcpSearch } from './scripts/mcp.mjs';
+
+// 查询示例
+const result = await mcpSearch('M5Stack CoreS3 基本参数', {
+  num: 1,
+  filter_type: 'product'
+});
+```
+
+---
 
 ## 核心流程
 
@@ -166,22 +195,15 @@ MCP 服务器当前提供以下工具：
 
 ### 工具脚本
 
-skill提供以下Node.js脚本（位于 `scripts/` 目录）：
+skill提供以下Node.js脚本：
 
-1. **mcp.js** - 简单、好用的MCP客户端
-   - 提供 `mcpSearch(query, options)` 函数
-   - 使用方式：
-     ```javascript
-     const { mcpSearch } = require('./mcp.js');
-     const result = await mcpSearch('M5Stack CoreS3', { num: 1 });
-     ```
+1. **scripts/mcp.mjs** - ES Module版本MCP客户端
+   - 提供 `mcpSearch(query, options)` 异步函数
+   - 支持ESM导入，兼容现代Node.js环境
 
-## 在Skill中使用MCP客户端
-
-当需要查询M5Stack文档或示例时：
-
-1. 使用 `scripts/mcp.js` 的 `mcpSearch()` 函数查询
-2. 或者直接访问M5Stack官方文档站点: https://docs.m5stack.com
+2. **m5-search.mjs** - 命令行查询工具
+   - 无需编写代码，直接在终端快速查询文档
+   - 支持参数过滤，输出格式化结果
 
 ## 关键注意事项
 
@@ -192,4 +214,4 @@ skill提供以下Node.js脚本（位于 `scripts/` 目录）：
 5. **合理选择filter_type** - 根据问题类型选择合适的文档类型
 6. **设备兼容性** - 注意不同M5Stack设备的差异
 7. **库依赖** - 明确列出所需的开发库
-8. **MCP服务状态** - 如果MCP服务不可用，降级使用官方文档站点
+8. **MCP服务状态** - 如果MCP服务不可用，降级使用官方文档站点: https://docs.m5stack.com

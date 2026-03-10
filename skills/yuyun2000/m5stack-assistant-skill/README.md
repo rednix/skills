@@ -1,22 +1,23 @@
-
 # M5Stack Assistant Skill - 使用说明
 
 ## 📦 包含内容
 
 ```
-skills/m5stack-arduino-programmer/
+m5stack-assistant/
 ├── SKILL.md                          # 核心skill指令
 ├── README.md                         # 本文件
+├── m5-search.mjs                     # 命令行快速查询工具
 ├── references/
 │   └── quick-reference.md           # M5Stack快速参考
 └── scripts/
-    └── mcp.js                       # 简单好用的MCP客户端
+    └── mcp.mjs                       # ES Module版本MCP客户端
 ```
 
 ## ✅ 测试状态
 - ✅ MCP 服务器连接成功
 - ✅ JSON-RPC 调用成功
 - ✅ knowledge_search 工具可用
+- ✅ 命令行查询工具可用
 
 ## 🚀 功能范围
 
@@ -47,10 +48,24 @@ skills/m5stack-arduino-programmer/
 
 ## 🚀 快速开始
 
-### 1. 使用 mcp.js 查询知识库
+### 1. 命令行快速查询（最简单）
+```bash
+# 基础用法
+node m5-search.mjs "M5Stack CoreS3 引脚定义"
 
+# 带参数查询
+node m5-search.mjs "M5StickC Plus Arduino示例" --filter arduino --num 2
+node m5-search.mjs "ESP32-S3 寄存器说明" --chip
+```
+
+**参数说明：**
+- `--num <1-3>`：返回结果数量，默认1
+- `--filter <类型>`：过滤文档类型：`product`/`program`/`arduino`/`uiflow`/`esp-idf`/`esphome`，默认`product`
+- `--chip`：查询芯片相关数据手册
+
+### 2. 在代码中使用MCP客户端
 ```javascript
-const { mcpSearch } = require('./scripts/mcp.js');
+import { mcpSearch } from './scripts/mcp.mjs';
 
 // 查询 M5Stack CoreS3 产品信息
 const result = await mcpSearch('M5Stack CoreS3 规格参数', { 
@@ -69,12 +84,6 @@ const result = await mcpSearch('LLM-8850 功耗 热设计', {
   filter_type: 'product',
   num: 2 
 });
-```
-
-### 2. 运行演示
-```bash
-cd skills/m5stack-arduino-programmer/scripts
-node mcp.js
 ```
 
 ## 📝 MCP 协议说明
@@ -104,11 +113,12 @@ node mcp.js
 - `is_chip`: 是否查询芯片手册 (true/false)
 - `filter_type`: 文档类型过滤
   - `product` - 产品文档（推荐用于产品咨询、规格查询）
+  - `product_no_eol` - 在售产品文档
+  - `program` - 全品类编程文档
   - `arduino` - Arduino 开发
   - `uiflow` - UiFlow 开发
   - `esp-idf` - ESP-IDF 开发
-  - `program` - 全品类编程文档
-  - 等等...
+  - `esphome` - ESPHome 官方文档
 
 ## 💡 使用建议
 
