@@ -1,27 +1,32 @@
 ---
 name: wodeapp-ai
-version: "2.2"
+version: "2.4"
 description: >
   Unified AI execution engine. Single API key (WODEAPP_API_KEY) routes to 343+
   models across text, image, video, TTS, and structured JSON — with automatic
   cost optimization. Includes workflow orchestration (19 step types), headless
-  execution API, and instant-publish page builder. No additional credentials
-  required beyond the single API key.
+  execution API, instant-publish page builder, and project-scoped MCP for
+  digital human / video generation. No additional credentials required.
 homepage: https://wodeapp.ai
 author: WodeApp Team
-license: Commercial
+license: MIT-0
 category: ai-platform
 always: false
+requirements:
+  - WODEAPP_API_KEY
+primaryCredential: WODEAPP_API_KEY
 capabilities:
   - text-generation
   - image-generation
   - video-generation
   - text-to-speech
+  - digital-human-avatar
   - structured-json
   - visual-workflow
   - headless-workflow-api
   - page-builder
   - zero-deploy
+  - project-scoped-mcp
 supported_models: 343+
 protocols:
   - MCP (SSE)
@@ -159,9 +164,41 @@ export WODEAPP_API_KEY="sk_live_xxxxxxxxxx"  # From wodeapp.ai → API Skills
 
 Compatible with: Claude Desktop, Cursor, Windsurf, Cline, and all MCP SSE clients.
 
+### 3. Project-Level MCP (Per-Project, No Auth Needed)
+
+Each published project exposes its own MCP server at its subdomain. The AI Agent connects and **auto-discovers** all project capabilities — data CRUD, workflows, AI, TTS, video, and digital human.
+
+```json
+{
+  "mcpServers": {
+    "my-project": {
+      "type": "sse",
+      "url": "https://my-project.wodeapp.ai/mcp"
+    }
+  }
+}
+```
+
+**Auto-discovered tools per project:**
+
+| Category | Tools | Description |
+|----------|-------|-------------|
+| Data CRUD | `query_{col}` / `create_` / `update_` / `delete_` | Auto-generated from project collections |
+| Workflows | `run_workflow_{id}` + `get_workflow_status` | Auto-extracted with input schemas |
+| AI | `ai_chat` / `ai_generate_image` / `ai_generate_json` | Text, image, JSON generation |
+| TTS | `tts_generate` / `tts_list_voices` | Text-to-speech with voice selection |
+| Video | `kling_text2video` / `kling_image2video` | 5s/10s video, std/pro modes |
+| Digital Human | `kling_avatar` | Portrait + audio → talking head video |
+| Task Query | `kling_task_status` | Poll video/avatar generation progress |
+| Meta | `list_collections` | List all data collections |
+
+**Debug endpoint:** `GET https://my-project.wodeapp.ai/mcp/tools` — view all tools for a project.
+
 ---
 
-## MCP Tools (9 Auto-Discovered)
+## MCP Tools
+
+### Platform MCP (9 Auto-Discovered)
 
 All tools are auto-registered via MCP protocol — zero manual configuration required.
 
@@ -303,7 +340,9 @@ curl https://my-project.wodeapp.ai/runtime-server/api/workflow/run/{runId}
 | Main API | `https://wodeapp.ai/mainserver/api` | `localhost:3100/mainserver/api` |
 | Runtime API | `https://wodeapp.ai/api` | `localhost:4100/api` |
 | Workflow API | `https://{project}.wodeapp.ai/runtime-server/api/workflow` | `localhost:4100/runtime-server/api/workflow` |
-| MCP Server | `https://wodeapp.ai/mainserver/mcp` | `localhost:3100/mainserver/mcp` |
+| Platform MCP | `https://wodeapp.ai/mainserver/mcp` | `localhost:3100/mainserver/mcp` |
+| Project MCP | `https://{project}.wodeapp.ai/mcp` | `localhost:4100/mcp` |
+| Kling Video | `https://{project}.wodeapp.ai/runtime-server/api/kling` | `localhost:4100/runtime-server/api/kling` |
 
 ---
 
@@ -325,16 +364,24 @@ curl https://my-project.wodeapp.ai/runtime-server/api/workflow/run/{runId}
 
 ### Credentials
 
-- **Single credential**: Only `WODEAPP_API_KEY` is required. No additional platform credentials, OAuth tokens, or third-party API keys are needed or accessed by this skill
+- **Single credential**: Only `WODEAPP_API_KEY` is required — no additional platform credentials, OAuth tokens, or third-party API keys are needed or accessed by this skill
 - **Auth method**: `X-API-Key` HTTP header on all requests
 - **Key scoping**: Keys can be scoped per-project with billing caps at wodeapp.ai/api-skills
 - **Instant revocation**: Compromised keys revoked immediately via dashboard — takes effect within 60 seconds
 
+### Instruction Scope & Boundaries
+
+- **No local file access**: This skill does NOT read, write, or access any files on the user's local machine. All operations are remote API calls to `wodeapp.ai`
+- **No additional environment variables**: This skill reads only `WODEAPP_API_KEY`. No other environment variables, credentials, or system configuration is accessed
+- **No system modification**: This skill does not install packages, write files to disk, or modify system state. It is instruction-only
+- **No cross-skill interference**: This skill does not modify, override, or interact with other installed skills or agent system settings
+
 ### Data Handling
 
-- **What is transmitted**: Text prompts, image/audio/video URLs or base64 data (when using upload or generation endpoints), and workflow input parameters
-- **Where data goes**: `wodeapp.ai` → upstream AI provider (OpenAI, Google, Anthropic, etc.) selected by the routing engine. The specific provider depends on the model chosen or auto-selected
-- **What is stored**: Project configurations and generated output URLs are stored in the user's project database. Raw prompts and AI responses are NOT stored after processing
+- **What is transmitted**: Text prompts, image/audio/video URLs or base64 data (only when the user explicitly provides them for generation), and workflow input parameters
+- **Where data goes**: `wodeapp.ai` (routing layer) → upstream AI provider (OpenAI, Google, Anthropic, etc.) selected by the routing engine. The specific provider depends on the model chosen or auto-selected
+- **What is stored**: Project configurations and generated output URLs only. Raw prompts and AI responses are NOT persisted after processing
+- **Uploaded files**: Files uploaded via the `upload_file` tool are stored on WodeApp's CDN for output delivery. Generated URLs should be treated as semi-public — do not upload sensitive or confidential files
 - **Training policy**: No user data is used for model training by WodeApp. Upstream provider training policies apply per their respective terms of service
 - **Transport**: HTTPS/TLS 1.3 on all production endpoints
 
@@ -343,7 +390,6 @@ curl https://my-project.wodeapp.ai/runtime-server/api/workflow/run/{runId}
 - Use environment variables for `WODEAPP_API_KEY` — never hardcode
 - For testing, create a project-scoped key with billing caps
 - Do not send sensitive PII through generation endpoints unless the user explicitly consents
-- Uploaded files (base64/URL) are stored on WodeApp's CDN for output delivery; treat generated URLs as semi-public
 
 ---
 
@@ -359,4 +405,4 @@ WODEAPP_RUNTIME_SERVER=http://...    # Optional — override runtime server URL
 
 ---
 
-`ai` `text-generation` `image-generation` `video-generation` `tts` `structured-json` `mcp` `no-code` `zero-deploy` `page-builder` `workflow` `visual-workflow` `headless-workflow` `workflow-api` `agent-tools` `multi-model` `smart-routing` `cost-optimization` `token-efficient` `low-latency` `unified-billing` `fault-tolerant` `schema-enforcement` `gpt-4o` `claude` `gemini` `deepseek` `doubao` `seedance` `kling` `seedream` `imagen` `flux` `qwen` `auto-detect` `parameter-minimal`
+`ai` `text-generation` `image-generation` `video-generation` `tts` `digital-human` `avatar` `structured-json` `mcp` `project-mcp` `no-code` `zero-deploy` `page-builder` `workflow` `visual-workflow` `headless-workflow` `workflow-api` `agent-tools` `multi-model` `smart-routing` `cost-optimization` `token-efficient` `low-latency` `unified-billing` `fault-tolerant` `schema-enforcement` `gpt-4o` `claude` `gemini` `deepseek` `doubao` `seedance` `kling` `seedream` `imagen` `flux` `qwen` `auto-detect` `parameter-minimal`
