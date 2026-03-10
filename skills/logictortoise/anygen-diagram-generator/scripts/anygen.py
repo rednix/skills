@@ -3,19 +3,22 @@
 AnyGen OpenAPI Client
 
 Usage:
-    python3 anygen.py create --api-key sk-xxx --operation doc --prompt "..."
+    python3 anygen.py create --api-key sk-xxx --operation smart_draw --prompt "..."
     python3 anygen.py poll --api-key sk-xxx --task-id task_xxx
+    python3 anygen.py thumbnail --api-key sk-xxx --task-id task_xxx --output /tmp/
     python3 anygen.py download --api-key sk-xxx --task-id task_xxx --output ./
-    python3 anygen.py run --api-key sk-xxx --operation doc --prompt "..." --output ./
+    python3 anygen.py run --api-key sk-xxx --operation smart_draw --prompt "..." --output ./
     python3 anygen.py upload --api-key sk-xxx --file ./document.pdf
-    python3 anygen.py prepare --api-key sk-xxx --message "I need a doc about AI"
+    python3 anygen.py prepare --api-key sk-xxx --message "I need a diagram about system architecture"
+    python3 anygen.py send-message --task-id task_xxx --message "Add a cache layer node"
+    python3 anygen.py get-messages --task-id task_xxx --limit 10
+    python3 anygen.py get-messages --task-id task_xxx --wait
 """
 
 import argparse
 import base64
 import json
 import os
-import shutil
 import sys
 import time
 from datetime import datetime
@@ -30,31 +33,12 @@ except ImportError:
 
 API_BASE = "https://www.anygen.io"
 POLL_INTERVAL = 3  # seconds
-MAX_POLL_TIME = 1200  # 20 minutes
+MAX_POLL_TIME = 180  # 3 minutes
 OPENCLAW_WORKSPACE = Path.home() / ".openclaw" / "workspace"
 CONFIG_DIR = Path.home() / ".config" / "anygen"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 ENV_API_KEY = "ANYGEN_API_KEY"
 
-
-def _is_ascii(s):
-    try:
-        s.encode('ascii')
-        return True
-    except UnicodeEncodeError:
-        return False
-
-
-def _media_safe_path(local_path):
-    """Return a MEDIA-safe path (ASCII-only filename). Copies if needed."""
-    p = Path(local_path)
-    if _is_ascii(p.name):
-        return local_path
-    safe_name = "output" + p.suffix
-    safe_path = p.parent / safe_name
-    shutil.copy2(str(p), str(safe_path))
-    print(f"[INFO] Renamed for MEDIA: {p.name} -> {safe_name}")
-    return str(safe_path)
 
 
 def load_config():
@@ -116,15 +100,10 @@ def format_timestamp(ts):
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def log_logid(response):
-    logid = response.headers.get("x-tt-logid", "")
-    if logid:
-        print(f"logid: {logid}")
-
-
-def make_auth_token(api_key):
-    """Build Bearer auth token from API key."""
-    return api_key if api_key.startswith("Bearer ") else f"Bearer {api_key}"
+def log_request_id(response):
+    request_id = response.headers.get("x-request-id", "")
+    if request_id:
+        print(f"x-request-id: {request_id}")
 
 
 def parse_headers(header_list):
@@ -137,6 +116,11 @@ def parse_headers(header_list):
             key, value = h.split(":", 1)
             headers[key.strip()] = value.strip()
     return headers if headers else None
+
+
+def make_auth_token(api_key):
+    """Build Bearer auth token from API key."""
+    return api_key if api_key.startswith("Bearer ") else f"Bearer {api_key}"
 
 
 def encode_file(file_path):
@@ -199,7 +183,7 @@ def upload_file(api_key, file_path, extra_headers=None):
                 timeout=60
             )
 
-        log_logid(response)
+        log_request_id(response)
         log_info(f"Response status: {response.status_code}")
         if response.status_code != 200:
             log_error(f"HTTP error: {response.status_code}")
@@ -252,7 +236,7 @@ def prepare_task(api_key, messages, file_tokens=None, extra_headers=None):
             timeout=120
         )
 
-        log_logid(response)
+        log_request_id(response)
         if response.status_code != 200:
             log_error(f"HTTP error: {response.status_code}")
             log_error(f"Response: {response.text[:500]}")
@@ -339,7 +323,7 @@ def run_prepare_interactive(api_key, initial_message, file_tokens=None,
         print("You can create the task with:")
         cmd_parts = [
             "python3 anygen.py create",
-            f"--operation {suggested.get('operation', 'doc')}",
+            f"--operation {suggested.get('operation', 'chat')}",
             f"--prompt \"{suggested.get('prompt', '')}\"",
         ]
         for ft in (suggested.get("file_tokens") or []):
@@ -439,7 +423,7 @@ def create_task(api_key, operation, prompt, language=None, slide_count=None,
             headers=headers,
             timeout=30
         )
-        log_logid(response)
+        log_request_id(response)
         log_info(f"Response status: {response.status_code}")
         log_info(f"Response body: {response.text[:500] if response.text else 'Empty'}")
         if response.status_code != 200:
@@ -479,7 +463,7 @@ def query_task(api_key, task_id, extra_headers=None):
             headers=headers,
             timeout=30
         )
-        log_logid(response)
+        log_request_id(response)
         return response.json()
     except requests.RequestException as e:
         log_error(f"Request failed: {e}")
@@ -507,6 +491,14 @@ def _download_to_local(file_url, file_name, output_dir):
     output_path.mkdir(parents=True, exist_ok=True)
 
     file_path = output_path / (file_name or "output")
+    # Avoid overwriting existing files from other tasks
+    if file_path.exists():
+        stem = file_path.stem
+        suffix = file_path.suffix
+        counter = 1
+        while file_path.exists():
+            file_path = output_path / f"{stem}_{counter}{suffix}"
+            counter += 1
     with open(file_path, "wb") as f:
         f.write(response.content)
 
@@ -514,12 +506,13 @@ def _download_to_local(file_url, file_name, output_dir):
     return str(file_path)
 
 
-def poll_task(api_key, task_id, max_time=MAX_POLL_TIME, extra_headers=None, output_dir=None, media=False):
+def poll_task(api_key, task_id, max_time=MAX_POLL_TIME, extra_headers=None, output_dir=None):
     """Poll task until completion or failure. Auto-downloads file if output_dir is provided."""
     log_info(f"Polling task status: {task_id}")
 
     start_time = time.time()
     last_progress = -1
+    last_heartbeat = start_time
 
     while True:
         elapsed = time.time() - start_time
@@ -535,10 +528,17 @@ def poll_task(api_key, task_id, max_time=MAX_POLL_TIME, extra_headers=None, outp
         status = task.get("status")
         progress = task.get("progress", 0)
 
-        # Only log progress if it changed
         if progress != last_progress:
             log_progress(status, progress)
             last_progress = progress
+
+        now = time.time()
+        if now - last_heartbeat >= 30:
+            ts = datetime.now().strftime("%H:%M:%S")
+            mins = int(elapsed) // 60
+            secs = int(elapsed) % 60
+            print(f"[HEARTBEAT] {ts} | elapsed {mins}m{secs:02d}s | status: {status} | progress: {progress}%", flush=True)
+            last_heartbeat = now
 
         if status == "completed":
             output = task.get("output", {})
@@ -549,23 +549,15 @@ def poll_task(api_key, task_id, max_time=MAX_POLL_TIME, extra_headers=None, outp
             if output.get("word_count"):
                 print(f"Word count: {output.get('word_count')}")
 
-            # Auto-download file
+            # Auto-download file only if output_dir is specified
             file_url = output.get("file_url")
-            download_dir = output_dir or "."
-            if file_url:
-                local_path = _download_to_local(file_url, output.get("file_name"), download_dir)
+            if file_url and output_dir:
+                local_path = _download_to_local(file_url, output.get("file_name"), output_dir)
                 if local_path:
                     print(f"[RESULT] Local file: {local_path}")
-                    if media:
-                        print(f"MEDIA:{_media_safe_path(local_path)}")
 
-            # Download thumbnail for doc preview
             if output.get("thumbnail_url"):
-                thumb_stem = Path(output.get("file_name", "output")).stem
-                thumb_name = f"{thumb_stem}_thumbnail.png"
-                thumb_path = _download_to_local(output["thumbnail_url"], thumb_name, download_dir)
-                if thumb_path:
-                    print(f"[RESULT] Thumbnail: {thumb_path}")
+                print(f"[RESULT] Thumbnail URL: {output['thumbnail_url']}")
 
             print(f"[RESULT] Task URL: {task_url}")
             return task
@@ -578,11 +570,8 @@ def poll_task(api_key, task_id, max_time=MAX_POLL_TIME, extra_headers=None, outp
         time.sleep(POLL_INTERVAL)
 
 
-def download_file(api_key, task_id, output_dir, extra_headers=None, media=False):
+def download_file(api_key, task_id, output_dir, extra_headers=None):
     """Download the generated file. Returns local file path or False."""
-    if media and not output_dir:
-        output_dir = str(OPENCLAW_WORKSPACE) if OPENCLAW_WORKSPACE.is_dir() else "."
-
     task = query_task(api_key, task_id, extra_headers)
     if not task:
         return False
@@ -603,17 +592,164 @@ def download_file(api_key, task_id, output_dir, extra_headers=None, media=False)
     local_path = _download_to_local(file_url, file_name, output_dir)
     if local_path:
         print(f"[RESULT] Local file: {local_path}")
-        if media:
-            print(f"MEDIA:{_media_safe_path(local_path)}")
         if output.get("thumbnail_url"):
-            thumb_stem = Path(file_name or "output").stem
-            thumb_name = f"{thumb_stem}_thumbnail.png"
-            thumb_path = _download_to_local(output["thumbnail_url"], thumb_name, output_dir)
-            if thumb_path:
-                print(f"[RESULT] Thumbnail: {thumb_path}")
+            print(f"[RESULT] Thumbnail URL: {output['thumbnail_url']}")
         print(f"[RESULT] Task URL: {task_url}")
         return local_path
     return False
+
+
+def download_thumbnail(api_key, task_id, output_dir, extra_headers=None):
+    """Download only the thumbnail image. Returns local file path or False."""
+    task = query_task(api_key, task_id, extra_headers)
+    if not task:
+        return False
+
+    if task.get("status") != "completed":
+        log_error(f"Task not completed, current status: {task.get('status')}")
+        return False
+
+    output = task.get("output", {})
+    thumbnail_url = output.get("thumbnail_url")
+    if not thumbnail_url:
+        log_error("No thumbnail available for this task")
+        return False
+
+    local_path = _download_to_local(thumbnail_url, f"thumbnail_{task_id}.png", output_dir)
+    if local_path:
+        print(f"[RESULT] Thumbnail file: {local_path}")
+        return local_path
+    return False
+
+
+# ============ Multi-turn Conversation ============
+
+def send_message(api_key, task_id, content, files=None, extra_headers=None):
+    """Send a message to an existing task. Returns immediately."""
+    auth_token = make_auth_token(api_key)
+
+    headers = {
+        "Authorization": auth_token,
+        "Content-Type": "application/json",
+    }
+    if extra_headers:
+        headers.update(extra_headers)
+
+    body = {"auth_token": auth_token, "content": content}
+    if files:
+        body["files"] = files
+
+    try:
+        log_info(f"Sending message to task: {task_id}")
+        response = requests.post(
+            f"{API_BASE}/v1/openapi/tasks/{task_id}/messages",
+            json=body,
+            headers=headers,
+            timeout=30,
+        )
+        log_request_id(response)
+        if response.status_code != 200:
+            log_error(f"HTTP error: {response.status_code}")
+            log_error(f"Response: {response.text[:500]}")
+            return None
+
+        result = response.json()
+    except requests.RequestException as e:
+        log_error(f"Request failed: {e}")
+        return None
+    except json.JSONDecodeError:
+        log_error(f"Response parse failed: {response.text[:500]}")
+        return None
+
+    msg = result.get("message", {})
+    status = result.get("status", "unknown")
+    log_success(f"Message sent! id={msg.get('id')}, status={status}")
+    print(f"Message ID: {msg.get('id')}")
+    print(f"Status: {status}")
+    return result
+
+
+def get_messages(api_key, task_id, limit=10, cursor=None, extra_headers=None):
+    """Get messages for a task. Supports polling and pagination."""
+    auth_token = make_auth_token(api_key)
+
+    headers = {"Authorization": auth_token}
+    if extra_headers:
+        headers.update(extra_headers)
+
+    params = {"limit": limit}
+    if cursor:
+        params["cursor"] = cursor
+
+    try:
+        response = requests.get(
+            f"{API_BASE}/v1/openapi/tasks/{task_id}/messages",
+            headers=headers,
+            params=params,
+            timeout=30,
+        )
+        log_request_id(response)
+        if response.status_code != 200:
+            log_error(f"HTTP error: {response.status_code}")
+            log_error(f"Response: {response.text[:500]}")
+            return None
+
+        result = response.json()
+    except requests.RequestException as e:
+        log_error(f"Request failed: {e}")
+        return None
+    except json.JSONDecodeError:
+        log_error(f"Response parse failed: {response.text[:500]}")
+        return None
+
+    return result
+
+
+def poll_messages(api_key, task_id, since_message_id, limit=10,
+                  max_time=MAX_POLL_TIME, extra_headers=None):
+    """Poll messages until an assistant reply is completed after since_message_id."""
+    log_info(f"Waiting for AI reply on task: {task_id}")
+
+    start_time = time.time()
+    last_heartbeat = start_time
+
+    while True:
+        elapsed = time.time() - start_time
+        if elapsed > max_time:
+            log_error(f"Polling timeout ({max_time}s)")
+            return None
+
+        result = get_messages(api_key, task_id, limit=limit, extra_headers=extra_headers)
+        if not result:
+            time.sleep(POLL_INTERVAL)
+            continue
+
+        messages = result.get("messages", [])
+        task_snapshot = result.get("task_snapshot", {})
+
+        # Find the latest assistant message newer than since_message_id
+        for msg in messages:
+            if (msg.get("role") == "assistant"
+                    and msg.get("id", 0) > since_message_id
+                    and msg.get("status") == "completed"):
+                log_success("AI reply received!")
+                print(f"[REPLY] {msg.get('content', '')}")
+                if task_snapshot:
+                    snap_status = task_snapshot.get("status", "")
+                    can_export = task_snapshot.get("can_export", False)
+                    print(f"[SNAPSHOT] status={snap_status}, can_export={can_export}")
+                return result
+
+        now = time.time()
+        if now - last_heartbeat >= 30:
+            ts = datetime.now().strftime("%H:%M:%S")
+            mins = int(elapsed) // 60
+            secs = int(elapsed) % 60
+            snap_status = task_snapshot.get("status", "unknown")
+            print(f"[HEARTBEAT] {ts} | elapsed {mins}m{secs:02d}s | task_status: {snap_status}", flush=True)
+            last_heartbeat = now
+
+        time.sleep(POLL_INTERVAL)
 
 
 def run_full_workflow(api_key, operation, prompt, output_dir, extra_headers=None,
@@ -624,9 +760,12 @@ def run_full_workflow(api_key, operation, prompt, output_dir, extra_headers=None
     if not task_id:
         return False
 
-    task = poll_task(api_key, task_id, extra_headers=extra_headers, output_dir=output_dir or ".")
+    task = poll_task(api_key, task_id, extra_headers=extra_headers)
     if not task or task.get("status") != "completed":
         return False
+
+    if output_dir:
+        return download_file(api_key, task_id, output_dir, extra_headers=extra_headers)
 
     return True
 
@@ -637,30 +776,30 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Quick mode: create a diagram task directly
+  python3 anygen.py create -o smart_draw -p "A system architecture diagram"
+
   # Dialogue mode: analyze requirements first
-  python3 anygen.py prepare --message "I need a technical design document"
+  python3 anygen.py prepare --message "I need a diagram about microservice architecture"
 
   # Upload a file for use in tasks
   python3 anygen.py upload --file ./data.pdf
 
-  # Quick mode: create a doc task directly
-  python3 anygen.py create -o doc -p "A technical design document for auth system"
-
   # Create task with uploaded file tokens
-  python3 anygen.py create -o doc -p "Summarize this report" --file-token tk_xxx
+  python3 anygen.py create -o smart_draw -p "Diagram from this doc" --file-token tk_xxx
 
   # Full workflow: create -> poll -> download
-  python3 anygen.py run -o doc -p "Technical design document" --output ./
+  python3 anygen.py run -o smart_draw -p "CI/CD pipeline flowchart" --output ./
         """
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
-    # Common arguments
     def add_common_args(p):
-        p.add_argument("--api-key", "-k", help="AnyGen API Key (sk-xxx). Can also use env ANYGEN_API_KEY or config file")
+        p.add_argument("--api-key", "-k",
+                        help="AnyGen API Key (sk-xxx). Also: env ANYGEN_API_KEY or config file")
         p.add_argument("--header", "-H", action="append", dest="headers",
-                       help="Extra HTTP header (format: 'Key:Value', can be used multiple times)")
+                        help="Extra HTTP header (format: 'Key:Value')")
 
     # ---- upload command ----
     upload_parser = subparsers.add_parser("upload", help="Upload a file and get file_token")
@@ -687,14 +826,14 @@ Examples:
     create_parser = subparsers.add_parser("create", help="Create a generation task")
     add_common_args(create_parser)
     create_parser.add_argument("--operation", "-o", required=True,
-                               choices=["chat", "slide", "doc", "storybook", "data_analysis", "website", "smart_draw"],
+                               choices=["slide", "doc", "smart_draw", "storybook", "data_analysis", "website", "finance", "deep_research", "ai_designer"],
                                help="Operation type")
     create_parser.add_argument("--prompt", "-p", required=True, help="Content prompt")
     create_parser.add_argument("--language", "-l", help="Language (zh-CN, en-US)")
     create_parser.add_argument("--slide-count", "-c", type=int, help="Number of slides")
     create_parser.add_argument("--template", "-t", help="Slide template")
     create_parser.add_argument("--ratio", "-r", choices=["16:9", "4:3"], help="Slide ratio")
-    create_parser.add_argument("--export-format", "-f", help="Export format (slide: pptx/image, doc: docx/image, smart_draw: drawio/excalidraw)")
+    create_parser.add_argument("--export-format", "-f", help="Export format (slide: pptx/image/thumbnail, doc: docx/image/thumbnail, smart_draw: drawio/excalidraw)")
     create_parser.add_argument("--file", action="append", dest="files",
                                help="Attachment file path (legacy base64, can be repeated)")
     create_parser.add_argument("--file-token", action="append", dest="file_tokens",
@@ -705,28 +844,57 @@ Examples:
     poll_parser = subparsers.add_parser("poll", help="Poll task status until completion and auto-download")
     add_common_args(poll_parser)
     poll_parser.add_argument("--task-id", required=True, help="Task ID to poll")
-    poll_parser.add_argument("--output", help="Output directory for auto-download (default: current directory)")
-    poll_parser.add_argument("--media", action="store_true", help="Output MEDIA: line for IM file delivery")
+    poll_parser.add_argument("--output", help="Output directory for auto-download (omit to skip download)")
 
     # ---- download command ----
     download_parser = subparsers.add_parser("download", help="Download generated file")
     add_common_args(download_parser)
     download_parser.add_argument("--task-id", required=True, help="Task ID")
     download_parser.add_argument("--output", required=True, help="Output directory")
-    download_parser.add_argument("--media", action="store_true", help="Output MEDIA: line for IM file delivery")
+
+    # ---- thumbnail command ----
+    thumbnail_parser = subparsers.add_parser("thumbnail", help="Download thumbnail image only")
+    add_common_args(thumbnail_parser)
+    thumbnail_parser.add_argument("--task-id", required=True, help="Task ID")
+    thumbnail_parser.add_argument("--output", required=True, help="Output directory")
+
+
+    # ---- send-message command ----
+    send_msg_parser = subparsers.add_parser("send-message",
+        help="Send a message to an existing task (multi-turn conversation)")
+    add_common_args(send_msg_parser)
+    send_msg_parser.add_argument("--task-id", required=True, help="Task ID")
+    send_msg_parser.add_argument("--message", "-m", required=True, help="Message content")
+    send_msg_parser.add_argument("--file", action="append", dest="files",
+                                  help="File path to upload and attach (can be repeated)")
+    send_msg_parser.add_argument("--file-token", action="append", dest="file_tokens",
+                                  help="File token from upload (can be repeated)")
+
+    # ---- get-messages command ----
+    get_msgs_parser = subparsers.add_parser("get-messages",
+        help="Get messages for a task (supports polling and pagination)")
+    add_common_args(get_msgs_parser)
+    get_msgs_parser.add_argument("--task-id", required=True, help="Task ID")
+    get_msgs_parser.add_argument("--limit", type=int, default=10,
+                                  help="Number of messages to return (default: 10, max: 100)")
+    get_msgs_parser.add_argument("--cursor", help="Pagination cursor")
+    get_msgs_parser.add_argument("--wait", action="store_true",
+                                  help="Block and poll until a new assistant reply is completed")
+    get_msgs_parser.add_argument("--since-id", type=int, default=0,
+                                  help="Wait for assistant reply with id greater than this (used with --wait)")
 
     # ---- run command ----
-    run_parser = subparsers.add_parser("run", help="Run full workflow: create -> poll -> download")
+    run_parser = subparsers.add_parser("run", help="Full workflow: create -> poll -> download")
     add_common_args(run_parser)
     run_parser.add_argument("--operation", "-o", required=True,
-                           choices=["chat", "slide", "doc", "storybook", "data_analysis", "website", "smart_draw"],
+                           choices=["slide", "doc", "smart_draw", "storybook", "data_analysis", "website", "finance", "deep_research", "ai_designer"],
                            help="Operation type")
     run_parser.add_argument("--prompt", "-p", required=True, help="Content prompt")
     run_parser.add_argument("--language", "-l", help="Language (zh-CN, en-US)")
     run_parser.add_argument("--slide-count", "-c", type=int, help="Number of slides")
     run_parser.add_argument("--template", "-t", help="Slide template")
     run_parser.add_argument("--ratio", "-r", choices=["16:9", "4:3"], help="Slide ratio")
-    run_parser.add_argument("--export-format", "-f", help="Export format (slide: pptx/image, doc: docx/image, smart_draw: drawio/excalidraw)")
+    run_parser.add_argument("--export-format", "-f", help="Export format (slide: pptx/image/thumbnail, doc: docx/image/thumbnail, smart_draw: drawio/excalidraw)")
     run_parser.add_argument("--file", action="append", dest="files",
                            help="Attachment file path (legacy base64)")
     run_parser.add_argument("--file-token", action="append", dest="file_tokens",
@@ -756,7 +924,7 @@ Examples:
         parser.print_help()
         sys.exit(1)
 
-    # Handle config command separately (doesn't need API key)
+    # Handle config command (no API key needed)
     if args.command == "config":
         if not args.config_action:
             config_parser.print_help()
@@ -807,7 +975,7 @@ Examples:
                 log_error(f"{args.key} not found in config")
             sys.exit(0)
 
-    # For other commands, resolve API key
+    # Resolve API key for all other commands
     api_key = get_api_key(getattr(args, 'api_key', None))
     if not api_key:
         log_error("API Key not found. Provide one via:")
@@ -861,23 +1029,96 @@ Examples:
             files=args.files,
             file_tokens=args.file_tokens,
             extra_headers=extra_headers,
-            style=args.style,
+            style=args.style
         )
         sys.exit(0 if task_id else 1)
 
     elif args.command == "poll":
-        output_dir = getattr(args, 'output', None) or "."
-        media = getattr(args, 'media', False)
-        task = poll_task(api_key, args.task_id, extra_headers=extra_headers, output_dir=output_dir, media=media)
+        output_dir = getattr(args, 'output', None)
+        task = poll_task(api_key, args.task_id, extra_headers=extra_headers, output_dir=output_dir)
         if task and task.get("status") == "completed":
             sys.exit(0)
         else:
             sys.exit(1)
 
     elif args.command == "download":
-        media = getattr(args, 'media', False)
-        success = download_file(api_key, args.task_id, args.output, extra_headers=extra_headers, media=media)
+        success = download_file(api_key, args.task_id, args.output, extra_headers=extra_headers)
         sys.exit(0 if success else 1)
+
+    elif args.command == "thumbnail":
+        success = download_thumbnail(api_key, args.task_id, args.output, extra_headers=extra_headers)
+        sys.exit(0 if success else 1)
+
+    elif args.command == "send-message":
+        # Upload files if provided and build file references
+        files_payload = []
+        if args.file_tokens:
+            for ft in args.file_tokens:
+                files_payload.append({"file_token": ft})
+        if args.files:
+            for file_path in args.files:
+                log_info(f"Uploading file: {file_path}")
+                token = upload_file(api_key, file_path, extra_headers=extra_headers)
+                if token:
+                    files_payload.append({"file_token": token})
+                else:
+                    log_error(f"File upload failed, skipping: {file_path}")
+
+        result = send_message(
+            api_key=api_key,
+            task_id=args.task_id,
+            content=args.message,
+            files=files_payload if files_payload else None,
+            extra_headers=extra_headers,
+        )
+        sys.exit(0 if result else 1)
+
+    elif args.command == "get-messages":
+        if args.wait:
+            result = poll_messages(
+                api_key=api_key,
+                task_id=args.task_id,
+                since_message_id=args.since_id,
+                limit=args.limit,
+                extra_headers=extra_headers,
+            )
+            sys.exit(0 if result else 1)
+        else:
+            result = get_messages(
+                api_key=api_key,
+                task_id=args.task_id,
+                limit=args.limit,
+                cursor=args.cursor,
+                extra_headers=extra_headers,
+            )
+            if result:
+                messages = result.get("messages", [])
+                task_snapshot = result.get("task_snapshot", {})
+                has_more = result.get("has_more", False)
+
+                print(f"\n{'=' * 60}")
+                print(f"Messages ({len(messages)}):")
+                print(f"{'=' * 60}")
+                for msg in messages:
+                    role = msg.get("role", "unknown")
+                    content = msg.get("content", "")
+                    msg_id = msg.get("id", "?")
+                    status = msg.get("status", "?")
+                    print(f"  [{role}] (id={msg_id}, status={status}): {content[:200]}")
+
+                if task_snapshot:
+                    print(f"\nTask Snapshot:")
+                    print(f"  status={task_snapshot.get('status')}")
+                    print(f"  content_version={task_snapshot.get('content_version')}")
+                    print(f"  can_export={task_snapshot.get('can_export')}")
+
+                if has_more:
+                    next_cursor = result.get("cursor", "")
+                    print(f"\nMore messages available. Use --cursor {next_cursor}")
+
+                sys.exit(0)
+            else:
+                sys.exit(1)
 
     elif args.command == "run":
         success = run_full_workflow(
@@ -893,7 +1134,7 @@ Examples:
             export_format=args.export_format,
             files=args.files,
             file_tokens=args.file_tokens,
-            style=args.style,
+            style=args.style
         )
         sys.exit(0 if success else 1)
 
