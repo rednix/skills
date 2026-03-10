@@ -1,11 +1,17 @@
 {
   "owner": "rgstephens",
   "slug": "fargo-skill",
-  "displayName": "Fargorate",
+  "displayName": "FargoRate",
   "latest": {
-    "version": "0.2.0",
-    "publishedAt": 1772832095152,
-    "commit": "https://github.com/openclaw/skills/commit/701ff662e6edb4a45feda3b54f5a604be5bc9cc8"
+    "version": "0.3.1",
+    "publishedAt": 1773177906556,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.2.0",
+      "publishedAt": 1772832095152,
+      "commit": "https://github.com/openclaw/skills/commit/701ff662e6edb4a45feda3b54f5a604be5bc9cc8"
+    }
+  ]
 }

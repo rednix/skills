@@ -1,8 +1,22 @@
 ---
 name: fargorate
-description: Look up pool player ratings and handicap data from FargoRate. Use when the user asks about a pool player's rating, FargoRate ID, match odds, race-to recommendations, handicaps, top-ranked pool players, or rating changes over time.
-metadata: {"nanobot":{"emoji":"🎱","requires":{"bins":["fargo"]},"install":[{"id":"curl","kind":"script","label":"Install fargo CLI","url":"https://raw.githubusercontent.com/rgstephens/fargo-skill/main/install.sh"}]}}
+description: Look up pool player ratings and handicap data from FargoRate. Use when the user asks about a pool player's rating, FargoRate ID, match odds, race-to recommendations, handicaps, top-ranked pool players, or rating changes over time. A local db can be enabled to track rating changes across runs. Contact fields in the db are local-only and never sent to an API.
+version: 0.3.1
+metadata:
+  openclaw:
+    emoji: "🎱"
+    homepage: https://github.com/rgstephens/fargo-skill
+    requires:
+      bins:
+        - fargo
+    install:
+      - id: curl
+        kind: script
+        label: Install fargo CLI
+        url: https://raw.githubusercontent.com/rgstephens/fargo-skill/main/install.sh
 ---
+
+<!-- Version: 0.2.3 -->
 
 # FargoRate
 
@@ -13,12 +27,6 @@ Look up pool player ratings, match odds, and handicap data from [FargoRate](http
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rgstephens/fargo-skill/main/install.sh | bash
-```
-
-Pin a specific version:
-
-```bash
-VERSION=v1.2.3 bash <(curl -fsSL https://raw.githubusercontent.com/rgstephens/fargo-skill/main/install.sh)
 ```
 
 By default the binary is installed to `/usr/local/bin/fargo`. Set `INSTALL_DIR` to override.

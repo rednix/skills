@@ -52,8 +52,34 @@ URL="https://github.com/${REPO}/releases/download/${VERSION}/${FILENAME}"
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
 
+CHECKSUMS_URL="https://github.com/${REPO}/releases/download/${VERSION}/checksums.txt"
+
 echo "Downloading ${URL}" >&2
 curl -fsSL "$URL" -o "${TMPDIR}/${FILENAME}"
+curl -fsSL "$CHECKSUMS_URL" -o "${TMPDIR}/checksums.txt"
+
+# Verify SHA256 checksum
+echo "Verifying checksum..." >&2
+EXPECTED=$(grep " ${FILENAME}$" "${TMPDIR}/checksums.txt" | awk '{print $1}')
+if [[ -z "$EXPECTED" ]]; then
+  echo "Checksum entry for ${FILENAME} not found in checksums.txt" >&2
+  exit 1
+fi
+if command -v sha256sum &>/dev/null; then
+  ACTUAL=$(sha256sum "${TMPDIR}/${FILENAME}" | awk '{print $1}')
+elif command -v shasum &>/dev/null; then
+  ACTUAL=$(shasum -a 256 "${TMPDIR}/${FILENAME}" | awk '{print $1}')
+else
+  echo "No sha256sum or shasum found; skipping checksum verification." >&2
+  ACTUAL="$EXPECTED"
+fi
+if [[ "$ACTUAL" != "$EXPECTED" ]]; then
+  echo "Checksum mismatch for ${FILENAME}!" >&2
+  echo "  expected: ${EXPECTED}" >&2
+  echo "  actual:   ${ACTUAL}" >&2
+  exit 1
+fi
+echo "Checksum OK" >&2
 
 if [[ "$EXT" == "zip" ]]; then
   unzip -q "${TMPDIR}/${FILENAME}" -d "$TMPDIR"
