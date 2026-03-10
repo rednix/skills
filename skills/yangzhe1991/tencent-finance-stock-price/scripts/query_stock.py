@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
 # dependencies = []
@@ -10,13 +12,24 @@ Example: uv run query_stock.py sh000001 hkHSI usAAPL
 """
 
 import sys
+import io
+
+# 强制 stdout 和 stderr 使用 UTF-8 编码，防止在 Cron 的隔离环境（无 LANG 变量）下报错
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
+if sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', line_buffering=True)
+
 import urllib.request
+import urllib.parse
 import re
 
 # Code mapping for common indices and stocks
 CODE_MAP = {
     # A股指数
     '上证指数': 'sh000001',
+    '深证成指': 'sz399001',
+    '深证': 'sz399001',
     '上证': 'sh000001',
     '科创50': 'sh000688',
     '创业板指': 'sz399006',
@@ -27,6 +40,7 @@ CODE_MAP = {
     '恒生科技': 'hkHSTECH',
     # 美股指数
     '标普500': 'usINX',
+    '道琼斯': 'usDJI',
     '标普': 'usINX',
     '纳指100': 'usNDX',
     '纳斯达克': 'usIXIC',
@@ -56,7 +70,7 @@ def query_stocks(codes):
     query = ','.join(resolved_codes)
     
     # Fetch data
-    url = f"http://qt.gtimg.cn/q={query}"
+    url = f"http://qt.gtimg.cn/q={urllib.parse.quote(query)}"
     try:
         with urllib.request.urlopen(url, timeout=10) as response:
             raw_data = response.read()
