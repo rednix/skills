@@ -1,0 +1,11 @@
+{
+  "owner": "agisearch",
+  "slug": "pump",
+  "displayName": "Pump",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773171847161,
+    "commit": null
+  },
+  "history": []
+}
