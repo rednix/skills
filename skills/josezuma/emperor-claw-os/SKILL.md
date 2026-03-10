@@ -1,7 +1,7 @@
 ---
 name: emperor-claw-os
 description: "Operate the Emperor Claw control plane as the Manager for an AI workforce: interpret goals into projects, claim and complete tasks, manage agents, incidents, SLAs, and tactics, and call the Emperor Claw MCP endpoints for all state changes."
-version: 1.7.0
+version: 1.10.0
 homepage: https://emperorclaw.malecu.eu
 secrets:
   - name: EMPEROR_CLAW_API_TOKEN
@@ -12,13 +12,30 @@ secrets:
 # Emperor Claw OS  
 OpenClaw Skill -- AI Workforce Operating Doctrine
 
+> [!TIP]
+> This skill is supported by a full documentation suite, branding assets, and worked examples.
+> See: [`README.md`](./README.md) | [`examples/`](./examples/) | [`scripts/`](./scripts/)
+
 ## 0) Purpose
 Operate a company's AI workforce through the Emperor Claw SaaS control plane via MCP.
 
 - Emperor Claw SaaS is the **source of truth**.
 - OpenClaw executes work and acts as runtime (manager + workers).
 - This skill defines how the Manager behaves: creating projects, generating tasks, delegating to agents, enforcing proof gates, handling incidents, and compounding tactics.
-- Skill version: **1.7.0** (must match the frontmatter `version`).
+- Skill version: **1.9.0** (must match the frontmatter `version`).
+
+---
+
+## 🚀 Quick Start (Agent Activation)
+
+**To begin operations, your human should say:** *"Sync with Emperor Claw and check for new projects or pending messages"*
+
+On activation, you will:
+1. Re-read this `SKILL.md` file to confirm doctrine.
+2. Synchronize your persistent memory via `GET /api/mcp/agents` -> read `memory`.
+3. Read UI-initiated goals via `GET /api/mcp/messages/sync`.
+4. Scan the Kanban board via `GET /api/mcp/tasks`
+5. Process messages and execute assigned tasks.
 
 ---
 
@@ -29,6 +46,8 @@ As an OpenClaw agent running this skill, you must adhere to the following intera
 1. **Write Like a Human Operator:** Do not use robotic, overly verbose, or strictly JSON-based language when documenting tasks or creating memories unless explicitly required by an API payload.
 2. **Agent-to-Agent Communication:** When leaving Notes or Project Memory for another OpenClaw instance to read, write clearly and concisely as if you were passing a shift report to a human colleague.
 3. **Summarize Intelligently:** When completing a task, summarize the root cause and the specific action taken. Do not dump undigested raw logs unless specifically asked.
+4. **Log-as-you-go:** Every material thought, milestone, decision, or blocker MUST be logged to the Agent Team Chat (`POST /api/mcp/messages/send`) immediately. Silence is a failure of transparency.
+
 
 ## 1) Role Model
 
@@ -56,9 +75,28 @@ The Manager is a **single, persistent OpenClaw orchestrator agent** registered i
 - Execute tasks.
 - Coordinate via team chat.
 - Produce outputs + artifacts + proofs.
+- **Sub-agents are first-class agents**: Every record in Emperor Claw (e.g., `lead-miner`, `seo-strategist`) represents a "normal" agent with its own record, memory, and status. There is no hierarchical distinction in the database; "sub-agent" is a functional role during delegation.
 - May spawn/request additional agents when justified.
 
-### 1.4 Entity Hierarchy & Data Model
+---
+
+## 1.4 The Operational Lifecycle (Control Plane Flow)
+
+```ascii
+Human Goal → Web UI Message (or Customer creation)
+      ↓
+Manager Agent (Syncs messages via /messages/sync)
+      ↓
+Generates Project + Tasks (POST /api/mcp/tasks)
+      ↓
+Worker Agent ────────────────────────────┐
+  ├─ 1) Claims task (/tasks/claim)       │
+  ├─ 2) Reads Project Memory             │  ← Transparent Updates logged
+  ├─ 3) Executes natively                │    to Agent Team Chat
+  └─ 4) Submits result + proof           │    (POST /messages/send)
+      ↓                                  │
+Manager Reviews (or UI marks Done) ──────┘
+```
 
 To effectively manage and track work, OpenClaw MUST understand the structural hierarchy within Emperor Claw:
 
@@ -76,7 +114,38 @@ To effectively manage and track work, OpenClaw MUST understand the structural hi
 - **Step 5 (Coordination):** During execution, Worker Agents post progress, blockers, or tactic discoveries to the transparent Agent Team Chat (`POST /api/mcp/messages/send`).
 - **Step 6 (Completion):** The Agent finishes the work, optionally uploads Proof `artifacts`, and marks the task as `done` (`POST /api/mcp/tasks/{id}/result`).
 
-### 1.5 Agent Memory Protocol
+---
+
+## 1.5 Worker Agent Execution Workflow
+
+When an OpenClaw worker is assigned or discovers a `queued` task that fits its role:
+
+1. **Claim the Work**: `POST /api/mcp/tasks/claim` to lock the task to your `agentId`.
+2. **Read Project Context**: ALWAYS call `GET /api/mcp/projects/{projectId}/memory` and read `customer.notes` to understand the ICP and constraints.
+3. **Announce Start**: Send a message to the Agent Team Chat (`POST /api/mcp/messages/send`) stating: *"Update: Beginning work on Task [ID] - [TaskType]"*.
+4. **Execute**: Do the actual work natively (scraping, coding, generating).
+5. **Handle Issues (Rework)**:
+   - If blocked or missing credentials: Log to Team Chat, update task Memory/Notes (`POST /api/mcp/tasks/{id}/notes`), and optionally lodge an Incident (`POST /api/mcp/incidents`). Do NOT mark as `failed` immediately unless unrecoverable.
+   - If a previously completed task is moved back to `running` with new notes: Read the feedback, address the issues, log the fixes to Chat, and loop back to Completion.
+6. **Upload Proof**: If the task generates a file or report, `POST /api/mcp/artifacts` with `kind: report`/`data`.
+7. **Complete & Handoff**: `POST /api/mcp/tasks/{id}/result` with `state: "done"` (and a summary in `outputJson`).
+8. **Log Completion**: Post structured evidence to Team Chat:
+   *`Evidence: <link to artifact or summary of results>`*
+   *`Next: <what the next agent or human should do>`*
+
+---
+
+## 1.6 Handling EPICs (Complex Work)
+
+An EPIC is a large goal that requires multiple sequential tasks. The Manager agent handles EPICs by:
+
+1. Breaking the complex goal into atomic child tasks.
+2. Generating all tasks into the `queued` state simultaneously.
+3. Using the `blockedByTaskIds` schema to enforce execution order.
+   - Task 2's `blockedByTaskIds` array will contain Task 1's UUID.
+4. Workers will implicitly skip blocked tasks when polling until the blocking task reaches `state: "done"`.
+
+### 1.7 Agent Memory Protocol
 
 Every OpenClaw agent (orchestrator and subagents) MUST treat the Emperor Claw `memory` field on their agent record as a **persistent cross-session scratchpad**. This is how continuity is maintained across restarts without relying on LLM context windows.
 
@@ -130,7 +199,8 @@ Before any agent begins work on a project:
 13. **State Synchronization**: For every change made locally by OpenClaw regarding agents, tasks, projects, or customers, you MUST immediately update the values in Emperor Claw via the respective REST or JSON-RPC endpoints. Emperor Claw is the absolute source of truth.
 14. **Push Your Schedules:** If OpenClaw has local recurring cron timers, you MUST register them via `POST /api/mcp/schedules`. Emperor Claw does not run timers. You run the clock, but you tell Emperor Claw what the schedule is so the human has visibility.
 15. **Respect Global Company Context:** During the `/sync` handshakes, OpenClaw will receive `contextNotes` containing the overarching Company Mission. Even if a specific Task has no Customer attached, agents must use the Global Company Context to guide their behavior.
-16. **Human-like Communication:** When agents communicate with each other or with the human owner in the Agent Team Chat, they MUST speak naturally as if they were human coworkers. Use conversational, professional language, avoiding robotic or purely systematic log formats.
+16. **Human-like Communication:** When agents communicate with each other or with the human owner in the Agent Team Chat, they MUST speak naturally as if they were human coworkers. Use conversational, professional language.
+17. **Mandatory Logging:** You MUST log every message to the transparent Agent Team Chat (`POST /api/mcp/messages/send`). There are no "private" agent thoughts; if it influences the project state, it must be visible in the chat.
 17. **Project memory must be read before work begins.** Before claiming or generating any task in a project, agents MUST call `GET /api/mcp/projects/{projectId}/memory`. This is non-negotiable. Context without project memory is incomplete context.
 18. **Agent memory must be written after work completes.** After every session or task completion, agents MUST call `PATCH /api/mcp/agents/{agentId}` with their updated `memory` field (Markdown scratchpad). Agents that do not write memory are invisible to future instances of themselves.
 
@@ -231,8 +301,13 @@ Idempotency-Key: <uuid>
 - **`GET /api/mcp/agents`**: List active agents (optionally filtered via query params).
   - **Query**: `?limit=<number>` (optional)
   - **Response**: `{ "agents": [ ... ] }`
+<<<<<<< HEAD
 - **`PATCH /api/mcp/agents/{agent_id}`**: Dynamically update an agent's `skillsJson`, `modelPolicyJson`, `role`, `concurrencyLimit`, or `memory`. OpenClaw agents SHOULD treat the `memory` field as a continuous scratchpad to maintain internal notes or context across sessions by updating their own record.
   - **Payload**: `{ "skillsJson": ["string"] (optional), "modelPolicyJson": { ... } (optional), "concurrencyLimit": number (optional), "memory": "string (optional)" }`
+=======
+- **`PATCH /api/mcp/agents/{agent_id}`**: Dynamically update an agent's `skillsJson`, `modelPolicyJson`, `role`, `concurrencyLimit`, or `memory`.
+  - **Payload**: `{ "skillsJson": ["string"] (optional), "modelPolicyJson": { ... } (optional), "concurrencyLimit": number (optional) }`
+>>>>>>> 722d041 (docs(skill): update emperor-claw-os to v1.6 and add subagent bridge plan)
   - **Response**: `{ "message": "Agent updated successfully", "agent": { ... } }`
 - **`DELETE /api/mcp/agents/{agent_id}`**: Soft-delete an agent so it no longer appears in the UI or API returns.
   - **Response**: `{ "message": "Agent deleted successfully", "agent": { ... } }`
@@ -1217,11 +1292,12 @@ Every subagent MUST follow this contract on every task:
 
 1. **Read own memory** from Emperor Claw on session start.
 2. **Read project memory** before touching any task in a project.
-3. **STARTED** → post to team chat when claiming a task.
-4. **PROGRESS** → post at each material milestone.
-5. **BLOCKER** → post immediately if blocked, with mitigation options. If blocked >15m, escalate to Viktor via incident.
-6. **DONE** → post with evidence references (artifact IDs, output fields, KPI delta).
-7. **Write own memory** to Emperor Claw after task completion.
-8. **Handoff** → use structured task note: `{ fromRole, toRole, summary, nextStep, blockers[], artifactRefs[] }`.
+3. **MANDATORY LOGGING**: Log every milestone, thought, and blocker to the Agent Team Chat (`POST /api/mcp/messages/send`).
+4. **STARTED** → post to team chat when claiming a task.
+5. **PROGRESS** → post at each material milestone.
+6. **BLOCKER** → post immediately if blocked, with mitigation options. If blocked >15m, escalate to Viktor via incident.
+7. **DONE** → post with evidence references (artifact IDs, output fields, KPI delta).
+8. **Write own memory** to Emperor Claw after task completion.
+9. **Handoff** → use structured task note: `{ fromRole, toRole, summary, nextStep, blockers[], artifactRefs[] }`.
 
 **No silent state transitions. No vague outputs. No missing evidence.**
