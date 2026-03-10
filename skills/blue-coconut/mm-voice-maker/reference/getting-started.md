@@ -8,7 +8,7 @@ Quick start guide for setting up and testing MiniMax Voice Maker.
 
 ```bash
 # Navigate to project directory
-cd mmVoiceMaker
+cd mmVoice_Maker
 
 # Create virtual environment (optional but recommended)
 python -m venv venv

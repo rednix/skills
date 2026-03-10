@@ -3,7 +3,7 @@
 Environment Check Script for MiniMax Voice Maker
 
 This script verifies all required dependencies and configurations
-before using the mmVoiceMaker skill.
+before using the mmVoice_Maker skill.
 
 Usage:
     python check_environment.py
@@ -134,12 +134,12 @@ def check_api_key() -> Tuple[bool, Optional[str]]:
 def check_workspace() -> bool:
     """Check if we're in the correct workspace"""
     current_dir = os.getcwd()
-    if "mmVoiceMaker" in current_dir:
+    if "mmVoice_Maker" in current_dir:
         print_success(f"Working directory: {current_dir}")
         return True
     else:
         print_warning(f"Current directory: {current_dir}")
-        print_info("Consider navigating to mmVoiceMaker directory")
+        print_info("Consider navigating to mmVoice_Maker directory")
         return True  # Not a critical error
 
 
@@ -295,14 +295,14 @@ def main():
     
     if all(critical_passed):
         print_success(f"{Colors.BOLD}All critical checks passed! ✓{Colors.END}")
-        print_info("\nYou're ready to use mmVoiceMaker!")
+        print_info("\nYou're ready to use mmVoice_Maker!")
         print_info("\nQuick start:")
         print_info("  python -c \"from scripts import quick_tts; quick_tts('Hello', output_path='test.mp3')\"")
         return 0
     else:
         failed = [check for check in critical_checks if not results.get(check, False)]
         print_error(f"{Colors.BOLD}Some checks failed: {', '.join(failed)}{Colors.END}")
-        print_info("\nPlease fix the issues above before using mmVoiceMaker")
+        print_info("\nPlease fix the issues above before using mmVoice_Maker")
         return 1
 
 
