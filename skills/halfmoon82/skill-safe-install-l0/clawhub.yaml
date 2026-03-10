@@ -1,6 +1,6 @@
 name: skill-safe-install
-description: L0-grade secure skill installation workflow (duplicate check, inspect, sandbox, formal install, whitelist with explicit authorization).
-version: 2.1.0
+description: L0-grade secure skill installation workflow (duplicate check, inspect, sandbox, formal install, whitelist with explicit authorization). Adds first-party trusted skill whitelist to exempt halfmoon82/deepeye skills from risk scan.
+version: 2.2.0
 author: deepeye
 tags:
   - security
