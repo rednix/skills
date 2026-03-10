@@ -1,14 +1,361 @@
-# PRISM_GEN_DEMO 使用教程
+# PRISM-Gen Demo Tutorial
+
+## 📚 Table of Contents
+1. [Quick Start](#quick-start)
+2. [Data Preparation](#data-preparation)
+3. [Basic Queries](#basic-queries)
+4. [Advanced Analysis](#advanced-analysis)
+5. [Visualization](#visualization)
+6. [Paper Chart Generation](#paper-chart-generation)
+7. [Batch Processing](#batch-processing)
+8. [Troubleshooting](#troubleshooting)
+
+---
+
+## 1. Quick Start
+
+### 1.1 Installation
+```bash
+# Clone or download the project
+git clone <repository-url>
+cd prism-gen-demo
+
+# Run installation script
+bash setup.sh
+```
+
+### 1.2 Basic Testing
+```bash
+# Test environment
+python3 -c "import pandas; print('Pandas version:', pandas.__version__)"
+
+# Test scripts
+bash scripts/test_visualization.sh
+```
+
+### 1.3 Adding Data
+```bash
+# Create data directory (if it doesn't exist)
+mkdir -p data
+
+# Copy PRISM result CSV files
+cp /path/to/your/prism/results/*.csv data/
+```
+
+---
+
+## 2. Data Preparation
+
+### 2.1 Supported CSV Format
+PRISM-GEN_DEMO supports standard PRISM output CSV format, key columns include:
+
+| Column Name | Description | Type | Importance |
+|-------------|-------------|------|------------|
+| `smiles` | Molecular SMILES representation | String | Required |
+| `pIC50` | Activity prediction value | Numeric | Important |
+| `QED` | Drug-likeness | Numeric | Important |
+| `LogP` | Lipophilicity | Numeric | Important |
+| `MW` | Molecular weight | Numeric | Important |
+| `hERG_Prob` | hERG inhibition risk | Numeric | Important |
+| `SA` | Synthetic accessibility | Numeric | Optional |
+| `TPSA` | Topological polar surface area | Numeric | Optional |
+
+### 2.2 Data Quality Check
+```bash
+# View data source information
+bash scripts/demo_source_info.sh step4a_admet_final.csv
+
+# Check data quality
+bash scripts/test_full_functionality.sh
+```
+
+### 2.3 Data Preprocessing Recommendations
+1. **Unify column names**: Ensure consistent column names across all CSV files
+2. **Handle missing values**: Scripts handle automatically, but preprocessing recommended
+3. **Format validation**: Ensure numeric columns are of correct type
+
+---
+
+## 3. Basic Queries
+
+### 3.1 View Data Sources
+```bash
+# List all available data sources
+bash scripts/demo_list_sources.sh
+
+# View detailed information of a single data source
+bash scripts/demo_source_info.sh step4a_admet_final.csv
+```
+
+### 3.2 Data Preview
+```bash
+# Preview first 10 rows of data
+bash scripts/demo_preview.sh step4a_admet_final.csv 10
+
+# Simplified preview (no pandas dependency)
+bash scripts/demo_simple_preview.sh step4a_admet_final.csv 5
+```
+
+### 3.3 Conditional Filtering
+```bash
+# Filter molecules with pIC50 > 7.0
+bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0
+
+# Filter with multiple conditions (AND logic)
+bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0 QED '>' 0.5
+
+# Filter with range conditions
+bash scripts/demo_filter.sh step4a_admet_final.csv LogP '>=' 1.0 LogP '<=' 5.0
+```
+
+### 3.4 Top N Selection
+```bash
+# Get top 10 molecules by pIC50
+bash scripts/demo_top.sh step4a_admet_final.csv pIC50 10
+
+# Get bottom 5 molecules by hERG_Prob (least toxic)
+bash scripts/demo_top.sh step4a_admet_final.csv hERG_Prob 5 --ascending
+```
+
+---
+
+## 4. Advanced Analysis
+
+### 4.1 Statistical Analysis
+```bash
+# Generate statistical summary
+bash scripts/demo_source_info.sh step4a_admet_final.csv --stats
+
+# Calculate correlation matrix
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED --correlation-only
+```
+
+### 4.2 Distribution Analysis
+```bash
+# Generate distribution plot for pIC50
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50
+
+# Generate distribution with custom parameters
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
+  --bins 20 --title "Activity Distribution" --output "activity_dist.png"
+```
+
+### 4.3 Correlation Analysis
+```bash
+# Generate scatter plot with trend line
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED --trendline
+
+# Generate scatter plot with correlation statistics
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
+  --trendline --correlation --output "correlation_plot.png"
+```
+
+---
+
+## 5. Visualization
+
+### 5.1 Basic Charts
+```bash
+# Generate histogram
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50
+
+# Generate scatter plot
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED
+```
+
+### 5.2 Customized Charts
+```bash
+# Customize chart appearance
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
+  --title "Activity Distribution Analysis" \
+  --xlabel "pIC50" \
+  --ylabel "Frequency" \
+  --color "steelblue" \
+  --output "custom_histogram.png"
+
+# Multiple customization options
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
+  --title "Activity vs Drug-likeness" \
+  --xlabel "pIC50 (Activity)" \
+  --ylabel "QED (Drug-likeness)" \
+  --trendline \
+  --correlation \
+  --grid \
+  --output "scatter_with_stats.png"
+```
+
+### 5.3 Export Options
+```bash
+# Export to different formats
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.png"
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.pdf"
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.svg"
+
+# High-resolution export for publications
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
+  --output "publication_quality.png" --dpi 300 --figsize "8,6"
+```
+
+---
+
+## 6. Paper Chart Generation
+
+### 6.1 Publication-Quality Settings
+```bash
+# Generate publication-ready figure
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
+  --title "Distribution of Predicted Activity" \
+  --output "figure_1.png" \
+  --dpi 300 \
+  --figsize "10,8" \
+  --fontsize 14 \
+  --style "seaborn-whitegrid"
+
+# Generate correlation plot for paper
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
+  --title "Correlation between Activity and Drug-likeness" \
+  --output "figure_2.png" \
+  --dpi 300 \
+  --trendline \
+  --correlation \
+  --annotate-stats
+```
+
+### 6.2 Multi-Panel Figures
+```bash
+# Create subplot grid (example concept)
+# Note: This requires custom script development
+bash scripts/create_multi_panel.sh \
+  --data step4a_admet_final.csv \
+  --plots "distribution:pIC50,scatter:pIC50:QED,distribution:QED" \
+  --output "multi_panel_figure.png"
+```
+
+---
+
+## 7. Batch Processing
+
+### 7.1 Process Multiple Files
+```bash
+# Process all CSV files in data directory
+for file in data/*.csv; do
+  echo "Processing $file..."
+  bash scripts/demo_source_info.sh "$file"
+done
+
+# Batch filter with same condition
+for file in data/*.csv; do
+  bash scripts/demo_filter.sh "$file" pIC50 '>' 7.0
+done
+```
+
+### 7.2 Automated Workflows
+```bash
+# Example workflow script
+#!/bin/bash
+# workflow.sh - Automated analysis workflow
+
+echo "Step 1: List all data sources"
+bash scripts/demo_list_sources.sh
+
+echo "Step 2: Filter high-activity molecules"
+bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0
+
+echo "Step 3: Get top candidates"
+bash scripts/demo_top.sh filtered_results.csv pIC50 20
+
+echo "Step 4: Generate visualizations"
+bash scripts/demo_plot_distribution.sh filtered_results.csv pIC50
+bash scripts/demo_plot_scatter.sh filtered_results.csv pIC50 QED --trendline
+
+echo "Workflow completed!"
+```
+
+---
+
+## 8. Troubleshooting
+
+### 8.1 Common Issues
+
+#### Issue: Python dependencies not found
+**Solution:**
+```bash
+# Install required packages
+pip install pandas numpy matplotlib seaborn
+
+# Or use the setup script
+bash setup.sh
+```
+
+#### Issue: Script permission denied
+**Solution:**
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+```
+
+#### Issue: CSV file not found
+**Solution:**
+```bash
+# Check file exists
+ls -la data/
+
+# Use correct file path
+bash scripts/demo_list_sources.sh
+```
+
+#### Issue: Memory error with large files
+**Solution:**
+```bash
+# Use simplified preview for large files
+bash scripts/demo_simple_preview.sh large_file.csv 5
+
+# Filter before analysis
+bash scripts/demo_filter.sh large_file.csv pIC50 '>' 6.0 | head -1000 > filtered.csv
+```
+
+### 8.2 Debug Mode
+```bash
+# Run scripts with debug output
+bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0 --debug
+
+# Test individual components
+bash scripts/test_basic.sh
+bash scripts/test_visualization.sh
+bash scripts/test_full_functionality.sh
+```
+
+### 8.3 Performance Tips
+1. **Use simple preview for large files**: `demo_simple_preview.sh` doesn't load entire file
+2. **Filter first**: Apply filters before visualization to reduce data size
+3. **Use head/tail**: Limit output with `head -n 100` for testing
+4. **Cache results**: Save filtered results and reuse them
+
+### 8.4 Getting Help
+```bash
+# View script help
+bash scripts/demo_filter.sh --help
+
+# List all available scripts
+bash scripts/list_scripts_info.sh
+
+# Check environment
+bash scripts/_check_env_bash.sh
+```
+
+---
+
+# PRISM-Gen Demo 使用教程
 
 ## 📚 目录
-1. [快速开始](#快速开始)
-2. [数据准备](#数据准备)
-3. [基础查询](#基础查询)
-4. [高级分析](#高级分析)
-5. [可视化](#可视化)
-6. [论文图表生成](#论文图表生成)
-7. [批量处理](#批量处理)
-8. [故障排除](#故障排除)
+1. [快速开始](#快速开始-1)
+2. [数据准备](#数据准备-1)
+3. [基础查询](#基础查询-1)
+4. [高级分析](#高级分析-1)
+5. [可视化](#可视化-1)
+6. [论文图表生成](#论文图表生成-1)
+7. [批量处理](#批量处理-1)
+8. [故障排除](#故障排除-1)
 
 ---
 
@@ -98,416 +445,98 @@ bash scripts/demo_simple_preview.sh step4a_admet_final.csv 5
 
 ### 3.3 条件过滤
 ```bash
-# 简单条件过滤
+# 筛选pIC50 > 7.0的分子
 bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0
-bash scripts/demo_filter.sh step4a_admet_final.csv LogP '1.5-3.5' ''
-bash scripts/demo_filter.sh step4a_admet_final.csv smiles '~' 'CC(=O)'
 
-# 多条件过滤示例
-# 先筛选高活性
-bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0
-# 再从结果中筛选低风险
-bash scripts/demo_filter.sh filtered_result.csv hERG_Prob '<' 0.1
+# 多条件筛选（AND逻辑）
+bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0 QED '>' 0.5
+
+# 范围条件筛选
+bash scripts/demo_filter.sh step4a_admet_final.csv LogP '>=' 1.0 LogP '<=' 5.0
 ```
 
-### 3.4 Top N筛选
+### 3.4 Top N选择
 ```bash
-# 按pIC50排序取Top 10
+# 按pIC50获取前10个分子
 bash scripts/demo_top.sh step4a_admet_final.csv pIC50 10
 
-# 按QED排序取Top 5（升序）
-bash scripts/demo_top.sh step4a_admet_final.csv QED 5 asc
-
-# 从过滤结果中取Top
-bash scripts/demo_filter.sh step4a_admet_final.csv pIC50 '>' 7.0
-bash scripts/demo_top.sh filtered_result.csv QED 10
+# 按hERG_Prob获取后5个分子（毒性最低）
+bash scripts/demo_top.sh step4a_admet_final.csv hERG_Prob 5 --ascending
 ```
 
 ---
 
 ## 4. 高级分析
 
-### 4.1 分布分析
+### 4.1 统计分析
 ```bash
-# 基本分布图
+# 生成统计摘要
+bash scripts/demo_source_info.sh step4a_admet_final.csv --stats
+
+# 计算相关性矩阵
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED --correlation-only
+```
+
+### 4.2 分布分析
+```bash
+# 生成pIC50分布图
 bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50
 
-# 带统计信息的分布图
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --stats --kde
-
-# 自定义参数
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv LogP \
-  --bins 20 \
-  --title "LogP Distribution" \
-  --output "logp_distribution.png" \
-  --dpi 300
+# 使用自定义参数生成分布图
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
+  --bins 20 --title "活性分布" --output "activity_dist.png"
 ```
 
-### 4.2 相关性分析
+### 4.3 相关性分析
 ```bash
-# 基本散点图
-bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED
+# 生成带趋势线的散点图
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED --trendline
 
-# 带趋势线和相关性
+# 生成带相关性统计的散点图
 bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
-  --trendline --correlation
-
-# 分组分析
-bash scripts/demo_plot_scatter.sh step4a_admet_final.csv LogP pIC50 \
-  --hue Active_Set \
-  --title "LogP vs pIC50 by Activity"
-
-# 多维度分析
-bash scripts/demo_plot_scatter.sh step4a_admet_final.csv MW LogP \
-  --hue Active_Set \
-  --size QED \
-  --title "Multi-dimensional Analysis"
+  --trendline --correlation --output "correlation_plot.png"
 ```
-
-### 4.3 统计检验
-所有可视化脚本自动包含：
-- Pearson相关系数和p值
-- Spearman秩相关系数
-- 线性回归分析
-- 描述性统计
-- 异常值检测
 
 ---
 
 ## 5. 可视化
 
-### 5.1 图表类型
-| 图表类型 | 脚本 | 用途 |
-|----------|------|------|
-| 分布图 | `demo_plot_distribution.sh` | 单变量分布分析 |
-| 散点图 | `demo_plot_scatter.sh` | 双变量相关性分析 |
-| 组合图 | 自定义 | 多图表组合 |
-
-### 5.2 输出格式
+### 5.1 基础图表
 ```bash
-# PNG格式（默认）
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --format png
+# 生成直方图
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50
 
-# PDF格式（矢量图）
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --format pdf
-
-# SVG格式（矢量图）
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --format svg
+# 生成散点图
+bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED
 ```
 
-### 5.3 质量控制
+### 5.2 自定义图表
 ```bash
-# 高分辨率输出（论文质量）
+# 自定义图表外观
 bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
-  --dpi 300 \
-  --output "figure1_high_res.png"
+  --title "活性分布分析" \
+  --xlabel "pIC50" \
+  --ylabel "频率" \
+  --color "steelblue" \
+  --output "custom_histogram.png"
 
-# 添加网格和统计信息
+# 多个自定义选项
 bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
-  --grid --correlation --trendline
+  --title "活性 vs 药物相似性" \
+  --xlabel "pIC50 (活性)" \
+  --ylabel "QED (药物相似性)" \
+  --trendline \
+  --correlation \
+  --grid \
+  --output "scatter_with_stats.png"
 ```
 
----
-
-## 6. 论文图表生成
-
-### 6.1 标准图表模板
-
-#### 图1: 活性分布
+### 5.3 导出选项
 ```bash
-bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 \
-  --title "Distribution of Predicted Activity (pIC50)" \
-  --output "figure1_activity_distribution.png" \
-  --dpi 300 --format png --stats --kde
-```
+# 导出到不同格式
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.png"
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.pdf"
+bash scripts/demo_plot_distribution.sh step4a_admet_final.csv pIC50 --output "plot.svg"
 
-#### 图2: 活性-性质相关性
-```bash
-bash scripts/demo_plot_scatter.sh step4a_admet_final.csv pIC50 QED \
-  --title "Correlation between Activity and Drug-likeness" \
-  --output "figure2_activity_qed_correlation.png" \
-  --dpi 300 --format png --trendline --correlation --grid
-```
-
-#### 图3: 多指标分析
-```bash
-# 创建组合图的脚本示例
-python3 -c "
-import matplotlib.pyplot as plt
-import pandas as pd
-
-df = pd.read_csv('data/step4a_admet_final.csv')
-
-fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-
-# 子图1: pIC50分布
-axes[0,0].hist(df['pIC50'], bins=20, edgecolor='black')
-axes[0,0].set_xlabel('pIC50')
-axes[0,0].set_ylabel('Count')
-axes[0,0].set_title('A) Activity Distribution')
-
-# 子图2: QED分布
-axes[0,1].hist(df['QED'], bins=20, edgecolor='black', color='orange')
-axes[0,1].set_xlabel('QED')
-axes[0,1].set_ylabel('Count')
-axes[0,1].set_title('B) Drug-likeness Distribution')
-
-# 子图3: pIC50 vs QED
-axes[1,0].scatter(df['pIC50'], df['QED'], alpha=0.6)
-axes[1,0].set_xlabel('pIC50')
-axes[1,0].set_ylabel('QED')
-axes[1,0].set_title('C) Activity vs Drug-likeness')
-
-# 子图4: LogP分布
-axes[1,1].boxplot(df['LogP'].dropna())
-axes[1,1].set_ylabel('LogP')
-axes[1,1].set_title('D) Lipophilicity Distribution')
-
-plt.tight_layout()
-plt.savefig('figure3_multi_analysis.png', dpi=300, bbox_inches='tight')
-print('组合图已保存: figure3_multi_analysis.png')
-"
-```
-
-### 6.2 统计表格生成
-```bash
-# 生成描述性统计表
-python3 -c "
-import pandas as pd
-
-df = pd.read_csv('data/step4a_admet_final.csv')
-
-# 选择关键列
-key_columns = ['pIC50', 'QED', 'LogP', 'MW', 'hERG_Prob', 'SA', 'TPSA']
-available_cols = [col for col in key_columns if col in df.columns]
-
-if available_cols:
-    stats = df[available_cols].describe().round(3)
-    
-    # 保存为CSV
-    stats.to_csv('table1_descriptive_statistics.csv')
-    print('统计表已保存: table1_descriptive_statistics.csv')
-    
-    # 打印LaTeX格式
-    print('\\nLaTeX表格格式:')
-    print(stats.to_latex())
-else:
-    print('无关键列数据')
-"
-```
-
-### 6.3 图表说明模板
-```
-**Figure 1. Distribution of predicted activity values.**
-(A) Histogram showing the distribution of pIC50 values for all compounds (n=200). 
-(B) Box plot illustrating the range and quartiles of activity values. 
-The vertical dashed line indicates the threshold for high activity (pIC50 > 7.0).
-
-**Figure 2. Correlation between activity and drug-likeness.**
-Scatter plot showing the relationship between pIC50 and QED scores (Pearson r = -0.598, p < 0.001). 
-The red line represents the linear regression fit (R² = 0.358). 
-Compounds in the upper right quadrant represent the most promising candidates.
-
-**Table 1. Descriptive statistics of key molecular properties.**
-Summary statistics for the 200 compounds analyzed, including mean, standard deviation, 
-and range for each property. Values are presented as mean ± SD.
-```
-
----
-
-## 7. 批量处理
-
-### 7.1 批量筛选
-```bash
-#!/bin/bash
-# batch_filter.sh - 批量筛选脚本
-
-# 定义筛选条件
-CONDITIONS=(
-  "pIC50 '>' 7.0"
-  "QED '>' 0.6"
-  "LogP '1.5-3.5' ''"
-  "hERG_Prob '<' 0.1"
-)
-
-# 对每个条件执行筛选
-for condition in "${CONDITIONS[@]}"; do
-  echo "执行筛选: $condition"
-  bash scripts/demo_filter.sh step4a_admet_final.csv $condition
-done
-
-echo "批量筛选完成"
-```
-
-### 7.2 批量可视化
-```bash
-#!/bin/bash
-# batch_visualization.sh - 批量可视化脚本
-
-# 定义要分析的列
-COLUMNS=("pIC50" "QED" "LogP" "MW" "hERG_Prob")
-
-# 为每列生成分布图
-for column in "${COLUMNS[@]}"; do
-  echo "生成 $column 分布图..."
-  bash scripts/demo_plot_distribution.sh step4a_admet_final.csv "$column" \
-    --output "${column}_distribution.png" \
-    --dpi 150
-done
-
-# 生成相关性矩阵
-echo "生成相关性矩阵..."
-python3 -c "
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-df = pd.read_csv('data/step4a_admet_final.csv')
-numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-key_cols = [col for col in ['pIC50', 'QED', 'LogP', 'MW', 'hERG_Prob'] if col in numeric_cols]
-
-if len(key_cols) > 1:
-    corr_matrix = df[key_cols].corr()
-    
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', center=0, 
-                square=True, linewidths=0.5, cbar_kws={'shrink': 0.8})
-    plt.title('Correlation Matrix of Molecular Properties')
-    plt.tight_layout()
-    plt.savefig('correlation_matrix.png', dpi=300)
-    print('相关性矩阵已保存: correlation_matrix.png')
-"
-```
-
-### 7.3 结果汇总
-```bash
-#!/bin/bash
-# generate_report.sh - 生成分析报告
-
-echo "# PRISM结果分析报告" > report.md
-echo "## 生成时间: $(date)" >> report.md
-echo "" >> report.md
-
-# 数据概览
-echo "## 1. 数据概览" >> report.md
-bash scripts/demo_list_sources.sh | grep -A5 "可用数据源" >> report.md
-echo "" >> report.md
-
-# 关键统计
-echo "## 2. 关键统计" >> report.md
-python3 -c "
-import pandas as pd
-df = pd.read_csv('data/step4a_admet_final.csv')
-
-print('### 描述性统计')
-print('| 属性 | 平均值 | 标准差 | 最小值 | 最大值 |')
-print('|------|--------|--------|--------|--------|')
-
-for col in ['pIC50', 'QED', 'LogP', 'MW', 'hERG_Prob']:
-    if col in df.columns:
-        mean = df[col].mean()
-        std = df[col].std()
-        min_val = df[col].min()
-        max_val = df[col].max()
-        print(f'| {col} | {mean:.3f} | {std:.3f} | {min_val:.3f} | {max_val:.3f} |')
-" >> report.md
-
-echo "" >> report.md
-echo "报告已生成: report.md"
-```
-
----
-
-## 8. 故障排除
-
-### 8.1 常见问题
-
-#### 问题1: Python包未安装
-```
-错误: ModuleNotFoundError: No module named 'pandas'
-```
-**解决方案**:
-```bash
-# 安装缺少的包
-pip3 install pandas numpy matplotlib seaborn --user
-
-# 或运行环境检查
-bash scripts/_ensure_env.py
-```
-
-#### 问题2: 脚本无执行权限
-```
-错误: bash: scripts/demo_list_sources.sh: Permission denied
-```
-**解决方案**:
-```bash
-chmod +x scripts/*.sh
-chmod +x scripts/*.py
-```
-
-#### 问题3: 数据文件不存在
-```
-错误: 文件不存在: data/step4a_admet_final.csv
-```
-**解决方案**:
-```bash
-# 检查数据目录
-ls -la data/
-
-# 添加CSV文件
-cp /path/to/your/csv/files/*.csv data/
-```
-
-#### 问题4: 列名不匹配
-```
-错误: 列不存在: pIC50
-```
-**解决方案**:
-```bash
-# 查看可用列
-bash scripts/demo_source_info.sh your_file.csv
-
-# 或直接查看文件
-head -1 data/your_file.csv
-```
-
-### 8.2 性能优化
-
-#### 大文件处理
-```bash
-# 使用简化版预览
-bash scripts/demo_simple_preview.sh large_file.csv 10
-
-# 分批处理
-python3 -c "
-import pandas as pd
-
-# 分批读取大文件
-chunk_size = 10000
-for chunk in pd.read_csv('large_file.csv', chunksize=chunk_size):
-    # 处理每个批次
-    filtered = chunk[chunk['pIC50'] > 7.0]
-    # 保存或进一步处理
-"
-```
-
-#### 内存优化
-```bash
-# 指定数据类型减少内存使用
-python3 -c "
-import pandas as pd
-
-dtypes = {
-    'pIC50': 'float32',
-    'QED': 'float32',
-    'LogP': 'float32',
-    'MW': 'float32',
-    'hERG_Prob': 'float32'
-}
-
-df = pd.read_csv('data/step4a_admet_final.csv', dtype=dtypes)
-print(f'内存使用: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB')
-"
-```
-
-### 8.3 获取
+# 高分辨率导出用于发表
+bash scripts/demo

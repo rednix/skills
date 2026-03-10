@@ -5,6 +5,43 @@ All notable changes to the PRISM-Gen Demo skill will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-03-09
+### Security & Compliance
+- **ClawHub security scan fixes**: Addressed all issues identified in security scan report
+- **Documentation accuracy**: Corrected misleading claims about "11 real PRISM files" and "no network dependencies"
+- **Transparent network usage**: Clearly distinguishes between offline basic functions and network-required Python installation
+
+### Added
+- **Security verification tools**: 
+  - `SECURITY.md`: Comprehensive security statement document
+  - `scripts/verify_skill.sh`: Skill integrity verification with dry-run mode
+  - `scripts/list_scripts_info.sh`: Detailed script information listing
+  - `scripts/pre_package_check.sh`: Pre-upload integrity checker
+- **Enhanced installation safety**:
+  - Security warning banner in `setup.sh`
+  - User confirmation for Python package installation
+  - Option to skip Python installation for offline basic functions
+- **Improved documentation**:
+  - Accurate file listing (example + real data files)
+  - Clear network dependency explanations
+  - Complete security guidelines
+
+### Fixed
+- **Setup script improvements**: Added safety checks and user controls
+- **Documentation consistency**: Updated all SKILL.md files and READMEs
+- **Version consistency**: Unified version numbering across all files
+- **Script self-check issue**: Fixed verification script detecting its own patterns
+
+### Changed
+- **User experience**: More transparent installation process
+- **Security posture**: Proactive security verification before use
+- **Compliance**: Meets ClawHub security standards for skill packages
+
+### Compatibility
+- **Backward compatible**: All existing functionality remains unchanged
+- **Enhanced safety**: Added verification tools without breaking existing workflows
+- **User control**: Optional Python installation preserves offline functionality
+
 ## [1.0.1] - 2026-03-07
 ### Fixed
 - **Windows compatibility**: Removed all Zone.Identifier NTFS alternate data streams that caused upload failures on ClawHub
