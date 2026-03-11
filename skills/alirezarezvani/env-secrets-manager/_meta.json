@@ -1,0 +1,11 @@
+{
+  "owner": "alirezarezvani",
+  "slug": "env-secrets-manager",
+  "displayName": "Env Secrets Manager",
+  "latest": {
+    "version": "2.1.1",
+    "publishedAt": 1773139237742,
+    "commit": null
+  },
+  "history": []
+}
