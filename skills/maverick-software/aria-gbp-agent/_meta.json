@@ -1,0 +1,11 @@
+{
+  "owner": "maverick-software",
+  "slug": "aria-gbp-agent",
+  "displayName": "Aria — Google Business Profile Agent",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773091227175,
+    "commit": null
+  },
+  "history": []
+}
