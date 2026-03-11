@@ -78,9 +78,15 @@ python3 skills/codex-usage/scripts/codex_usage.py --delete-profile openai-codex:
 - Reports user-friendly reset formatting (`reset_in`, `reset_at` in host local timezone).
 - Supports retries/timeouts and debug metadata (attempt, elapsed_ms, status) for diagnosis.
 - Includes top-level `summary`, `formatted_profiles`, and `suggested_user_message` fields to simplify slash-command response formatting.
-- Preferred strict output block format:
+- Preferred strict output block format (newline-based, no `|` separators):
   - `Profile: %name%`
-  - `Usable: ✅/❌ | Limited: ✅/❌`
-  - `5h: %remaining left | Reset: dd/mm/yyyy, hh:mm | Time left: x Days, y Hours, z Minutes`
-  - `Week: %remaining left | Reset: dd/mm/yyyy, hh:mm | Time left: x Days, y Hours, z Minutes`
+  - `Usable: ✅/❌`
+  - `Limited: ✅/❌`
+  - `5h Left: %remaining left`
+  - `5h Reset: dd/mm/yyyy, hh:mm`
+  - `5h Time left: x Days, y Hours, z Minutes`
+  - `Week Left: %remaining left`
+  - `Week Reset: dd/mm/yyyy, hh:mm`
+  - `Week Time left: x Days, y Hours, z Minutes`
+  - Separate profile blocks with a blank line.
 - Never print full tokens.

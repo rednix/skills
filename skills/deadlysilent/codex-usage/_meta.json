@@ -3,9 +3,15 @@
   "slug": "codex-usage",
   "displayName": "Codex Usage",
   "latest": {
-    "version": "1.0.14",
-    "publishedAt": 1773170282922,
-    "commit": "https://github.com/openclaw/skills/commit/4a528cfdafc07d5f5be5ae6512f76d131bc06245"
+    "version": "1.0.15",
+    "publishedAt": 1773170408471,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.14",
+      "publishedAt": 1773170282922,
+      "commit": "https://github.com/openclaw/skills/commit/4a528cfdafc07d5f5be5ae6512f76d131bc06245"
+    }
+  ]
 }

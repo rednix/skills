@@ -394,9 +394,14 @@ def build_template_line(profile_report):
 
     return (
         f"Profile: {profile_report.get('profile')}\n"
-        f"  Usable: {format_bool_icon(usable)} | Limited: {format_bool_icon(limited)}\n"
-        f"  5h: {five_hour['remaining']} | Reset: {five_hour['reset_at']} | Time left: {five_hour['time_left']}\n"
-        f"  Week: {week['remaining']} | Reset: {week['reset_at']} | Time left: {week['time_left']}"
+        f"  Usable: {format_bool_icon(usable)}\n"
+        f"  Limited: {format_bool_icon(limited)}\n"
+        f"  5h Left: {five_hour['remaining']}\n"
+        f"  5h Reset: {five_hour['reset_at']}\n"
+        f"  5h Time left: {five_hour['time_left']}\n"
+        f"  Week Left: {week['remaining']}\n"
+        f"  Week Reset: {week['reset_at']}\n"
+        f"  Week Time left: {week['time_left']}"
     )
 
 
@@ -632,7 +637,7 @@ def main():
         "remote_endpoint_enabled": include_remote,
         "profiles": reports,
         "progress_message": "Running Codex usage checks now…",
-        "response_template": "Profile: %name% | Usable: ✅/❌ | Limited: ✅/❌ | 5h: %remaining left (Reset: dd/mm/yyyy, hh:mm | Time left: x Days, y Hours, z Minutes) | Week: %remaining left (Reset: dd/mm/yyyy, hh:mm | Time left: x Days, y Hours, z Minutes)",
+        "response_template": "Profile: %name%\nUsable: ✅/❌\nLimited: ✅/❌\n5h Left: %remaining left\n5h Reset: dd/mm/yyyy, hh:mm\n5h Time left: x Days, y Hours, z Minutes\nWeek Left: %remaining left\nWeek Reset: dd/mm/yyyy, hh:mm\nWeek Time left: x Days, y Hours, z Minutes",
     }
     if endpoint_reason:
         out["remote_endpoint_note"] = endpoint_reason
