@@ -1,0 +1,11 @@
+{
+  "owner": "divyn",
+  "slug": "pumpfun-usd-price-stream",
+  "displayName": "Reliable Pumpfun Price Feed",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1773144171779,
+    "commit": null
+  },
+  "history": []
+}
