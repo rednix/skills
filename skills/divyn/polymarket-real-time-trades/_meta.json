@@ -1,0 +1,11 @@
+{
+  "owner": "divyn",
+  "slug": "polymarket-real-time-trades",
+  "displayName": "Polymarket Real Time Trades Stream",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1773151571864,
+    "commit": null
+  },
+  "history": []
+}
