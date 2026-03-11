@@ -1,0 +1,11 @@
+{
+  "owner": "myxtype",
+  "slug": "12306-train-assistant",
+  "displayName": "12306 Train Assistant",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773212665612,
+    "commit": null
+  },
+  "history": []
+}
