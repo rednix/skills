@@ -4,7 +4,7 @@ A brain for your AI agent. Store context, recall it across sessions, and never l
 
 Your agent's memories work just like the human brain — important things stay sharp for months or years, while less-used memories gently fade into long-term storage. Nothing is truly lost — deeper recall can always bring them back.
 
-**v0.6.0:** Context Guard v4 — reads token usage directly from OpenClaw, no API dependency.
+**v1.0.0:** Context Guard v4 — reads token usage directly from OpenClaw, no API dependency.
 
 **v0.5.0:** Zero-gap session handoff — switch sessions without losing any context.
 

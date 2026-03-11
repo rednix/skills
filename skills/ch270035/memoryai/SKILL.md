@@ -1,8 +1,8 @@
 ---
 name: memoryai
 description: Persistent long-term memory for AI agents. Store, recall, reason, and seamlessly switch sessions with zero context loss.
-version: 0.6.0
-metadata: {"openclaw": {"emoji": "🧠", "requires": {"bins": ["python3"], "env": ["HM_API_KEY", "HM_ENDPOINT"]}, "primaryEnv": "HM_API_KEY"}}
+version: 1.0.0
+metadata: {"openclaw": {"emoji": "🧠", "requires": {"bins": ["python3"], "env": ["HM_API_KEY", "HM_ENDPOINT", "OPENCLAW_DIR", "WORKSPACE"]}, "primaryEnv": "HM_API_KEY"}}
 ---
 
 # MemoryAI — A Brain for Your AI Agent 🧠
@@ -31,7 +31,7 @@ The more your AI uses a memory, the sharper it stays. Unused memories age into c
 
 ### What's new:
 
-- **v0.6.0** — Context Guard v4: reads token usage directly from OpenClaw. No API dependency, cross-platform.
+- **v1.0.0** — Context Guard v4: reads token usage directly from OpenClaw. No API dependency, cross-platform.
 - **v0.5.0** — Zero-gap session handoff: switch sessions without losing a single thought.
 
 ## Setup
@@ -213,7 +213,17 @@ All core memory features work on any platform that can run Python 3.10+:
 
 ## Data & Privacy
 
-This skill sends stored memories to the configured MemoryAI endpoint via HTTPS.
-All data is transmitted over encrypted connections and stored in isolated, private databases.
-Users can export all data via `/v1/export` and delete all data via `DELETE /v1/data` at any time.
-The included `client.py` uses only Python stdlib (urllib) — no third-party dependencies. Source is fully readable and auditable.
+**What this skill reads locally:**
+- `context_check.py` reads OpenClaw's `sessions.json` (under `OPENCLAW_DIR`, defaults to `~/.openclaw`) to check token usage for Context Guard.
+- A small WAL file is written to `WORKSPACE/memory/wal.json` to track session handoff state.
+- `OPENCLAW_DIR` and `WORKSPACE` are optional env vars — they default to `~/.openclaw` and `~/.openclaw/workspace` respectively.
+
+**What this skill sends externally:**
+- `store`, `compact`, `handoff-start`: sends user-provided content (memories, session transcripts) to the configured `HM_ENDPOINT` via HTTPS.
+- `recall`, `restore`, `handoff-restore`: retrieves previously stored data from the same endpoint.
+- No data is sent automatically — all transmissions require explicit CLI invocation or agent action.
+
+**Privacy controls:**
+- All data is transmitted over encrypted HTTPS connections and stored in isolated, private databases.
+- Users can export all data via `/v1/export` and delete all data via `DELETE /v1/data` at any time.
+- `client.py` uses only Python stdlib (urllib) — no third-party dependencies. Source is fully readable and auditable.

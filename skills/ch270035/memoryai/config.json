@@ -1,4 +1,4 @@
 {
-  "endpoint": "http://165.99.16.94:8420",
-  "api_key": "hm_sk_f488a6ebb813f1ff74e1e02580bef665d226c9d2b987c918"
+  "endpoint": "https://memoryai.dev",
+  "api_key": "hm_sk_your_key_here"
 }

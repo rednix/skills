@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 (2026-03-10)
+## 1.0.0 (2026-03-10)
 
 ### Changed
 - **Context Guard v4.0** — Reads token usage directly from OpenClaw `sessions.json` instead of calling a non-existent API. Works immediately on all platforms (Windows, Linux, Mac).

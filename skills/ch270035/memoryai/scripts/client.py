@@ -15,7 +15,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent.parent
 CONFIG_PATH = SCRIPT_DIR / "config.json"
-VERSION = "0.6.0"
+VERSION = "1.0.0"
 
 
 def load_config():
