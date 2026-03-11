@@ -1,0 +1,11 @@
+{
+  "owner": "femto",
+  "slug": "new-tag",
+  "displayName": "New Tag",
+  "latest": {
+    "version": "0.1.1",
+    "publishedAt": 1773228287541,
+    "commit": null
+  },
+  "history": []
+}
