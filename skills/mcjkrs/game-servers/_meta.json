@@ -3,9 +3,15 @@
   "slug": "game-servers",
   "displayName": "Supercraft Game Servers",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772988967353,
-    "commit": "https://github.com/openclaw/skills/commit/7b3bdb70f4891ece8057ec002003651540fa94d3"
+    "version": "1.1.0",
+    "publishedAt": 1773140565837,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772988967353,
+      "commit": "https://github.com/openclaw/skills/commit/7b3bdb70f4891ece8057ec002003651540fa94d3"
+    }
+  ]
 }

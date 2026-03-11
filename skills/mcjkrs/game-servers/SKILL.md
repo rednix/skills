@@ -1,7 +1,8 @@
 ---
 name: supercraft-game-servers
-description: Order, configure, and manage dedicated game servers (17+ games) via Supercraft REST API
+description: Order, configure and manage dedicated game servers (20+ games) via Supercraft REST API
 homepage: https://claws.supercraft.host
+license: MIT
 user-invocable: true
 ---
 
@@ -21,7 +22,7 @@ To get a token, use the login-link flow:
 
 1. `POST /auth/login-link` with `{"email": "user@example.com"}` — sends a magic link email
 2. User clicks the link, which contains a magic token
-3. `POST /auth/claim` with `{"magic": "<token>"}` — returns a JWT
+3. `GET /auth/claim?magic=<token>` — poll this until it returns a JWT
 
 ```bash
 # After obtaining the JWT:
@@ -54,11 +55,22 @@ curl -H "Authorization: Bearer <JWT>" https://claws.supercraft.host/servers
 | GET | `/catalog/games/{code}` | Game details with plans and pricing |
 | GET | `/catalog/regions` | Available server regions |
 
-### Purchasing (requires auth)
+### Purchasing (no auth needed)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/orders/purchase` | Purchase a new server plan |
+| POST | `/orders/purchase` | Purchase a new server plan (returns checkout URL) |
+
+## Purchase & Login Flow — CRITICAL
+
+When generating a `checkout_url` (via `POST /orders/purchase`) or `login_url` (via `POST /auth/login-link`), you **MUST send the link to the user as a message BEFORE calling any tools** (curl, exec, cron). If you call a tool first, the message with the link gets blocked and the user never sees it.
+
+Correct sequence:
+1. **Reply to the user** with the `checkout_url` or `login_url`
+2. **After the reply**, set up a cron (every 30s) to poll `GET /auth/claim?magic=...`
+3. When claim returns `status: "ready"`, save the JWT token securely
+
+Do NOT use `while`/`sleep` loops — use a cron job or poll on the user's next message.
 
 ## Supported Games
 
