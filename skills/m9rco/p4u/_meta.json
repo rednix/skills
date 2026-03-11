@@ -5,7 +5,7 @@
   "latest": {
     "version": "0.0.0-nightly.08b71ba",
     "publishedAt": 1773223061501,
-    "commit": null
+    "commit": "https://github.com/openclaw/skills/commit/028594e434d182d7fcf6a5f1e74c683b78a6be4d"
   },
   "history": []
 }
