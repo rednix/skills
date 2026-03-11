@@ -1,0 +1,11 @@
+{
+  "owner": "vcup-date",
+  "slug": "agent101-tool-directory",
+  "displayName": "Agent101 Tool Directory",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773079336005,
+    "commit": null
+  },
+  "history": []
+}
