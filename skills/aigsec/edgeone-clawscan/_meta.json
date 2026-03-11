@@ -1,0 +1,11 @@
+{
+  "owner": "aigsec",
+  "slug": "edgeone-clawscan",
+  "displayName": "EdgeOne ClawScan",
+  "latest": {
+    "version": "1.0.5",
+    "publishedAt": 1773209355815,
+    "commit": null
+  },
+  "history": []
+}
