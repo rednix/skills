@@ -1,0 +1,11 @@
+{
+  "owner": "ppopen",
+  "slug": "openclaw-skill-local-file-processor",
+  "displayName": "Local File Processor",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772930923377,
+    "commit": null
+  },
+  "history": []
+}
