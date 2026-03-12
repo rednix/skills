@@ -1,6 +1,6 @@
 {
   "name": "@wipcomputer/wip-release",
-  "version": "1.2.4",
+  "version": "1.9.6",
   "type": "module",
   "description": "One-command release pipeline. Bumps version, updates changelog + SKILL.md, publishes to npm + GitHub.",
   "main": "core.mjs",
@@ -12,7 +12,7 @@
     "./cli": "./cli.js"
   },
   "scripts": {
-    "test": "node cli.mjs --help"
+    "test": "node cli.js --help"
   },
   "keywords": [
     "release",
@@ -29,5 +29,8 @@
     "type": "git",
     "url": "git+https://github.com/wipcomputer/wip-release.git"
   },
-  "homepage": "https://github.com/wipcomputer/wip-release"
+  "homepage": "https://github.com/wipcomputer/wip-ai-devops-toolbox",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
 }

@@ -1,9 +1,13 @@
 ---
-name: WIP.release
-version: 1.2.4
+name: wip-release
 description: One-command release pipeline. Bumps version, updates changelog + SKILL.md, publishes to npm + GitHub.
-homepage: https://github.com/wipcomputer/wip-release
+license: MIT
+interface: [cli, module, mcp]
 metadata:
+  display-name: "Release Pipeline"
+  version: "1.2.4"
+  homepage: "https://github.com/wipcomputer/wip-release"
+  author: "Parker Todd Brooks"
   category: dev-tools
   capabilities:
     - version-bump
@@ -11,22 +15,25 @@ metadata:
     - skill-sync
     - npm-publish
     - github-release
-  dependencies: []
-  interface: CLI
   requires:
-    binaries: [git, npm, gh, op, clawhub]
+    bins: [git, npm, gh, op, clawhub]
     secrets:
       - path: ~/.openclaw/secrets/op-sa-token
         description: 1Password service account token
       - vault: Agent Secrets
         item: npm Token
         description: npm publish token
-openclaw:
-  emoji: "🚀"
-  install:
-    env: []
-author:
-  name: Parker Todd Brooks
+  openclaw:
+    requires:
+      bins: [git, npm, gh, op]
+    install:
+      - id: node
+        kind: node
+        package: "@wipcomputer/wip-release"
+        bins: [wip-release]
+        label: "Install via npm"
+    emoji: "🚀"
+compatibility: Requires git, npm, gh, op (1Password CLI). Node.js 18+.
 ---
 
 # wip-release
@@ -56,10 +63,24 @@ Local release pipeline. One command bumps version, updates all docs, publishes e
 ### CLI
 
 ```bash
-wip-release patch --notes="fix X"    # full pipeline
-wip-release minor --dry-run          # preview only
-wip-release major --no-publish       # bump + tag only
+wip-release patch --notes="fix X"           # full pipeline
+wip-release minor --dry-run                 # preview only
+wip-release major --no-publish              # bump + tag only
+wip-release patch --skip-product-check      # skip product docs gate
 ```
+
+### Product Docs Gate
+
+wip-release checks that product docs (dev update, roadmap, readme-first) were updated before publishing. Only runs on repos with an `ai/` directory.
+
+- **patch**: warns if product docs are stale (non-blocking)
+- **minor/major**: blocks release until product docs are updated
+- **--skip-product-check**: bypasses the gate
+
+Checks:
+1. `ai/dev-updates/` has a file from the last 3 days
+2. `ai/product/plans-prds/roadmap.md` was modified since last release
+3. `ai/product/readme-first-product.md` was modified since last release
 
 ### Module
 
@@ -79,3 +100,17 @@ Branch protection may prevent direct pushes. Make sure you're on main after merg
 
 ### SKILL.md not updated
 Only updates if the file has a YAML frontmatter `version:` field between `---` markers.
+
+## MCP
+
+Tools: `release`, `release_status`
+
+Add to `.mcp.json`:
+```json
+{
+  "wip-release": {
+    "command": "node",
+    "args": ["/path/to/tools/wip-release/mcp-server.mjs"]
+  }
+}
+```

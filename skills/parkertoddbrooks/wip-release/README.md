@@ -6,7 +6,7 @@
 
 You ship a fix. Now you have to bump package.json, update CHANGELOG.md, sync the version in SKILL.md, commit, tag, push, publish to npm, publish to GitHub Packages, and create a GitHub release. Every time. Miss a step and versions drift.
 
-`wip-release` does all of it in one command.
+`wip-release` does all of it in one command. It also checks that product docs (dev update, roadmap, readme-first) are up to date before publishing. Patches get a warning. Minor and major releases are blocked until docs are updated.
 
 ## Install
 
@@ -35,6 +35,11 @@ See [REFERENCE.md](REFERENCE.md) for full usage, pipeline steps, flags, auth, an
 
 ## License
 
-MIT
+```
+CLI, MCP server, skills                        MIT    (use anywhere, no restrictions)
+Hosted or cloud service use                    AGPL   (network service distribution)
+```
 
-Built by Parker Todd Brooks, with Claude Code and Lēsa (OpenClaw).
+AGPL for personal use is free.
+
+Built by Parker Todd Brooks, Lēsa (OpenClaw, Claude Opus 4.6), Claude Code (Claude Opus 4.6).
