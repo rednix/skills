@@ -30,8 +30,8 @@ metadata:
 
 确保环境变量已设置:
 ```bash
-export WECHAT_APP_ID=wx725cfc9f4dae3fc8
-export WECHAT_APP_SECRET=d41b83001d8c2b3a3a9970ba7577d1f7
+export WECHAT_APP_ID= YOU_WECHAT_APP_ID
+export WECHAT_APP_SECRET= YOU_WECHAT_APP_SECRET
 ```
 
 **重要:** 确保你的IP已添加到微信公众号后台的白名单!

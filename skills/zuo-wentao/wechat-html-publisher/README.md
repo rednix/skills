@@ -6,8 +6,8 @@
 
 ```bash
 # 设置环境变量
-export WECHAT_APP_ID=wx725cfc9f4dae3fc8
-export WECHAT_APP_SECRET=d41b83001d8c2b3a3a9970ba7577d1f7
+export WECHAT_APP_ID=YOU_WECHAT_APP_ID
+export WECHAT_APP_SECRET=YOU_WECHAT_APP_SECRET
 
 # 发布文章
 python scripts/publish_html.py \
