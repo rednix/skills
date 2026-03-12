@@ -25,30 +25,61 @@ if sys.platform == 'win32':
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"
 TIMEOUT = 8
 
+# RSSHub 镜像源列表
+RSSHUB_DOMAINS = [
+    "rsshub.app",
+    "rss.injahow.cn",
+    "rss.shab.fun",
+    "rsshub.rssforever.com",
+    "rsshub-7x3pyolbs.vercel.app"
+]
+
 # ── 新闻源定义 ──────────────────────────────────────────────
 SOURCES = {
     "hot": [
         {"name": "人民网时政", "type": "rss", "url": "http://www.people.com.cn/rss/politics.xml"},
         {"name": "新浪财经",  "type": "rss", "url": "https://feed.mix.sina.com.cn/api/roll/get?pageid=153&lid=2516&k=&num=20&page=1&r=0.1&callback="},
-        {"name": "东方财富",  "type": "web", "url": "https://www.eastmoney.com/"},
         {"name": "36氪",     "type": "rss", "url": "https://36kr.com/feed"},
-        {"name": "澎湃新闻",  "type": "rss", "url": "https://www.thepaper.cn/rss_newslist_all.xml"},
-        {"name": "环球网",   "type": "web", "url": "https://world.huanqiu.com/"},
         {"name": "财联社",   "type": "web", "url": "https://www.cls.cn/"},
-        {"name": "雪球",     "type": "web", "url": "https://xueqiu.com/"},
+        {"name": "雪球",     "type": "rss", "url": "https://plink.anyfeeder.com/weixin/xueqiujinghua"},
         {"name": "观察者网",  "type": "web", "url": "https://www.thepaper.cn/"},
         {"name": "IT之家",  "type": "web", "url": "https://www.ithome.com/"},
+    ],
+    "tech_media": [
+        {"name": "36氪",   "type": "rss", "url": "https://36kr.com/feed"},
+        {"name": "钛媒体",  "type": "rss", "url": "https://www.tmtpost.com/rss.xml"},
+        {"name": "InfoQ", "type": "rss", "url": "https://www.infoq.cn/feed"},
+        {"name": "量子位",  "type": "rss", "url": "https://www.qbitai.com/feed"},
+        {"name": "机器之心", "type": "web", "url": "https://www.jiqizhixin.com/"},
+        {"name": "新智元",  "type": "rss", "url": "https://plink.anyfeeder.com/weixin/AI_era"},
+    ],
+    "securities": [
+        {"name": "东方财富",  "type": "rss", "url": "http://rss.eastmoney.com/rss_partener.xml"},
+        {"name": "雪球-热帖",      "type": "rss", "url": "https://xueqiu.com/hots/topic/rss"},
+        {"name": "富途牛牛-要闻",   "type": "rss", "url": "https://rss.injahow.cn/futunn/main"},
+    ],
+    "official": [
+        {"name": "工信部-政策解读", "type": "rss", "url": "https://rss.injahow.cn/gov/miit/zcjd"},
+        {"name": "工信部-文件公示", "type": "rss", "url": "https://rss.injahow.cn/gov/miit/wjgs"},
+        {"name": "中国政府网",        "type": "web", "url": "https://www.most.gov.cn/dfkj/dfkjyw/dfzxdt/index_1.html"},
+        {"name": "发改委-信息公开", "type": "rss", "url": "https://rss.injahow.cn/gov/ndrc/zfxxgk"},
+        {"name": "发改委-新闻动态", "type": "rss", "url": "https://rss.injahow.cn/gov/ndrc/xwdt"},
     ],
 }
 
 CAT_NAMES = {
     "hot": "热点要闻",
+    "tech_media": "科技媒体",
+    "securities": "证券网站",
+    "official": "官方渠道",
 }
 
 
 # ── 网络请求 ─────────────────────────────────────────────────
 def fetch(url, timeout=TIMEOUT):
     """获取 URL 内容，返回文本"""
+    if any(domain in url for domain in RSSHUB_DOMAINS):
+        timeout = max(timeout, 20)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -148,6 +179,35 @@ def _parse_time(time_str):
     return time_str[:16]
 
 
+def _parse_keywords(values):
+    if not values:
+        return []
+    if isinstance(values, (list, tuple)):
+        raw = []
+        for v in values:
+            if v:
+                raw.append(str(v))
+        text = ",".join(raw)
+    else:
+        text = str(values)
+    parts = re.split(r'[,\s，;；|/]+', text)
+    keywords = []
+    for p in parts:
+        p = p.strip()
+        if p:
+            keywords.append(p.lower())
+    return keywords
+
+
+def _match_keywords(item, keywords):
+    if not keywords:
+        return True
+    title = (item.get("title") or "").lower()
+    summary = (item.get("summary") or "").lower()
+    haystack = title + "\n" + summary
+    return any(k in haystack for k in keywords)
+
+
 # ── 网页标题提取 ──────────────────────────────────────────────
 def parse_web_titles(html_text, source_name, base_url):
     """从网页 HTML 中提取新闻标题和链接"""
@@ -226,7 +286,7 @@ def _fetch_one_source(src):
         return parse_web_titles(text, src["name"], src["url"])
 
 
-def fetch_news(category="hot", keyword=None, limit=10):
+def fetch_news(category="hot", keyword=None, include=None, exclude=None, limit=10):
     """获取指定分类的新闻（并发请求所有源）"""
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -260,9 +320,14 @@ def fetch_news(category="hot", keyword=None, limit=10):
     unique.sort(key=sort_key, reverse=True)
 
     # 关键词过滤
+    include_keywords = _parse_keywords(include)
     if keyword:
-        keyword_lower = keyword.lower()
-        unique = [i for i in unique if keyword_lower in i["title"].lower() or keyword_lower in i.get("summary", "").lower()]
+        include_keywords.extend(_parse_keywords(keyword))
+    exclude_keywords = _parse_keywords(exclude)
+    if include_keywords:
+        unique = [i for i in unique if _match_keywords(i, include_keywords)]
+    if exclude_keywords:
+        unique = [i for i in unique if not _match_keywords(i, exclude_keywords)]
 
     # 多样性优化：交错展示不同来源，避免单一来源占据前排
     if len(unique) > limit:
@@ -313,13 +378,21 @@ def format_news(items, category="hot", summary_len=100):
 # ── 命令处理 ─────────────────────────────────────────────────
 def cmd_hot(args):
     """获取热点新闻"""
-    items = fetch_news("hot", keyword=args.keyword, limit=args.limit)
+    items = fetch_news("hot", keyword=args.keyword, include=args.include, exclude=args.exclude, limit=args.limit)
     if not items:
-        if args.keyword:
-            print(f'未找到包含关键词 "{args.keyword}" 的新闻')
+        if args.keyword or args.include or args.exclude:
+            include_kw = ",".join(_parse_keywords(args.include) + _parse_keywords(args.keyword))
+            exclude_kw = ",".join(_parse_keywords(args.exclude))
+            if include_kw:
+                print(f'未找到包含关键词 "{include_kw}" 的新闻')
+            else:
+                print("未找到符合过滤条件的新闻")
+            if exclude_kw:
+                print(f'  排除关键词: "{exclude_kw}"')
             print(f"\n💡 提示：")
             print(f"  - RSS源只包含最新热点新闻，可能不包含特定关键词")
-            print(f'  - 建议使用百度搜索查找 "{args.keyword}" 相关新闻')
+            if include_kw:
+                print(f'  - 建议使用百度搜索查找 "{include_kw}" 相关新闻')
             print(f"  - 或者去掉关键词查看所有热点新闻")
         else:
             print("暂无新闻数据，请稍后重试")
@@ -337,14 +410,22 @@ def cmd_category(args):
         print(f"不支持的分类: {cat}", file=sys.stderr)
         print(f"支持的分类: {', '.join(SOURCES.keys())}", file=sys.stderr)
         sys.exit(1)
-    items = fetch_news(cat, keyword=args.keyword, limit=args.limit)
+    items = fetch_news(cat, keyword=args.keyword, include=args.include, exclude=args.exclude, limit=args.limit)
     if not items:
         cat_name = CAT_NAMES.get(cat, cat)
-        if args.keyword:
-            print(f'未找到包含关键词 "{args.keyword}" 的{cat_name}新闻')
+        if args.keyword or args.include or args.exclude:
+            include_kw = ",".join(_parse_keywords(args.include) + _parse_keywords(args.keyword))
+            exclude_kw = ",".join(_parse_keywords(args.exclude))
+            if include_kw:
+                print(f'未找到包含关键词 "{include_kw}" 的{cat_name}新闻')
+            else:
+                print(f"未找到符合过滤条件的{cat_name}新闻")
+            if exclude_kw:
+                print(f'  排除关键词: "{exclude_kw}"')
             print(f"\n💡 提示：")
             print(f"  - RSS源只包含最新新闻，可能不包含特定关键词")
-            print(f'  - 建议使用百度搜索查找 "{args.keyword}" 相关新闻')
+            if include_kw:
+                print(f'  - 建议使用百度搜索查找 "{include_kw}" 相关新闻')
             print(f"  - 或者去掉关键词查看所有{cat_name}新闻")
         else:
             print(f"暂无 {cat_name} 新闻数据，请稍后重试")
@@ -381,6 +462,8 @@ def main():
 
     hp = subparsers.add_parser('hot', help='获取热点新闻')
     hp.add_argument('--keyword', '-k', help='关键词过滤')
+    hp.add_argument('--include', '-i', action='append', help='包含关键词（可多次或用逗号分隔）')
+    hp.add_argument('--exclude', '-e', action='append', help='排除关键词（可多次或用逗号分隔）')
     hp.add_argument('--limit', '-n', type=int, default=10, help='返回条数（默认 10）')
     hp.add_argument('--detail', '-d', type=int, default=100, help='摘要长度（默认 100，0=不显示，-1=全文）')
     hp.add_argument('--json', action='store_true', help='JSON 格式输出')
@@ -388,6 +471,8 @@ def main():
     cp = subparsers.add_parser('category', help='按分类获取新闻')
     cp.add_argument('--cat', '-c', required=True, choices=list(SOURCES.keys()), help='新闻分类')
     cp.add_argument('--keyword', '-k', help='关键词过滤')
+    cp.add_argument('--include', '-i', action='append', help='包含关键词（可多次或用逗号分隔）')
+    cp.add_argument('--exclude', '-e', action='append', help='排除关键词（可多次或用逗号分隔）')
     cp.add_argument('--limit', '-n', type=int, default=10, help='返回条数（默认 10）')
     cp.add_argument('--detail', '-d', type=int, default=100, help='摘要长度（默认 100，0=不显示，-1=全文）')
     cp.add_argument('--json', action='store_true', help='JSON 格式输出')
