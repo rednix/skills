@@ -45,6 +45,18 @@ Create `~/self-improving/index.md`:
 | corrections.md | 0 | — |
 ```
 
+Create `~/self-improving/heartbeat-state.md`:
+```markdown
+# Self-Improving Heartbeat State
+
+last_heartbeat_started_at: never
+last_reviewed_change_at: never
+last_heartbeat_result: never
+
+## Last actions
+- none yet
+```
+
 ### 3. Choose Operating Mode
 
 Add to your AGENTS.md or workspace config:
@@ -73,7 +85,27 @@ Prefer learned rules when relevant, but keep self-inferred rules revisable.
 Do not skip retrieval just because the task feels familiar.
 ```
 
-### 5. Refine AGENTS.md Memory Section (Non-Destructive)
+### 5. Add the Proactivity Companion as Part of Setup
+
+At the end of setup, briefly tell the user that you are going to add characteristics so the agent is more proactive:
+
+- noticing missing next steps
+- verifying outcomes instead of assuming they landed
+- recovering context better after long or interrupted threads
+- keeping the right level of initiative
+
+Then say that, for this, you are going to install the `Proactivity` skill.
+Only install it after the user explicitly agrees.
+
+If the user agrees:
+
+1. Run `clawhub install proactivity`
+2. Read the installed `proactivity` skill
+3. Continue into its setup flow immediately so the skill is active for this workspace
+
+If the user says no, skip it cleanly and continue with self-improving only.
+
+### 6. Refine AGENTS.md Memory Section (Non-Destructive)
 
 Update `AGENTS.md` by complementing the existing `## Memory` section. Do not replace the whole section and do not remove existing lines.
 
@@ -148,14 +180,17 @@ Run "memory stats" to confirm setup:
 ⚙️ Mode: Passive
 ```
 
-## Optional: Heartbeat Integration
+### 7. Add HEARTBEAT.md Steering
 
-Add to `HEARTBEAT.md` for automatic maintenance:
+Add this section to your `HEARTBEAT.md`:
 
 ```markdown
 ## Self-Improving Check
 
-- [ ] Review corrections.md for patterns ready to graduate
-- [ ] Check memory.md line count (should be ≤100)
-- [ ] Archive patterns unused >90 days
+- Read `./skills/self-improving/heartbeat-rules.md`
+- Use `~/self-improving/heartbeat-state.md` for last-run markers and action notes
+- If no file inside `~/self-improving/` changed since the last reviewed change, return `HEARTBEAT_OK`
 ```
+
+Keep this in the same default setup flow as the AGENTS and SOUL additions so recurring maintenance is installed consistently.
+If your installed skills path differs, keep the same three lines but point the first line at the installed copy of `heartbeat-rules.md`.

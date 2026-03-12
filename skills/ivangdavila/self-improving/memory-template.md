@@ -21,7 +21,7 @@ Create on first activation:
 
 ```bash
 mkdir -p ~/self-improving/{projects,domains,archive}
-touch ~/self-improving/{memory.md,index.md,corrections.md}
+touch ~/self-improving/{memory.md,index.md,corrections.md,heartbeat-state.md}
 ```
 
 ## Index Template
@@ -57,4 +57,19 @@ For `~/self-improving/corrections.md`:
   Context: where correction happened
   Confirmed: pending (N/3) | yes | no
 -->
+```
+
+## Heartbeat State Template
+
+For `~/self-improving/heartbeat-state.md`:
+
+```markdown
+# Self-Improving Heartbeat State
+
+last_heartbeat_started_at: never
+last_reviewed_change_at: never
+last_heartbeat_result: never
+
+## Last actions
+- none yet
 ```

@@ -1,13 +1,18 @@
 {
   "owner": "ivangdavila",
   "slug": "self-improving",
-  "displayName": "Self-Improving Agent (Proactive Self-Reflection)",
+  "displayName": "Self-Improving + Proactive Agent",
   "latest": {
-    "version": "1.2.10",
-    "publishedAt": 1772899624346,
-    "commit": "https://github.com/openclaw/skills/commit/ac4e6561ac1f5c3d39879ba934e8ca3c7a8ce1d0"
+    "version": "1.2.16",
+    "publishedAt": 1773329327755,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.10",
+      "publishedAt": 1772899624346,
+      "commit": "https://github.com/openclaw/skills/commit/ac4e6561ac1f5c3d39879ba934e8ca3c7a8ce1d0"
+    },
     {
       "version": "1.2.9",
       "publishedAt": 1772713517267,
