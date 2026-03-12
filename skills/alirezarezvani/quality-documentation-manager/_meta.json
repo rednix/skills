@@ -3,11 +3,16 @@
   "slug": "quality-documentation-manager",
   "displayName": "Quality Documentation Manager",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1770402684903,
-    "commit": "https://github.com/openclaw/skills/commit/7afa8cd19a8a6fb6ab8f922c4ea726abed490382"
+    "version": "2.1.1",
+    "publishedAt": 1773070402452,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1770402684903,
+      "commit": "https://github.com/openclaw/skills/commit/7afa8cd19a8a6fb6ab8f922c4ea726abed490382"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1770022409508,
