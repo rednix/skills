@@ -101,27 +101,37 @@ async function runSwiftHelper(args) {
   });
 }
 
+// List reminder calendars via Swift EventKit
+async function listCalendars() {
+  const result = await runSwiftHelper(['calendars']);
+  return result.calendars || [];
+}
+
 // List reminders via Swift EventKit (returns IDs)
-async function list(scope) {
+async function list(scope, listName, query) {
   scope = scope || 'week';
-  const result = await runSwiftHelper(['list', '--scope', scope]);
+  const args = ['list', '--scope', scope];
+  if (listName) args.push('--list', listName);
+  if (query) args.push('--query', query);
+  const result = await runSwiftHelper(args);
   return result.items || [];
 }
 
-async function add(title, dueISO, note, repeat, repeatEnd, interval) {
+async function add(title, dueISO, note, repeat, repeatEnd, interval, priority, listName) {
   if (!title) {
     throw new Error('title is required');
   }
 
-  // Use Swift EventKit helper for recurrence (native support)
-  // or for any reminder creation (more reliable)
-  if (repeat) {
+  // Use Swift EventKit helper when recurrence, priority, or specific list is needed
+  if (repeat || priority || listName) {
     const args = ['add', '--title', title];
     if (dueISO) args.push('--due', dueISO);
     if (note) args.push('--note', note);
     if (repeat) args.push('--repeat', repeat);
     if (interval) args.push('--interval', String(interval));
     if (repeatEnd) args.push('--repeat-end', repeatEnd);
+    if (priority) args.push('--priority', priority);
+    if (listName) args.push('--list', listName);
 
     const result = await runSwiftHelper(args);
     return {
@@ -210,6 +220,7 @@ async function edit(id, updates) {
   if (updates.title) args.push('--title', updates.title);
   if (updates.due) args.push('--due', updates.due);
   if (updates.note !== undefined) args.push('--note', updates.note || '');
+  if (updates.priority) args.push('--priority', updates.priority);
   if (updates.repeat) args.push('--repeat', updates.repeat);
   if (updates.interval) args.push('--interval', String(updates.interval));
   if (updates['repeat-end']) args.push('--repeat-end', updates['repeat-end']);
@@ -234,25 +245,33 @@ async function main() {
 
   if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
     console.log(`Usage:
-  list [--scope today|week|all]
-  add --title "TITLE" [--due ISO_DATE] [--note "MEMO"] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD]
-  edit --id "ID" [--title "NEW"] [--due ISO_DATE] [--note "NEW"]
+  calendars
+  list [--scope today|week|all] [--list "LIST_NAME"] [--query "KEYWORD"]
+  add --title "TITLE" [--due ISO_DATE] [--note "MEMO"] [--priority high|medium|low|none] [--list "LIST_NAME"] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD]
+  edit --id "ID" [--title "NEW"] [--due ISO_DATE] [--note "NEW"] [--priority high|medium|low|none]
   delete --id "ID"
   complete --id "ID"
 
 Examples:
-  node reminders/apple-bridge.js list --scope week
-  node reminders/apple-bridge.js add --title "Meeting" --due "2026-02-02T09:00:00+09:00"
-  node reminders/apple-bridge.js edit --id "ABC123" --title "Updated Meeting"
+  node reminders/apple-bridge.js calendars
+  node reminders/apple-bridge.js list --scope week --list "Work"
+  node reminders/apple-bridge.js list --query "meeting" --scope all
+  node reminders/apple-bridge.js add --title "Meeting" --due "2026-02-02T09:00:00+09:00" --priority high --list "Work"
+  node reminders/apple-bridge.js edit --id "ABC123" --title "Updated Meeting" --priority medium
   node reminders/apple-bridge.js delete --id "ABC123"
   node reminders/apple-bridge.js complete --id "ABC123"`);
     process.exit(0);
   }
 
   try {
-    if (cmd === 'list') {
+    if (cmd === 'calendars') {
+      const calendars = await listCalendars();
+      console.log(JSON.stringify(calendars));
+    } else if (cmd === 'list') {
       const scope = args.scope || 'week';
-      const items = await list(scope);
+      const listName = args.list || '';
+      const query = args.query || '';
+      const items = await list(scope, listName || null, query || null);
       console.log(JSON.stringify(items));
     } else if (cmd === 'add') {
       const title = args.title;
@@ -261,11 +280,13 @@ Examples:
       const repeat = args.repeat || '';
       const repeatEnd = args['repeat-end'] || '';
       const interval = args.interval || '';
+      const priority = args.priority || '';
+      const listName = args.list || '';
       if (!title) {
         console.error('Error: --title is required for add');
         process.exit(1);
       }
-      const result = await add(title, due || null, note || null, repeat || null, repeatEnd || null, interval || null);
+      const result = await add(title, due || null, note || null, repeat || null, repeatEnd || null, interval || null, priority || null, listName || null);
       console.log(JSON.stringify(result));
     } else if (cmd === 'edit') {
       const id = args.id;
@@ -277,6 +298,7 @@ Examples:
         title: args.title || '',
         due: args.due || '',
         note: args.note,
+        priority: args.priority || '',
         repeat: args.repeat || '',
         interval: args.interval || '',
         'repeat-end': args['repeat-end'] || '',

@@ -24,7 +24,21 @@
       "complete": [
         "Mark the meeting reminder as done",
         "Complete the report submission task"
+      ],
+      "lists": [
+        "Show me my reminder lists",
+        "What lists do I have?"
+      ],
+      "search": [
+        "Search for meeting reminders",
+        "Find reminders about report"
       ]
+    },
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "none": "None"
     },
     "repeat": {
       "labels": {
@@ -48,7 +62,10 @@
       "list_header_completed": "Completed",
       "no_reminders": "No reminders found.",
       "error_access": "There was a problem accessing the Reminders app.",
-      "ask_when": "When do you need this reminder?"
+      "ask_when": "When do you need this reminder?",
+      "list_not_found": "List '{name}' not found.",
+      "no_search_results": "No reminders matching '{query}'.",
+      "calendars_header": "Reminder Lists"
     }
   },
   "ko": {
@@ -76,7 +93,21 @@
       "complete": [
         "회의 미리알림 완료 처리해줘",
         "보고서 제출 다 했어"
+      ],
+      "lists": [
+        "미리알림 목록 보여줘",
+        "리스트 뭐 있어?"
+      ],
+      "search": [
+        "회의 관련 미리알림 찾아줘",
+        "보고서 미리알림 검색해줘"
       ]
+    },
+    "priority": {
+      "high": "높음",
+      "medium": "보통",
+      "low": "낮음",
+      "none": "없음"
     },
     "repeat": {
       "labels": {
@@ -100,7 +131,10 @@
       "list_header_completed": "완료됨",
       "no_reminders": "미리알림이 없습니다.",
       "error_access": "미리알림 앱에 접근하는 데 문제가 생겼어요.",
-      "ask_when": "언제까지 알림이 필요하세요?"
+      "ask_when": "언제까지 알림이 필요하세요?",
+      "list_not_found": "'{name}' 목록을 찾을 수 없어요.",
+      "no_search_results": "'{query}'에 해당하는 미리알림이 없어요.",
+      "calendars_header": "미리알림 목록"
     }
   },
   "ja": {
@@ -128,7 +162,21 @@
       "complete": [
         "会議のリマインダーを完了にして",
         "レポート提出を完了にして"
+      ],
+      "lists": [
+        "リマインダーリストを見せて",
+        "リストは何がある？"
+      ],
+      "search": [
+        "会議のリマインダーを探して",
+        "レポートのリマインダーを検索して"
       ]
+    },
+    "priority": {
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "none": "なし"
     },
     "repeat": {
       "labels": {
@@ -152,7 +200,10 @@
       "list_header_completed": "完了済み",
       "no_reminders": "リマインダーがありません。",
       "error_access": "リマインダーアプリへのアクセスに問題が発生しました。",
-      "ask_when": "いつまでにリマインダーが必要ですか？"
+      "ask_when": "いつまでにリマインダーが必要ですか？",
+      "list_not_found": "「{name}」リストが見つかりません。",
+      "no_search_results": "「{query}」に該当するリマインダーがありません。",
+      "calendars_header": "リマインダーリスト"
     }
   },
   "zh": {
@@ -180,7 +231,21 @@
       "complete": [
         "把会议提醒标记为完成",
         "报告提交完成了"
+      ],
+      "lists": [
+        "显示我的提醒列表",
+        "有哪些列表？"
+      ],
+      "search": [
+        "搜索会议提醒",
+        "查找关于报告的提醒"
       ]
+    },
+    "priority": {
+      "high": "高",
+      "medium": "中",
+      "low": "低",
+      "none": "无"
     },
     "repeat": {
       "labels": {
@@ -204,7 +269,10 @@
       "list_header_completed": "已完成",
       "no_reminders": "没有找到提醒。",
       "error_access": "访问提醒应用时出现问题。",
-      "ask_when": "您需要什么时候的提醒？"
+      "ask_when": "您需要什么时候的提醒？",
+      "list_not_found": "找不到「{name}」列表。",
+      "no_search_results": "没有找到与「{query}」相关的提醒。",
+      "calendars_header": "提醒列表"
     }
   }
 }

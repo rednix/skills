@@ -137,13 +137,36 @@ func fetchReminder(store: EKEventStore, id: String) -> EKReminder? {
     return item
 }
 
+// MARK: - Priority Helpers
+
+func parsePriority(_ str: String) -> Int {
+    switch str.lowercased() {
+    case "high": return 1
+    case "medium": return 5
+    case "low": return 9
+    case "none": return 0
+    default: return Int(str) ?? 0
+    }
+}
+
+func priorityLabel(_ value: Int) -> String {
+    switch value {
+    case 1...4: return "high"
+    case 5: return "medium"
+    case 6...9: return "low"
+    default: return "none"
+    }
+}
+
 // MARK: - Format reminder to JSON dict
 
 func reminderToDict(_ r: EKReminder) -> [String: Any] {
     var item: [String: Any] = [
         "id": r.calendarItemIdentifier,
         "title": r.title ?? "",
-        "completed": r.isCompleted
+        "completed": r.isCompleted,
+        "list": r.calendar?.title ?? "",
+        "priority": priorityLabel(r.priority)
     ]
 
     if let components = r.dueDateComponents,
@@ -169,21 +192,54 @@ func reminderToDict(_ r: EKReminder) -> [String: Any] {
     return item
 }
 
+// MARK: - Calendar Helpers
+
+func findCalendar(store: EKEventStore, name: String) -> EKCalendar? {
+    let allCals = store.calendars(for: .reminder)
+    return allCals.first { $0.title.lowercased() == name.lowercased() }
+}
+
+// MARK: - List Calendars Command
+
+func listCalendars() {
+    withReminderAccess { store in
+        let calendars = store.calendars(for: .reminder)
+        let defaultCal = store.defaultCalendarForNewReminders()
+        let items: [[String: Any]] = calendars.map { cal in
+            [
+                "id": cal.calendarIdentifier,
+                "name": cal.title,
+                "isDefault": cal.calendarIdentifier == defaultCal?.calendarIdentifier
+            ]
+        }
+        printJSON(["ok": true, "calendars": items])
+    }
+}
+
 // MARK: - List Command
 
 func listReminders(args: [String: String]) {
     let scope = args["scope"] ?? "week"
+    let listName = args["list"] ?? ""
+    let query = args["query"] ?? ""
 
     withReminderAccess { store in
-        guard let calendar = store.defaultCalendarForNewReminders() else {
-            printError("No default calendar")
-            return
+        // Determine which calendars to search
+        let calendars: [EKCalendar]
+        if !listName.isEmpty {
+            guard let cal = findCalendar(store: store, name: listName) else {
+                printError("List '\(listName)' not found")
+                return
+            }
+            calendars = [cal]
+        } else {
+            calendars = store.calendars(for: .reminder)
         }
 
         let predicate = store.predicateForIncompleteReminders(
             withDueDateStarting: nil,
             ending: nil,
-            calendars: [calendar]
+            calendars: calendars
         )
 
         let fetchSemaphore = DispatchSemaphore(value: 0)
@@ -200,7 +256,7 @@ func listReminders(args: [String: String]) {
         let now = Date()
         let cal = Calendar.current
 
-        let filtered: [EKReminder]
+        var filtered: [EKReminder]
         switch scope {
         case "today":
             let startOfDay = cal.startOfDay(for: now)
@@ -222,6 +278,13 @@ func listReminders(args: [String: String]) {
             filtered = fetched
         }
 
+        // Filter by query (title search)
+        if !query.isEmpty {
+            filtered = filtered.filter { r in
+                r.title?.localizedCaseInsensitiveContains(query) == true
+            }
+        }
+
         let items = filtered.map { reminderToDict($0) }
         printJSON(["ok": true, "items": items])
     }
@@ -236,14 +299,30 @@ func addReminder(args: [String: String]) {
     }
 
     withReminderAccess { store in
-        guard let calendar = store.defaultCalendarForNewReminders() else {
-            printError("No default calendar")
-            return
+        let calendar: EKCalendar
+        let listName = args["list"] ?? ""
+        if !listName.isEmpty {
+            guard let cal = findCalendar(store: store, name: listName) else {
+                printError("List '\(listName)' not found")
+                return
+            }
+            calendar = cal
+        } else {
+            guard let defaultCal = store.defaultCalendarForNewReminders() else {
+                printError("No default calendar")
+                return
+            }
+            calendar = defaultCal
         }
 
         let reminder = EKReminder(eventStore: store)
         reminder.title = title
         reminder.calendar = calendar
+
+        // Priority
+        if let priorityStr = args["priority"], !priorityStr.isEmpty {
+            reminder.priority = parsePriority(priorityStr)
+        }
 
         if let note = args["note"], !note.isEmpty {
             reminder.notes = note
@@ -341,6 +420,11 @@ func editReminder(args: [String: String]) {
             }
         }
 
+        // Update priority if provided
+        if let priorityStr = args["priority"], !priorityStr.isEmpty {
+            reminder.priority = parsePriority(priorityStr)
+        }
+
         // Update recurrence if provided
         if let repeatStr = args["repeat"], !repeatStr.isEmpty {
             if let frequency = parseFrequency(repeatStr) {
@@ -436,9 +520,10 @@ func completeReminder(args: [String: String]) {
 func showHelp() {
     print("""
     Usage:
-      swift eventkit-bridge.swift list [--scope today|week|all]
-      swift eventkit-bridge.swift add --title "TITLE" [--due ISO_DATE] [--note "NOTE"] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD]
-      swift eventkit-bridge.swift edit --id "ID" [--title "NEW"] [--due ISO_DATE] [--note "NEW"] [--repeat daily|weekly|monthly|yearly]
+      swift eventkit-bridge.swift calendars
+      swift eventkit-bridge.swift list [--scope today|week|all] [--list "LIST_NAME"] [--query "KEYWORD"]
+      swift eventkit-bridge.swift add --title "TITLE" [--due ISO_DATE] [--note "NOTE"] [--priority high|medium|low|none] [--list "LIST_NAME"] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD]
+      swift eventkit-bridge.swift edit --id "ID" [--title "NEW"] [--due ISO_DATE] [--note "NEW"] [--priority high|medium|low|none] [--repeat daily|weekly|monthly|yearly]
       swift eventkit-bridge.swift delete --id "ID"
       swift eventkit-bridge.swift complete --id "ID"
     """)
@@ -451,6 +536,8 @@ let parsed = parseArgs(Array(args.dropFirst()))
 let command = args.count > 1 ? args[1] : ""
 
 switch command {
+case "calendars":
+    listCalendars()
 case "list":
     listReminders(args: parsed)
 case "add":

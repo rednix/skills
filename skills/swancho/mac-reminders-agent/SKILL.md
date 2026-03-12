@@ -1,10 +1,11 @@
 ---
 name: mac-reminders-agent
-version: 1.2.0
+version: 1.3.0
 author: swancho
 license: MIT
 description: |
   Integrate with macOS Reminders app to check, add, edit, delete, and complete reminders.
+  Supports multiple reminder lists (calendars), priority levels (high/medium/low), and title search.
   Supports native recurrence (매주/weekly/毎週/每周) via Swift EventKit - creates single reminder with repeat rule.
   Supports editing and deleting reminders by ID (calendarItemIdentifier from EventKit).
   Supports multiple languages (en, ko, ja, zh) for trigger detection and response formatting.
@@ -27,8 +28,11 @@ install: |
 This skill integrates with the local macOS **Reminders** app to:
 
 - View and organize today's/this week's reminders (with unique IDs)
+- **Multiple lists**: View all reminder lists, filter/add to specific lists
+- **Priority**: Set and view priority levels (high/medium/low)
+- **Search**: Find reminders by title keyword
 - Add new reminders based on natural language requests
-- **Edit reminders**: Modify title, due date, notes by ID
+- **Edit reminders**: Modify title, due date, notes, priority by ID
 - **Delete reminders**: Remove reminders by ID
 - **Complete reminders**: Mark reminders as done by ID
 - **Native recurrence**: Weekly, daily, monthly, yearly repeating reminders
@@ -73,6 +77,29 @@ For each case, call the Node.js CLI, receive JSON results, and format them using
 
 ---
 
+## 0) View Reminder Lists
+
+### Command Invocation
+
+```bash
+node skills/mac-reminders-agent/cli.js lists --locale ko
+```
+
+### Output Format
+
+Returns JSON with calendars array:
+
+```json
+{
+  "calendars": [
+    { "id": "cal-id-1", "name": "Reminders", "isDefault": true },
+    { "id": "cal-id-2", "name": "Work", "isDefault": false }
+  ]
+}
+```
+
+---
+
 ## 1) List Reminders
 
 ### Trigger Examples (by language)
@@ -103,23 +130,34 @@ node skills/mac-reminders-agent/cli.js list --scope today
 
 # List with specific locale
 node skills/mac-reminders-agent/cli.js list --scope week --locale ko
+
+# List from specific list
+node skills/mac-reminders-agent/cli.js list --scope week --list "Work"
+
+# Search by title keyword
+node skills/mac-reminders-agent/cli.js list --query "meeting" --scope all
 ```
 
-### Scope Options
+### Parameters
 
-- `today` - Today only
-- `week` - This week (today ~ +7 days)
-- `all` - All reminders
+- `--scope` (optional): `today`, `week` (default), `all`
+- `--list` (optional): Filter by reminder list name (omit for all lists)
+- `--query` (optional): Filter by title keyword (case-insensitive)
+- `--locale` (optional): Response language (en, ko, ja, zh)
 
 ### Output Format
 
-Returns JSON array:
+Returns JSON with items array:
 
 ```json
 [
   {
+    "id": "ABC-123-DEF",
     "title": "Task title",
-    "due": "2026-02-05T16:30:00" | null
+    "due": "2026-02-05T16:30:00+09:00",
+    "list": "Work",
+    "priority": "high",
+    "completed": false
   }
 ]
 ```
@@ -173,6 +211,9 @@ Use `locales.json` templates to format responses in user's language:
 ```bash
 # Add with locale
 node skills/mac-reminders-agent/cli.js add --title "Meeting" --due "2026-02-05T09:00:00+09:00" --locale ko
+
+# Add with priority and specific list
+node skills/mac-reminders-agent/cli.js add --title "Urgent Report" --due "2026-02-05T17:00:00+09:00" --priority high --list "Work" --locale ko
 ```
 
 ### Parameters
@@ -180,6 +221,8 @@ node skills/mac-reminders-agent/cli.js add --title "Meeting" --due "2026-02-05T0
 - `--title` (required): Reminder title
 - `--due` (optional): ISO 8601 format (`YYYY-MM-DDTHH:mm:ss+09:00`)
 - `--note` (optional): Additional notes
+- `--priority` (optional): `high`, `medium`, `low`, `none` (default: none)
+- `--list` (optional): Target reminder list name (default: system default list)
 - `--locale` (optional): Response language (en, ko, ja, zh)
 
 ### Response Examples
@@ -215,6 +258,9 @@ node skills/mac-reminders-agent/cli.js edit --id "ABC123" --title "New Meeting T
 # Edit due date
 node skills/mac-reminders-agent/cli.js edit --id "ABC123" --due "2026-03-01T10:00:00+09:00"
 
+# Edit priority
+node skills/mac-reminders-agent/cli.js edit --id "ABC123" --priority high
+
 # Edit note
 node skills/mac-reminders-agent/cli.js edit --id "ABC123" --note "Updated notes"
 ```
@@ -225,6 +271,7 @@ node skills/mac-reminders-agent/cli.js edit --id "ABC123" --note "Updated notes"
 - `--title` (optional): New title
 - `--due` (optional): New due date in ISO 8601 format
 - `--note` (optional): New note text
+- `--priority` (optional): `high`, `medium`, `low`, `none`
 - `--locale` (optional): Response language (en, ko, ja, zh)
 
 ### IMPORTANT: Use `list` first to get reminder IDs
@@ -379,11 +426,15 @@ This skill requires access to the **Reminders** app. On first use:
 
 - Multi-language support via `locales.json` (en, ko, ja, zh)
 - Core commands:
-  - `list --scope today|week|all [--locale XX]` — returns items with `id` field
-  - `add --title ... [--due ...] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD] [--locale XX]`
-  - `edit --id ID [--title ...] [--due ...] [--note ...] [--locale XX]`
+  - `lists [--locale XX]` — view all reminder lists (calendars)
+  - `list --scope today|week|all [--list "NAME"] [--query "KEYWORD"] [--locale XX]` — returns items with `id`, `list`, `priority` fields
+  - `add --title ... [--due ...] [--priority high|medium|low|none] [--list "NAME"] [--repeat daily|weekly|monthly|yearly] [--interval N] [--repeat-end YYYY-MM-DD] [--locale XX]`
+  - `edit --id ID [--title ...] [--due ...] [--note ...] [--priority ...] [--locale XX]`
   - `delete --id ID [--locale XX]`
   - `complete --id ID [--locale XX]`
+- **Multiple lists**: Target specific reminder lists or search across all
+- **Priority**: Set priority levels on reminders (high/medium/low)
+- **Search**: Filter reminders by title keyword
 - **Native recurrence**: Use `--repeat` for recurring reminders (creates single reminder with repeat rule)
 - Automatically detect user language or use explicit `--locale` parameter
 - Format responses using locale-specific templates

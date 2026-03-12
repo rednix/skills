@@ -3,11 +3,16 @@
   "slug": "mac-reminders-agent",
   "displayName": "Mac Reminders Agent",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1771914709422,
-    "commit": "https://github.com/openclaw/skills/commit/052983d551a7d3a63db51398ff8bf742afa7faed"
+    "version": "1.3.0",
+    "publishedAt": 1773210700072,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1771914709422,
+      "commit": "https://github.com/openclaw/skills/commit/052983d551a7d3a63db51398ff8bf742afa7faed"
+    },
     {
       "version": "1.1.2",
       "publishedAt": 1770769367856,

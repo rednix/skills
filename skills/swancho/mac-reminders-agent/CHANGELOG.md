@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-11
+
+### Added
+- **Multiple lists**: `lists` command to view all reminder lists; `--list` option on `list` and `add` to target specific lists
+- **Priority support**: `--priority high|medium|low|none` on `add` and `edit`; priority displayed in list output
+- **Title search**: `--query "keyword"` on `list` to filter reminders by title (case-insensitive)
+- Priority labels in locales.json (en, ko, ja, zh)
+- Trigger examples for lists/search in locales.json
+
+### Changed
+- `list` command now searches across all reminder lists by default (was default list only)
+- `reminderToDict` now includes `list` (calendar name) and `priority` fields
+- Updated SKILL.md with new commands and options
+- `add` with `--priority` or `--list` now routes through Swift EventKit
+
 ## [1.2.0] - 2026-02-24
 
 ### Added

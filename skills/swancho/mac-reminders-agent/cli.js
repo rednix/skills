@@ -97,10 +97,11 @@ async function main() {
 
   if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
     console.log(`Usage:
-  node cli.js list [--scope today|week|all] [--locale en|ko|ja|zh]
-  node cli.js add --title "TITLE" [--due ISO_DATETIME] [--note "MEMO"] [--locale en|ko|ja|zh]
+  node cli.js lists [--locale en|ko|ja|zh]
+  node cli.js list [--scope today|week|all] [--list "LIST_NAME"] [--query "KEYWORD"] [--locale en|ko|ja|zh]
+  node cli.js add --title "TITLE" [--due ISO_DATETIME] [--note "MEMO"] [--priority high|medium|low|none] [--list "LIST_NAME"] [--locale en|ko|ja|zh]
   node cli.js add --title "Weekly standup" --due "2026-02-10T09:00:00+09:00" --repeat weekly [--interval N] [--repeat-end "2026-06-30"] [--locale ko]
-  node cli.js edit --id "ID" [--title "NEW"] [--due ISO_DATETIME] [--note "NEW"] [--locale en|ko|ja|zh]
+  node cli.js edit --id "ID" [--title "NEW"] [--due ISO_DATETIME] [--note "NEW"] [--priority high|medium|low|none] [--locale en|ko|ja|zh]
   node cli.js delete --id "ID" [--locale en|ko|ja|zh]
   node cli.js complete --id "ID" [--locale en|ko|ja|zh]
 
@@ -110,9 +111,19 @@ Supported locales: en (English), ko (한국어), ja (日本語), zh (中文)
   }
 
   try {
-    if (cmd === 'list') {
+    if (cmd === 'lists' || cmd === 'calendars') {
+      const result = await runReminderBridge('calendars', []);
+      console.log(JSON.stringify({
+        locale,
+        labels: loc.responses || {},
+        calendars: result
+      }));
+    } else if (cmd === 'list') {
       const scope = args.scope || 'week';
-      const result = await runReminderBridge('list', ['--scope', scope]);
+      const extra = ['--scope', scope];
+      if (args.list) extra.push('--list', args.list);
+      if (args.query) extra.push('--query', args.query);
+      const result = await runReminderBridge('list', extra);
       // result is an array of items (from apple-bridge)
       console.log(JSON.stringify({
         locale,
@@ -167,9 +178,14 @@ Supported locales: en (English), ko (한국어), ja (日本語), zh (中文)
         }
       }
 
+      const priority = args.priority || '';
+      const listName = args.list || '';
+
       const extra = ['--title', title];
       if (due) extra.push('--due', due);
       if (note) extra.push('--note', note);
+      if (priority) extra.push('--priority', priority);
+      if (listName) extra.push('--list', listName);
 
       // 반복 옵션들을 bridge 쪽으로 그대로 전달
       if (repeat) extra.push('--repeat', repeat);
@@ -204,6 +220,7 @@ Supported locales: en (English), ko (한국어), ja (日本語), zh (中文)
       if (args.title) extra.push('--title', args.title);
       if (args.due) extra.push('--due', args.due);
       if (args.note !== undefined && args.note !== true) extra.push('--note', args.note);
+      if (args.priority) extra.push('--priority', args.priority);
       if (args.repeat) extra.push('--repeat', args.repeat);
       if (args.interval) extra.push('--interval', args.interval);
       if (args['repeat-end']) extra.push('--repeat-end', args['repeat-end']);
