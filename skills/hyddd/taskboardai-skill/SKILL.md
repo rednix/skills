@@ -1,3 +1,8 @@
+---
+name: taskboard-skill
+description: Manage tasks and projects using the TaskBoardAI Kanban system. Includes MCP server integration.
+---
+
 <skill>
   <name>taskboard</name>
   <description>
