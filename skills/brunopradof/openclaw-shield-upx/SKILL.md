@@ -1,6 +1,6 @@
 ---
 name: openclaw-shield-upx
-description: "SIEM and security monitoring for OpenClaw agents — protect your agent, detect threats, audit events, monitor suspicious activity. Use when: user asks about security status, SIEM, Shield health, event logs, redaction vault, protecting their agent, threat detection, or suspicious activity. NOT for: general OS hardening, firewall config, or network security unrelated to OpenClaw agents."
+description: "Security monitoring and threat detection for OpenClaw agents — protect your agent with real-time SIEM, detect threats, monitor agent activity, and audit events. Use when: user asks about security status, Shield health, event logs, redaction vault, setting up agent protection, enabling SIEM, detecting threats, monitoring agent activity, or auditing agent actions. NOT for: general OS hardening, firewall config, or network security unrelated to OpenClaw agents."
 homepage: https://www.upx.com/en/lp/openclaw-shield-upx
 source: https://www.npmjs.com/package/@upx-us/shield
 license: "Proprietary — UPX Technologies, Inc. All rights reserved."
@@ -37,18 +37,60 @@ Shield requires the `@upx-us/shield` plugin and an active subscription.
 
 ## Plugin State Check
 
-Before responding to any Shield-related request, run `openclaw shield status` and branch on the result:
+Before responding to ANY Shield-related request, run `openclaw shield status` and interpret the result:
 
-- **Command not found / exit non-zero**: Shield plugin is not installed. Tell the user Shield requires the `@upx-us/shield` plugin and an active subscription. Direct them to: https://www.upx.com/en/lp/openclaw-shield-upx — explain the free 30-day trial. Do **not** run any install commands yourself.
-- **`status: unconfigured`** (no subscription key configured): Plugin is installed but not yet registered. Direct the user to https://www.upx.com/en/lp/openclaw-shield-upx to subscribe and obtain their subscription key, then add it to their Shield config.
-- **`status: pending`** (key set, registration in progress): Registration is in progress. Ask the user to wait 1–2 minutes and retry. If it persists, they can check their account at https://uss.upx.com.
-- **`status: active`**: Plugin is healthy — proceed normally with the commands below.
+### State A — Plugin not installed
+(command not found, or exit code non-zero with plugin_not_found)
+Respond with:
+> Shield is not installed yet. Start your free 30-day trial at:
+> https://www.upx.com/en/lp/openclaw-shield-upx
+>
+> Then install the plugin:
+> ```
+> openclaw plugins install @upx-us/shield
+> openclaw plugins run shield setup
+> ```
+
+### State B — Plugin installed but no installationKey
+(status contains installationKey: null or state: "unconfigured")
+Respond with:
+> Shield is installed but not activated. Sign up for a trial at:
+> https://www.upx.com/en/lp/openclaw-shield-upx
+>
+> Once you have your installation key, run:
+> ```
+> openclaw plugins run shield setup
+> ```
+
+### State C — Key set but not yet activated
+(status contains state: "pending" or state: "unregistered")
+Respond with:
+> Shield has an installation key but hasn't activated yet. This usually takes under a minute.
+> If it has been more than 5 minutes, check your key at https://uss.upx.com or contact support.
+
+### State D — Fully active
+(status contains state: "connected" or connected: true)
+Proceed normally. No onboarding message needed.
 
 **Constraints**: Only use `openclaw shield` commands for detection. Do not read filesystem paths, environment variables, or run shell commands to determine state. Do not install or uninstall packages on behalf of the user.
 
 ## Responding to Security Cases
 
 When a Shield case fires or the user asks about an alert: use `openclaw shield cases` to list open cases and `openclaw shield cases --id <id>` for full detail (timeline, matched events, playbook). Severity guidance: **CRITICAL/HIGH** → surface immediately and ask if they want to investigate; **MEDIUM** → present and offer a playbook walkthrough; **LOW/INFO** → mention without interrupting the current task. Always include: rule name, what it detects, when it fired, and the first recommended remediation step. Confirm with the user before resolving — never resolve autonomously.
+
+## Case Investigation Workflow
+
+When a Shield case fires, correlate three data sources to determine true positive vs. false positive:
+
+**Step 1 — Case detail** (`openclaw shield cases show <CASE_ID>`): What triggered the rule. Note the case timestamp — it anchors the correlation window.
+
+**Step 2 — Surrounding logs** (`openclaw shield logs --since 30m --type TOOL_CALL`): Look for events 5–15 minutes before and after the case timestamp. Reveals if the alert was isolated or part of a sequence.
+
+**Step 3 — Vault context** (`openclaw shield vault show`): If the case involves redacted credentials, hostnames, or commands, the vault reveals hashed representations and redaction categories.
+
+**Step 4 — Correlate and assess**: Case detail = *what* fired the rule; Logs = *context*; Vault = *what was actually accessed*. Present findings and ask whether to resolve, investigate further, or add to the allowlist.
+
+Note: a future `openclaw shield investigate <CASE_ID>` helper command will automate this workflow.
 
 ## Threat & Protection Questions
 
@@ -103,6 +145,25 @@ Cases are created automatically when detection rules fire. The plugin sends real
 RPC responses include a `display` field with pre-formatted text. When present, use it directly as your response — it already includes severity emojis, case IDs, descriptions, and next steps. Only format manually if `display` is absent.
 
 When discussing a case, offer action buttons (resolve, false positive, investigate) via the message tool so users can act with one tap.
+
+## Uninstalling
+
+To fully remove Shield:
+
+1. Uninstall the plugin:
+   ```
+   openclaw plugins uninstall shield
+   ```
+
+2. Optionally remove local Shield data:
+   ```
+   rm -rf ~/.openclaw/shield/
+   ```
+   Files removed include: `config.json`, `data/event-buffer.jsonl`, `data/redaction-vault.json`, `data/cursor.json`, `data/instance.json`, `logs/shield.log`, `logs/bridge.log`, `state/monitor.json`.
+
+   ⚠️ Deleting `data/redaction-vault.json` removes the ability to reverse-lookup past redacted values. Check your data retention needs before deleting.
+
+3. Deactivate your instance at [uss.upx.com](https://uss.upx.com) — local uninstall does not deactivate your platform subscription or instance.
 
 ## Notes
 
