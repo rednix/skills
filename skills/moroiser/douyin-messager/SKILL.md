@@ -1,7 +1,6 @@
 ---
 name: douyin-messager
 description: "Douyin private messaging via browser automation. 抖音私信发送，通过浏览器自动化发送私信、获取聊天记录。Use when user needs to send 抖音私信、回复消息、查看聊天记录。Requires browser login. Triggers: 抖音, douyin, Douyin, TikTok中国, 抖音私信, douyin dm, douyin message, 抖音消息, 抖音发消息, send douyin message, 抖音聊天, douyin chat, 抖音回复, reply douyin, 获取抖音聊天记录, get douyin chat history, 抖音私信发送, send douyin dm, 给抖音用户发消息, message douyin user, 抖音私信自动化, douyin dm automation, 抖音私信工具, douyin messaging tool."
-metadata: {"openclaw": {"emoji": "🎵", "requires": {"config": ["browser.enabled"]}}}
 ---
 
 # 抖音私信发送 | Douyin Private Messaging

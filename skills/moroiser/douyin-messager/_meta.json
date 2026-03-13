@@ -3,9 +3,15 @@
   "slug": "douyin-messager",
   "displayName": "Douyin Messager | 抖音私信",
   "latest": {
-    "version": "1.1.1",
-    "publishedAt": 1772481326133,
-    "commit": "https://github.com/openclaw/skills/commit/f00bdbb0566def4ac3eae2135ce734719980efa0"
+    "version": "1.1.2",
+    "publishedAt": 1773339880568,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.1",
+      "publishedAt": 1772481326133,
+      "commit": "https://github.com/openclaw/skills/commit/f00bdbb0566def4ac3eae2135ce734719980efa0"
+    }
+  ]
 }
