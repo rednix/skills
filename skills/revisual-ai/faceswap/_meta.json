@@ -3,9 +3,15 @@
   "slug": "faceswap",
   "displayName": "Faceswap",
   "latest": {
-    "version": "1.0.2",
-    "publishedAt": 1773145177307,
-    "commit": "https://github.com/openclaw/skills/commit/c99d1d9fd05ab6f5baf270ca9e408166c552aeff"
+    "version": "1.0.3",
+    "publishedAt": 1773224320573,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1773145177307,
+      "commit": "https://github.com/openclaw/skills/commit/c99d1d9fd05ab6f5baf270ca9e408166c552aeff"
+    }
+  ]
 }

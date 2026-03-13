@@ -1,6 +1,6 @@
 {
   "name": "faceswap",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "AI-powered face swap service - Use verging.ai directly from command line. Supports local video files and images, remote video URLs (YouTube, Bilibili, etc.), remote image URLs, auto-download remote resources, real-time progress tracking, video trimming.",
   "author": "verging.ai",
   "license": "MIT",
