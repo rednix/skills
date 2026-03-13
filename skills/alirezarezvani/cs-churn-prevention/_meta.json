@@ -1,11 +1,17 @@
 {
   "owner": "alirezarezvani",
   "slug": "cs-churn-prevention",
-  "displayName": "Churn Prevention",
+  "displayName": "churn-prevention",
   "latest": {
-    "version": "2.1.1",
-    "publishedAt": 1773087991381,
-    "commit": "https://github.com/openclaw/skills/commit/e245760660d6b5765e31c7a040b6e794bbfe1751"
+    "version": "1.0.0",
+    "publishedAt": 1773244274067,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.1.1",
+      "publishedAt": 1773087991381,
+      "commit": "https://github.com/openclaw/skills/commit/e245760660d6b5765e31c7a040b6e794bbfe1751"
+    }
+  ]
 }
