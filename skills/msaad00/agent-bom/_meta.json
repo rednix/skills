@@ -1,13 +1,18 @@
 {
   "owner": "msaad00",
   "slug": "agent-bom",
-  "displayName": "agent-bom",
+  "displayName": "Agent BOM",
   "latest": {
-    "version": "0.62.0",
-    "publishedAt": 1772997937170,
-    "commit": "https://github.com/openclaw/skills/commit/133c525548b66e760c65353713af3a2eb48f58d7"
+    "version": "0.70.6",
+    "publishedAt": 1773346826068,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.62.0",
+      "publishedAt": 1772997937170,
+      "commit": "https://github.com/openclaw/skills/commit/133c525548b66e760c65353713af3a2eb48f58d7"
+    },
     {
       "version": "0.60.2",
       "publishedAt": 1772943077361,
