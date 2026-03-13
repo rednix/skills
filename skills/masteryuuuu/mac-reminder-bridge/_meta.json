@@ -3,9 +3,15 @@
   "slug": "mac-reminder-bridge",
   "displayName": "Mac Reminder Bridge",
   "latest": {
-    "version": "2.1.0",
-    "publishedAt": 1773395628729,
-    "commit": "https://github.com/openclaw/skills/commit/1e17bc66bd8927e4ae3ecd9c9d5efdd8b19396e2"
+    "version": "2.1.2",
+    "publishedAt": 1773398780458,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.1.0",
+      "publishedAt": 1773395628729,
+      "commit": "https://github.com/openclaw/skills/commit/1e17bc66bd8927e4ae3ecd9c9d5efdd8b19396e2"
+    }
+  ]
 }

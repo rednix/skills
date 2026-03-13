@@ -18,9 +18,12 @@ Environment variables:
   BRIDGE_SECRET        Shared secret for X-Bridge-Secret header (recommended)
   BRIDGE_PORT          Port (default: 5000)
   BRIDGE_ALLOWED_IPS   Comma-separated IPs/CIDRs (default: 172.0.0.0/8,127.0.0.1,::1)
+                       Example: "1.2.3.4,192.168.1.0/24" for Cloud/Home mixed setups.
+                       Set to "0.0.0.0/0" to disable IP check (NOT recommended unless BRIDGE_SECRET is set).
   DRY_RUN              Set to "1" to log without writing to Reminders
 """
 
+from __future__ import annotations
 import ipaddress
 import logging
 import logging.handlers
@@ -42,7 +45,8 @@ PORT       = int(os.environ.get("BRIDGE_PORT", 5000))
 DRY_RUN    = os.environ.get("DRY_RUN", "").strip() == "1"
 
 _raw_ips = os.environ.get("BRIDGE_ALLOWED_IPS", "172.0.0.0/8,127.0.0.1,::1")
-ALLOWED_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+from typing import Union, List
+ALLOWED_NETWORKS: List[Union[ipaddress.IPv4Network, ipaddress.IPv6Network]] = []
 for _entry in _raw_ips.split(","):
     _entry = _entry.strip()
     if _entry:
@@ -126,7 +130,7 @@ def as_escape(s: str) -> str:
     )
 
 
-def run_script(script: str) -> tuple[str, str, int]:
+def run_script(script: str) -> tuple:
     """
     Execute an AppleScript string via osascript.
     Returns (stdout, stderr, returncode).
@@ -189,7 +193,7 @@ PRIORITY_MAP   = {"none": 0, "low": 9, "medium": 5, "high": 1,
 PRIORITY_LABEL = {0: "none", 9: "low", 5: "medium", 1: "high"}
 
 _default_list_lock  = threading.Lock()
-_default_list_cache: str | None = None   # None = not yet resolved
+_default_list_cache: Union[str, None] = None
 
 
 def get_all_list_names() -> list[str]:

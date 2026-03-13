@@ -26,29 +26,22 @@
   - 内置 AppleScript 注入防护。
 - **原生体验**：基于 AppleScript 实现，数据与你的 iCloud 账号完美同步。
 
-## 📦 安装与配置
+## ⚙️ 配置（环境变量）
+| 变量名 | 描述 | 默认值 |
+|----------|-------------|---------|
+| `BRIDGE_SECRET` | 用于鉴权的共享密钥 | (无) |
+| `BRIDGE_PORT` | 监听端口 | `5000` |
+| `BRIDGE_ALLOWED_IPS` | IP 白名单（逗号分隔，云用户必看） | `172.0.0.0/8,127.0.0.1` |
 
-### 1. 宿主机端 (你的 Mac)
-克隆本项目并安装依赖：
+### ☁️ 云端部署（腾讯云/阿里云等）特别说明
+如果你是在远程云服务器上运行 OpenClaw：
+1. 请确保在 Mac 的防火墙/路由器中开放了 `5000` 端口。
+2. 你**必须**将云服务器的公网 IP 加入白名单，或设置 `BRIDGE_SECRET`：
 ```bash
-git clone https://github.com/your-username/mac-reminder-bridge.git
-cd mac-reminder-bridge
-pip install -r requirements.txt
-```
-
-启动监听服务：
-```bash
+# 示例：允许特定的云服务器 IP 访问
+export BRIDGE_ALLOWED_IPS="1.2.3.4,127.0.0.1"
 python3 listener.py
 ```
-*注意：首次运行时，macOS 会弹出窗口询问“是否允许终端访问提醒事项”，请点击“允许”。*
-
-### 2. 客户端 (Docker/OpenClaw 内部)
-如果你使用的是 OpenClaw 平台，直接安装技能即可：
-```bash
-clawhub install mac-reminder-bridge
-```
-
-## 🛠 接口示例
 
 ### 检查服务状态
 ```bash

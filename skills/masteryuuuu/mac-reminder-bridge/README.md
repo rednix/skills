@@ -80,7 +80,15 @@ curl -X POST http://host.docker.internal:5000/add_reminder \
 |----------|-------------|---------|
 | `BRIDGE_SECRET` | Shared secret for authentication | (None) |
 | `BRIDGE_PORT` | Port to listen on | `5000` |
-| `BRIDGE_ALLOWED_IPS` | Comma-separated allowlist | `172.0.0.0/8,127.0.0.1` |
+| `BRIDGE_ALLOWED_IPS` | Comma-separated allowlist (Cloud users see below) | `172.0.0.0/8,127.0.0.1` |
+
+### ☁️ Note for Cloud/Tencent Cloud users
+If you are running OpenClaw on a remote server (e.g., Tencent Cloud, AWS), your Docker instance will have a public IP. You **MUST** add your server's public IP to `BRIDGE_ALLOWED_IPS` or set a `BRIDGE_SECRET`:
+```bash
+# Example: Allow a specific Cloud Server IP
+export BRIDGE_ALLOWED_IPS="1.2.3.4,127.0.0.1"
+python3 listener.py
+```
 
 ## 📜 License
 MIT License. Feel free to use, modify, and distribute!
