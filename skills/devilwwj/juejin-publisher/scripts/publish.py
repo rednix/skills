@@ -20,6 +20,11 @@ import argparse
 import urllib.request
 import urllib.error
 
+# 配置优先级说明：
+#   1. 命令行参数 --cookie（最高优先级）
+#   2. 环境变量 JUEJIN_COOKIE
+#   3. juejin.env 配置文件（本地私有，不随 Skill 发布）
+
 # ─── 颜色输出 ────────────────────────────────────────────────
 RED = "\033[0;31m"
 GREEN = "\033[0;32m"
@@ -46,29 +51,53 @@ DEFAULT_CATEGORY_ID = "6809637769959178254"
 DEFAULT_TAG_IDS = ["6809640408797167623"]
 
 # ─── 配置加载 ────────────────────────────────────────────────
-def load_config():
-    """从 juejin.env 加载配置"""
+def load_config(cli_cookie=None):
+    """
+    按优先级加载配置：
+      1. 命令行参数 --cookie（最高优先级）
+      2. 环境变量 JUEJIN_COOKIE / JUEJIN_DEFAULT_CATEGORY_ID / JUEJIN_DEFAULT_TAG_IDS
+      3. juejin.env 配置文件（本地私有，不随 Skill 包发布）
+    """
     config = {}
-    if not os.path.exists(CONFIG_FILE):
-        log_error(f"配置文件不存在: {CONFIG_FILE}")
-        log_warn("请先创建配置文件：")
-        print(f"  cp {SKILL_ROOT}/juejin.env.example {CONFIG_FILE}")
-        sys.exit(1)
 
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith("#") or "=" not in line:
-                continue
-            # 支持 export KEY="VALUE" 和 KEY="VALUE" 两种格式
-            line = line.removeprefix("export").strip()
-            key, _, val = line.partition("=")
-            val = val.strip().strip('"').strip("'")
-            config[key.strip()] = val
+    # 优先级 3：从 juejin.env 文件加载（最低优先级）
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or "=" not in line:
+                    continue
+                line = line.removeprefix("export").strip()
+                key, _, val = line.partition("=")
+                val = val.strip().strip('"').strip("'")
+                config[key.strip()] = val
 
-    cookie = config.get("JUEJIN_COOKIE", "")
-    if not cookie:
-        log_error("JUEJIN_COOKIE 未配置，请在 juejin.env 中填入掘金 Cookie")
+    # 优先级 2：环境变量覆盖文件配置
+    for env_key in ("JUEJIN_COOKIE", "JUEJIN_DEFAULT_CATEGORY_ID", "JUEJIN_DEFAULT_TAG_IDS"):
+        env_val = os.environ.get(env_key, "")
+        if env_val:
+            config[env_key] = env_val
+
+    # 优先级 1：命令行参数覆盖一切
+    if cli_cookie:
+        config["JUEJIN_COOKIE"] = cli_cookie
+
+    # 验证必填项
+    cookie = config.get("JUEJIN_COOKIE", "").strip()
+    if not cookie or cookie in ("请填入你的掘金Cookie", "sessionid=your_session_id_here; ..."):
+        log_error("未找到有效的掘金 Cookie，请通过以下任一方式配置：")
+        print()
+        print("  方式一（推荐）：环境变量")
+        print("    export JUEJIN_COOKIE='你的Cookie'")
+        print()
+        print("  方式二：命令行参数")
+        print("    python3 publish.py article.md --cookie '你的Cookie'")
+        print()
+        print("  方式三：配置文件（本地私有）")
+        print(f"    cp {SKILL_ROOT}/juejin.env.example {CONFIG_FILE}")
+        print(f"    # 然后编辑 {CONFIG_FILE}，填入 JUEJIN_COOKIE")
+        print()
+        print("  如何获取 Cookie：登录 juejin.cn → F12 → Network → 任意请求 → Request Headers → Cookie")
         sys.exit(1)
 
     return config
@@ -204,8 +233,9 @@ def main():
         """
     )
     parser.add_argument("file", help="Markdown 文件路径")
-    parser.add_argument("--category", help="文章分类 ID（覆盖 juejin.env 默认值）")
-    parser.add_argument("--tags", help="标签 ID，逗号分隔（覆盖 juejin.env 默认值）")
+    parser.add_argument("--cookie", help="掘金 Cookie（优先级高于环境变量和配置文件）")
+    parser.add_argument("--category", help="文章分类 ID（覆盖默认值）")
+    parser.add_argument("--tags", help="标签 ID，逗号分隔（覆盖默认值）")
     parser.add_argument("--draft-only", action="store_true", help="仅创建草稿，不发布")
     args = parser.parse_args()
 
@@ -214,8 +244,8 @@ def main():
         log_error(f"文件不存在: {args.file}")
         sys.exit(1)
 
-    # 加载配置
-    config = load_config()
+    # 加载配置（支持 --cookie 参数、环境变量、juejin.env 三种方式）
+    config = load_config(cli_cookie=args.cookie)
     cookie = config["JUEJIN_COOKIE"]
     category_id = args.category or config.get("JUEJIN_DEFAULT_CATEGORY_ID", DEFAULT_CATEGORY_ID)
     if args.tags:

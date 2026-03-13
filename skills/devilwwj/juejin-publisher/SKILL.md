@@ -1,6 +1,6 @@
 ---
 name: juejin-publisher
-version: 1.0.0
+version: 1.0.2
 license: MIT
 description: 掘金文章自动发布技能。通过掘金官方 API（Cookie 鉴权），支持将 Markdown 文章一键发布到稀土掘金平台，支持设置分类、标签、摘要和封面图。
 metadata:
