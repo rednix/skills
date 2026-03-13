@@ -1,11 +1,17 @@
 {
   "owner": "bytesagain1",
   "slug": "roomba-control",
-  "displayName": "roomba-control",
+  "displayName": "Roomba Control",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773227908654,
-    "commit": "https://github.com/openclaw/skills/commit/5533dae4f8b1e9599b40bc97c3e7557bcd60a7bc"
+    "version": "2.2.0",
+    "publishedAt": 1773421760237,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773227908654,
+      "commit": "https://github.com/openclaw/skills/commit/5533dae4f8b1e9599b40bc97c3e7557bcd60a7bc"
+    }
+  ]
 }
