@@ -1,0 +1,11 @@
+{
+  "owner": "junweiren98-rgb",
+  "slug": "multi-agent-shared-memory",
+  "displayName": "Shared Memory for Multi-Agent OpenClaw",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773367510028,
+    "commit": null
+  },
+  "history": []
+}
