@@ -3,11 +3,16 @@
   "slug": "fargo-skill",
   "displayName": "FargoRate",
   "latest": {
-    "version": "0.3.1",
-    "publishedAt": 1773177906556,
-    "commit": "https://github.com/openclaw/skills/commit/f4902314296e80ac150fd054ff1d3d9835193f00"
+    "version": "0.3.6",
+    "publishedAt": 1773347588020,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.3.1",
+      "publishedAt": 1773177906556,
+      "commit": "https://github.com/openclaw/skills/commit/f4902314296e80ac150fd054ff1d3d9835193f00"
+    },
     {
       "version": "0.2.0",
       "publishedAt": 1772832095152,
