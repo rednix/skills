@@ -3,11 +3,16 @@
   "slug": "context-compression",
   "displayName": "Memory Compression",
   "latest": {
-    "version": "3.9.7",
-    "publishedAt": 1773284467681,
-    "commit": "https://github.com/openclaw/skills/commit/ce51740796e8cfeb3e53ab71bda21abda4269cc6"
+    "version": "3.10.0",
+    "publishedAt": 1773285593648,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.9.7",
+      "publishedAt": 1773284467681,
+      "commit": "https://github.com/openclaw/skills/commit/ce51740796e8cfeb3e53ab71bda21abda4269cc6"
+    },
     {
       "version": "3.6.3",
       "publishedAt": 1773151570771,
