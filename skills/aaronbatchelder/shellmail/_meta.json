@@ -3,11 +3,16 @@
   "slug": "shellmail",
   "displayName": "ShellMail - Email Built for AI Agents",
   "latest": {
-    "version": "1.0.10",
-    "publishedAt": 1772418385578,
-    "commit": "https://github.com/openclaw/skills/commit/38afe893299eebcdc9de687c0f2e148d0819517e"
+    "version": "1.0.12",
+    "publishedAt": 1773282958299,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.10",
+      "publishedAt": 1772418385578,
+      "commit": "https://github.com/openclaw/skills/commit/38afe893299eebcdc9de687c0f2e148d0819517e"
+    },
     {
       "version": "1.0.9",
       "publishedAt": 1772078031693,
