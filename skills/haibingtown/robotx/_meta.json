@@ -3,9 +3,15 @@
   "slug": "robotx",
   "displayName": "RobotX Deploy CLI",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772780392139,
-    "commit": "https://github.com/openclaw/skills/commit/d04d59f96abe019a447ec0ace9f60bae77aa62ec"
+    "version": "1.0.1",
+    "publishedAt": 1773230035166,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772780392139,
+      "commit": "https://github.com/openclaw/skills/commit/d04d59f96abe019a447ec0ace9f60bae77aa62ec"
+    }
+  ]
 }
