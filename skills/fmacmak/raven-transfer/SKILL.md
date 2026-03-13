@@ -7,6 +7,13 @@ description: Wallet-aware Raven Atlas transfer operations for NGN payouts. Use w
 
 Execute safe NGN payouts through Raven Atlas.
 
+## Package artifacts
+
+- `scripts/raven-transfer.mjs` (transfer CLI implementation)
+- `agents/openai.yaml` (runtime metadata and env requirements)
+- `references/*.md` (workflow, command contract, safety, install)
+- `tests/*.test.mjs` (unit and live-contract checks)
+
 ## Use this skill process
 
 1. Identify payout target type: `bank` or `merchant`.
@@ -17,11 +24,25 @@ Execute safe NGN payouts through Raven Atlas.
 6. Report normalized result fields (`available_balance`, `fee`, `total_debit`, `status`, `raw_status`).
 
 Do not skip confirmation token checks. Do not auto-retry transfer submission.
+Failed transfer note: yes, a failed Raven transfer is typically auto-reversed/refunded after a few minutes; wait, then re-check `transfer-status` and wallet balance before any retry.
 
 ## Required environment
 
-- `RAVEN_API_KEY` must be available in the runtime environment.
-- Ensure the host agent exposes this variable when running commands.
+- One auth source must be available in the runtime environment:
+  - `RAVEN_API_KEY_FILE` (preferred, points to a `chmod 600`/`chmod 400` file)
+  - `RAVEN_API_KEY`
+- Optional runtime overrides:
+  - `RAVEN_API_BASE` (default: `https://integrations.getravenbank.com/v1`)
+  - `RAVEN_TIMEOUT_MS` (default: `30000`)
+  - `RAVEN_READ_RETRIES` (default: `2`)
+  - `RAVEN_RETRY_DELAY_MS` (default: `300`)
+- Optional safety hardening:
+  - `RAVEN_DISABLE_LOCAL_STATE=1` disables on-disk transfer state.
+
+## Invocation policy
+
+- Implicit model invocation should be disabled for this skill.
+- Invoke explicitly with `$raven-transfer` when a transfer workflow is required.
 
 ## Run commands
 

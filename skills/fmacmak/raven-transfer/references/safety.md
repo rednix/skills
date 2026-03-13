@@ -8,6 +8,7 @@
 - Always perform pre-transfer check `available_balance >= amount + expected_fee`.
 - Always use idempotency reference (`merchant_ref`) and duplicate-intent checks.
 - Always run `transfer-status` for settlement verification before any resend decision.
+- Never print raw secrets in command output; redact token-like values and sensitive keys.
 
 ## Retry policy
 
@@ -28,7 +29,12 @@ If transfer fails, return actionable guidance and require fresh user confirmatio
 
 - Support caller-supplied `merchant_ref`.
 - Reject duplicate `merchant_ref` values from local transfer state.
-- Persist recent refs and intent hashes in `scripts/.state/transfer-state.json`.
+- Persist only minimal idempotency fields in `scripts/.state/transfer-state.json`:
+  - refs: `merchant_ref`, `trx_ref`, `intent_hash`, `status`, `raw_status`, `amount`, `fee`, timestamps
+  - intents: `intent_hash`, `merchant_ref`, `trx_ref`, `status`, `raw_status`, `amount`, `fee`, `updated_at`
+- Never persist account name, account number, or raw provider payloads.
+- Set file permissions to owner-only and avoid syncing `.state` to backups/repositories.
+- Set `RAVEN_DISABLE_LOCAL_STATE=1` to disable local state persistence entirely.
 - Reject repeated intent hashes with in-flight/successful statuses to prevent accidental double-send.
 
 ## Failure handling

@@ -1,11 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { normalizeTransferLookupResponse, normalizeWalletBalanceResponse } from "../scripts/raven-transfer.mjs";
+import { normalizeTransferLookupResponse, normalizeWalletBalanceResponse, resolveApiKey } from "../scripts/raven-transfer.mjs";
 
 const apiBase = process.env.RAVEN_API_BASE || "https://integrations.getravenbank.com/v1";
-const apiKey = process.env.RAVEN_API_KEY;
 const runLive = process.env.RAVEN_CONTRACT_TESTS === "1";
+const apiKey = (() => {
+  try {
+    return resolveApiKey(process.env);
+  } catch {
+    return null;
+  }
+})();
 
 async function ravenLive(method, path, body) {
   const response = await fetch(`${apiBase}${path}`, {

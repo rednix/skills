@@ -3,7 +3,8 @@
 ## Common
 
 - Script: `node ./scripts/raven-transfer.mjs`
-- Auth env var: `RAVEN_API_KEY`
+- Auth source: one of `RAVEN_API_KEY_FILE` (preferred) or `RAVEN_API_KEY`
+- Optional hardening env var: `RAVEN_DISABLE_LOCAL_STATE=1`
 - Output format: JSON object
 
 Success envelope:
@@ -92,7 +93,8 @@ Behavior:
 
 - If only `--merchant_ref` is passed, the script resolves `trx_ref` from local state.
 - Queries `GET /get-transfer?trx_ref=<ref>`.
-- Updates local transfer state with latest status.
+- Updates local transfer state with latest status using a strict allowlist of non-PII fields.
+- If `RAVEN_DISABLE_LOCAL_STATE=1`, pass `--trx_ref` directly because `merchant_ref` resolution from local state is unavailable.
 
 Example:
 

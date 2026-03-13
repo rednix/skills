@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   assessFunds,
@@ -8,6 +11,10 @@ import {
   normalizeTransferLookupResponse,
   normalizeTransferStatus,
   normalizeWalletBalanceResponse,
+  readApiKeyFromFile,
+  redactForLogs,
+  resolveApiKey,
+  sanitizeTransferStateSnapshot,
 } from "../scripts/raven-transfer.mjs";
 
 test("normalizeWalletBalanceResponse handles wallet array payload", () => {
@@ -99,4 +106,107 @@ test("normalizeTransferLookupResponse honors reversal flag", () => {
 
   const out = normalizeTransferLookupResponse(input);
   assert.equal(out.status, "reversed");
+});
+
+test("sanitizeTransferStateSnapshot strips account PII and payload fields", () => {
+  const state = {
+    refs: {
+      "INV-100": {
+        merchant_ref: "INV-100",
+        trx_ref: "rav_100",
+        status: "pending",
+        raw_status: "pending",
+        amount: 1000,
+        fee: 10,
+        account_name: "Jane Doe",
+        account_number: "0123456789",
+        bank: "058",
+        payload: { secret: true },
+      },
+    },
+    intents: {
+      abc123: {
+        intent_hash: "abc123",
+        merchant_ref: "INV-100",
+        trx_ref: "rav_100",
+        status: "pending",
+        raw_status: "pending",
+        amount: 1000,
+        fee: 10,
+        account_name: "Jane Doe",
+        payload: { secret: true },
+      },
+    },
+  };
+
+  const out = sanitizeTransferStateSnapshot(state);
+  assert.deepEqual(out.refs["INV-100"], {
+    merchant_ref: "INV-100",
+    trx_ref: "rav_100",
+    status: "pending",
+    raw_status: "pending",
+    amount: 1000,
+    fee: 10,
+  });
+  assert.deepEqual(out.intents.abc123, {
+    intent_hash: "abc123",
+    merchant_ref: "INV-100",
+    trx_ref: "rav_100",
+    status: "pending",
+    raw_status: "pending",
+    amount: 1000,
+    fee: 10,
+  });
+});
+
+test("resolveApiKey supports secure file-based key loading", () => {
+  const dir = mkdtempSync(join(tmpdir(), "raven-transfer-test-"));
+  const keyFile = join(dir, "api-key.txt");
+
+  try {
+    writeFileSync(keyFile, "RVSEC-file-based-key\n");
+    chmodSync(keyFile, 0o600);
+
+    const resolved = resolveApiKey({
+      RAVEN_API_KEY: "RVSEC-inline-fallback",
+      RAVEN_API_KEY_FILE: keyFile,
+    });
+
+    assert.equal(resolved, "RVSEC-file-based-key");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readApiKeyFromFile rejects broad file permissions", () => {
+  const dir = mkdtempSync(join(tmpdir(), "raven-transfer-test-"));
+  const keyFile = join(dir, "api-key.txt");
+
+  try {
+    writeFileSync(keyFile, "RVSEC-bad-perm");
+    chmodSync(keyFile, 0o644);
+
+    assert.throws(
+      () => readApiKeyFromFile(keyFile),
+      /permissions are too broad/i,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("redactForLogs redacts secret fields and token-like values", () => {
+  const out = redactForLogs({
+    Authorization: "Bearer abcdefghijklmnopqrstuvwxyz123456",
+    RAVEN_API_KEY: "RVSEC-cc9ca22d8d76d8ef7f84a353592b4f0525cd7e4aa8caf9bfb2d884da35d8fbcec8825fb8e6957cc4eb5a95ceca769ff3",
+    confirmation_token: "CONFIRM TXN_ABC123DEF456",
+    nested: {
+      error: "upstream returned RVSEC-12345678901234567890",
+    },
+  });
+
+  assert.equal(out.Authorization, "[REDACTED]");
+  assert.equal(out.RAVEN_API_KEY, "[REDACTED]");
+  assert.equal(out.confirmation_token, "CONFIRM TXN_ABC123DEF456");
+  assert.equal(out.nested.error, "upstream returned [REDACTED]");
 });

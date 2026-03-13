@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash, randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -13,13 +13,70 @@ const RETRY_BASE_DELAY_MS = Number(process.env.RAVEN_RETRY_DELAY_MS || "300");
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = join(SCRIPT_DIR, ".state", "transfer-state.json");
 const MAX_STATE_ENTRIES = 500;
+const STATE_DIR_MODE = 0o700;
+const STATE_FILE_MODE = 0o600;
+const LOCAL_STATE_DISABLED = process.env.RAVEN_DISABLE_LOCAL_STATE === "1";
+const REDACTED = "[REDACTED]";
+const SENSITIVE_KEY_PATTERN = /(?:^|_|-)(?:authorization|api(?:_|-)?key|token|secret|password|cookie)(?:$|_|-)/i;
+const SENSITIVE_VALUE_PATTERNS = [
+  /\bRVSEC-[A-Za-z0-9-]{20,}\b/g,
+  /\bBearer\s+[A-Za-z0-9._~+/=-]{16,}\b/gi,
+];
+const LOG_SAFE_TOKEN_KEYS = new Set(["confirmation_token"]);
+let cachedApiKey = null;
+
+function redactString(value) {
+  let redacted = value;
+  for (const pattern of SENSITIVE_VALUE_PATTERNS) {
+    redacted = redacted.replace(pattern, (match) => {
+      if (/^bearer\s+/i.test(match)) {
+        return "Bearer [REDACTED]";
+      }
+      return REDACTED;
+    });
+  }
+  return redacted;
+}
+
+export function redactForLogs(value, seen = new WeakSet()) {
+  if (typeof value === "string") {
+    return redactString(value);
+  }
+
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (typeof value !== "object") {
+    return value;
+  }
+
+  if (seen.has(value)) {
+    return "[Circular]";
+  }
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactForLogs(entry, seen));
+  }
+
+  const redacted = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (SENSITIVE_KEY_PATTERN.test(key) && !LOG_SAFE_TOKEN_KEYS.has(key.toLowerCase())) {
+      redacted[key] = REDACTED;
+      continue;
+    }
+    redacted[key] = redactForLogs(entry, seen);
+  }
+  return redacted;
+}
 
 function ok(data) {
-  console.log(JSON.stringify({ ok: true, ...data }));
+  console.log(JSON.stringify(redactForLogs({ ok: true, ...data })));
 }
 
 function fail(error, raw) {
-  console.error(JSON.stringify({ ok: false, error, ...(raw ? { raw } : {}) }));
+  console.error(JSON.stringify(redactForLogs({ ok: false, error, ...(raw ? { raw } : {}) })));
   process.exit(1);
 }
 
@@ -42,12 +99,66 @@ function usage(exitCode = 0) {
   process.exit(exitCode);
 }
 
-function getApiKey() {
-  const key = process.env.RAVEN_API_KEY;
-  if (!key) {
-    fail("RAVEN_API_KEY is not set. Configure it in your skill environment.");
+function formatMode(mode) {
+  return `0${(mode & 0o777).toString(8)}`;
+}
+
+export function readApiKeyFromFile(filePath) {
+  const resolvedPath = `${filePath || ""}`.trim();
+  if (!resolvedPath) {
+    throw new Error("RAVEN_API_KEY_FILE is empty.");
   }
+
+  let stats;
+  try {
+    stats = statSync(resolvedPath);
+  } catch {
+    throw new Error(`Unable to read RAVEN_API_KEY_FILE at ${resolvedPath}.`);
+  }
+
+  if (!stats.isFile()) {
+    throw new Error(`RAVEN_API_KEY_FILE must point to a regular file: ${resolvedPath}`);
+  }
+
+  const mode = stats.mode & 0o777;
+  if ((mode & 0o077) !== 0) {
+    throw new Error(`RAVEN_API_KEY_FILE permissions are too broad (${formatMode(mode)}). Run chmod 600 ${resolvedPath}.`);
+  }
+
+  const key = readFileSync(resolvedPath, "utf8").trim();
+  if (!key) {
+    throw new Error(`RAVEN_API_KEY_FILE is empty: ${resolvedPath}`);
+  }
+
   return key;
+}
+
+export function resolveApiKey(env = process.env) {
+  const apiKeyFile = `${env.RAVEN_API_KEY_FILE || ""}`.trim();
+  if (apiKeyFile) {
+    return readApiKeyFromFile(apiKeyFile);
+  }
+
+  const key = `${env.RAVEN_API_KEY || ""}`.trim();
+  if (!key) {
+    throw new Error("RAVEN_API_KEY is not set. Set RAVEN_API_KEY or RAVEN_API_KEY_FILE in the skill runtime.");
+  }
+
+  return key;
+}
+
+function getApiKey() {
+  if (cachedApiKey) {
+    return cachedApiKey;
+  }
+
+  try {
+    cachedApiKey = resolveApiKey();
+  } catch (error) {
+    fail(error?.message || "Unable to resolve Raven API key");
+  }
+
+  return cachedApiKey;
 }
 
 function getRequired(values, names, cmd) {
@@ -296,11 +407,12 @@ function defaultNarration(values, beneficiaryType) {
 }
 
 function sanitizeRef(raw) {
-  if (!raw || !raw.trim()) {
+  if (raw === undefined || raw === null) {
     return null;
   }
 
-  return raw.trim();
+  const value = `${raw}`.trim();
+  return value ? value : null;
 }
 
 function makeMerchantRef(raw) {
@@ -312,17 +424,101 @@ function makeMerchantRef(raw) {
   return `MREF_${Date.now()}_${randomBytes(3).toString("hex").toUpperCase()}`;
 }
 
+function compactDefined(object) {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined && value !== null),
+  );
+}
+
+function sanitizeText(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = `${value}`.trim();
+  return text ? text : undefined;
+}
+
+function sanitizeNumber(value) {
+  const number = asNumber(value);
+  return number === null ? undefined : number;
+}
+
+function sanitizeRefStateRecord(record, fallbackMerchantRef) {
+  const merchantRef = sanitizeRef(record?.merchant_ref ?? fallbackMerchantRef);
+  if (!merchantRef) {
+    return null;
+  }
+
+  return compactDefined({
+    merchant_ref: merchantRef,
+    trx_ref: sanitizeRef(record?.trx_ref ?? record?.transfer_ref ?? record?.reference),
+    status: sanitizeText(record?.status),
+    raw_status: sanitizeText(record?.raw_status),
+    amount: sanitizeNumber(record?.amount),
+    fee: sanitizeNumber(record?.fee),
+    created_at: sanitizeText(record?.created_at),
+    updated_at: sanitizeText(record?.updated_at),
+    intent_hash: sanitizeText(record?.intent_hash),
+  });
+}
+
+function sanitizeIntentStateRecord(record, fallbackIntentHash) {
+  const intentHash = sanitizeText(record?.intent_hash ?? fallbackIntentHash);
+  if (!intentHash) {
+    return null;
+  }
+
+  return compactDefined({
+    intent_hash: intentHash,
+    merchant_ref: sanitizeRef(record?.merchant_ref),
+    trx_ref: sanitizeRef(record?.trx_ref ?? record?.transfer_ref ?? record?.reference),
+    status: sanitizeText(record?.status),
+    raw_status: sanitizeText(record?.raw_status),
+    amount: sanitizeNumber(record?.amount),
+    fee: sanitizeNumber(record?.fee),
+    updated_at: sanitizeText(record?.updated_at),
+  });
+}
+
+export function sanitizeTransferStateSnapshot(rawState) {
+  const refs = {};
+  const intents = {};
+
+  const rawRefs = rawState?.refs && typeof rawState.refs === "object" ? rawState.refs : {};
+  for (const [refKey, rawRecord] of Object.entries(rawRefs)) {
+    const record = sanitizeRefStateRecord(rawRecord, refKey);
+    if (record) {
+      refs[record.merchant_ref] = record;
+    }
+  }
+
+  const rawIntents = rawState?.intents && typeof rawState.intents === "object" ? rawState.intents : {};
+  for (const [intentKey, rawRecord] of Object.entries(rawIntents)) {
+    const record = sanitizeIntentStateRecord(rawRecord, intentKey);
+    if (record) {
+      intents[record.intent_hash] = record;
+    }
+  }
+
+  return {
+    refs: pruneToLimit(refs),
+    intents: pruneToLimit(intents),
+  };
+}
+
 function readTransferState() {
+  if (LOCAL_STATE_DISABLED) {
+    return { refs: {}, intents: {} };
+  }
+
   if (!existsSync(STATE_FILE)) {
     return { refs: {}, intents: {} };
   }
 
   try {
     const raw = JSON.parse(readFileSync(STATE_FILE, "utf8"));
-    return {
-      refs: raw?.refs && typeof raw.refs === "object" ? raw.refs : {},
-      intents: raw?.intents && typeof raw.intents === "object" ? raw.intents : {},
-    };
+    return sanitizeTransferStateSnapshot(raw);
   } catch {
     return { refs: {}, intents: {} };
   }
@@ -345,15 +541,25 @@ function pruneToLimit(recordMap) {
 }
 
 function writeTransferState(state) {
+  if (LOCAL_STATE_DISABLED) {
+    return;
+  }
+
   const dir = dirname(STATE_FILE);
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true, mode: STATE_DIR_MODE });
+  try {
+    chmodSync(dir, STATE_DIR_MODE);
+  } catch {
+    // Best effort only. Continue if chmod is not supported.
+  }
 
-  const normalized = {
-    refs: pruneToLimit(state.refs || {}),
-    intents: pruneToLimit(state.intents || {}),
-  };
-
-  writeFileSync(STATE_FILE, JSON.stringify(normalized, null, 2));
+  const normalized = sanitizeTransferStateSnapshot(state);
+  writeFileSync(STATE_FILE, JSON.stringify(normalized, null, 2), { mode: STATE_FILE_MODE });
+  try {
+    chmodSync(STATE_FILE, STATE_FILE_MODE);
+  } catch {
+    // Best effort only. Continue if chmod is not supported.
+  }
 }
 
 export function normalizeTransferStatus(rawStatus) {
@@ -683,17 +889,23 @@ function findRefByTrxRef(state, trxRef) {
 }
 
 function upsertRefRecord(state, refKey, patch) {
-  if (!refKey) {
+  const safeRefKey = sanitizeRef(refKey);
+  if (!safeRefKey) {
     return;
   }
 
-  const existing = state.refs[refKey] || {};
-  state.refs[refKey] = {
+  const existing = state.refs[safeRefKey] || {};
+  const next = sanitizeRefStateRecord({
     ...existing,
     ...patch,
-    merchant_ref: refKey,
+    merchant_ref: safeRefKey,
+    created_at: existing.created_at || patch?.created_at,
     updated_at: new Date().toISOString(),
-  };
+  }, safeRefKey);
+
+  if (next) {
+    state.refs[safeRefKey] = next;
+  }
 }
 
 function syncStatusToState(state, transferStatus, providedMerchantRef) {
@@ -711,7 +923,7 @@ function syncStatusToState(state, transferStatus, providedMerchantRef) {
   const intentHash = state.refs[merchantRef]?.intent_hash;
   if (intentHash) {
     const existingIntent = state.intents[intentHash] || {};
-    state.intents[intentHash] = {
+    const nextIntent = sanitizeIntentStateRecord({
       ...existingIntent,
       intent_hash: intentHash,
       merchant_ref: merchantRef,
@@ -721,7 +933,11 @@ function syncStatusToState(state, transferStatus, providedMerchantRef) {
       amount: transferStatus.amount ?? existingIntent.amount,
       fee: transferStatus.fee ?? existingIntent.fee,
       updated_at: new Date().toISOString(),
-    };
+    }, intentHash);
+
+    if (nextIntent) {
+      state.intents[intentHash] = nextIntent;
+    }
   }
 }
 
