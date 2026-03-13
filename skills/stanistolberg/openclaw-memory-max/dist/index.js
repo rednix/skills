@@ -17,16 +17,29 @@ const memoryMaxPlugin = {
         additionalProperties: false,
         properties: {
             enableRulePinning: { type: 'boolean', default: false },
-            enableAutoCapture: { type: 'boolean', default: true },
+            enableAutoCapture: { type: 'boolean', default: false },
             enableAutoRecall: { type: 'boolean', default: true }
         }
     },
     register(api) {
         console.log('[openclaw-memory-max] Initializing SOTA Memory Cluster v3...');
-        // Read plugin config (OpenClaw passes it via api.config or api.getConfig())
-        const config = api.config || api.getConfig?.() || {};
+        // Read plugin config — merge from openclaw.json + api (api takes precedence)
+        let fileConfig = {};
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const baseDir = process.env.OPENCLAW_HOME || path.join(process.env.HOME || '/root', '.openclaw');
+            const configPath = path.join(baseDir, 'openclaw.json');
+            if (fs.existsSync(configPath)) {
+                const raw = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+                fileConfig = raw?.plugins?.entries?.['openclaw-memory-max']?.config || {};
+            }
+        }
+        catch { /* fallback silently */ }
+        const apiConfig = api.config || api.getConfig?.() || {};
+        const config = { ...fileConfig, ...apiConfig };
         const enableRulePinning = config.enableRulePinning ?? false;
-        const enableAutoCapture = config.enableAutoCapture ?? true;
+        const enableAutoCapture = config.enableAutoCapture ?? false;
         const enableAutoRecall = config.enableAutoRecall ?? true;
         console.log(`[openclaw-memory-max] Config: rulePinning=${enableRulePinning}, autoCapture=${enableAutoCapture}, autoRecall=${enableAutoRecall}`);
         // 0. Ensure Utility Score Schema Exists (async, fire-and-forget)
@@ -34,10 +47,10 @@ const memoryMaxPlugin = {
         // 1. Cross-Encoder Precision Search + Deep Search + Reward/Penalize
         (0, reranker_1.registerReranker)(api);
         console.log('[openclaw-memory-max] ✓ Precision Reranker + Deep Multi-Hop Search active.');
-        // 2. Semantic 1.0 Strict Weight Tracker (opt-in only)
+        // 2. Rule Weighter (read-only — parses MEMORY.md YAML, never writes to global config)
+        (0, weighter_1.registerWeighter)(api);
         if (enableRulePinning) {
-            (0, weighter_1.registerWeighter)(api);
-            console.log('[openclaw-memory-max] ✓ Semantic Rule Weighter watching MEMORY.md (opted in).');
+            console.log('[openclaw-memory-max] ✓ Rule Pinning active (injected via hook, not global config).');
         }
         else {
             console.log('[openclaw-memory-max] ⊘ Rule Pinning disabled (opt-in via config.enableRulePinning).');
@@ -49,7 +62,7 @@ const memoryMaxPlugin = {
         (0, graph_1.registerCausalGraph)(api);
         console.log('[openclaw-memory-max] ✓ Causal Knowledge Graph live (semantic + dedup).');
         // 5. Lifecycle Hooks: auto-recall, auto-capture, compaction rescue
-        (0, hooks_1.registerHooks)(api, { enableAutoCapture, enableAutoRecall });
+        (0, hooks_1.registerHooks)(api, { enableAutoCapture, enableAutoRecall, enableRulePinning });
         // 6. Episodic Memory: session segmentation
         (0, episodic_1.registerEpisodic)(api);
         // 7. Sleep Cycle: in-process maintenance scheduler
