@@ -3,9 +3,15 @@
   "slug": "subscription-churn-lifecycle",
   "displayName": "Subscription Churn Lifecycle",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1772786448625,
-    "commit": "https://github.com/openclaw/skills/commit/362a7c92981e66cf15186d51673f1b78c38bbc12"
+    "version": "0.1.2",
+    "publishedAt": 1773199100089,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1772786448625,
+      "commit": "https://github.com/openclaw/skills/commit/362a7c92981e66cf15186d51673f1b78c38bbc12"
+    }
+  ]
 }
