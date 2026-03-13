@@ -1,0 +1,11 @@
+{
+  "owner": "shuakami",
+  "slug": "uapi-get-image-bing-daily",
+  "displayName": "UAPI 必应壁纸 接口",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773084682809,
+    "commit": null
+  },
+  "history": []
+}
