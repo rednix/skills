@@ -3,9 +3,15 @@
   "slug": "blue-ocean-sourcing",
   "displayName": "Blue Ocean Sourcing",
   "latest": {
-    "version": "0.1.1",
-    "publishedAt": 1772786732840,
-    "commit": "https://github.com/openclaw/skills/commit/5059eb890e83b4b7d6ecaec3235e3afa2efbbcc7"
+    "version": "0.1.2",
+    "publishedAt": 1773198196057,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.1",
+      "publishedAt": 1772786732840,
+      "commit": "https://github.com/openclaw/skills/commit/5059eb890e83b4b7d6ecaec3235e3afa2efbbcc7"
+    }
+  ]
 }
