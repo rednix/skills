@@ -3,9 +3,15 @@
   "slug": "openclaw-guide-maintenance",
   "displayName": "OpenClaw Guide & Maintenance",
   "latest": {
-    "version": "2026.3.8",
-    "publishedAt": 1773121458719,
-    "commit": "https://github.com/openclaw/skills/commit/943bf87b1fd6a489de5102be501a921aa0358180"
+    "version": "2026.3.9",
+    "publishedAt": 1773302412056,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2026.3.8",
+      "publishedAt": 1773121458719,
+      "commit": "https://github.com/openclaw/skills/commit/943bf87b1fd6a489de5102be501a921aa0358180"
+    }
+  ]
 }

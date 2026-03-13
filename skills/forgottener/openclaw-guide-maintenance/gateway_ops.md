@@ -279,6 +279,61 @@ openclaw doctor
 
 Check: valid browser path, CDP profile reachability, Chrome extension relay.
 
+### Config File Replacement Pitfalls
+
+When replacing `openclaw.json` entirely (e.g. restoring from backup, pasting a new config):
+
+1. **`.env` variable placeholders**: Config uses `${VAR_NAME}` references (e.g. `${JINA_API_KEY}`, `${TELEGRAM_MAIN_BOT_TOKEN}`). If `.env` contains placeholder values like `your-jina-api-key-here` instead of real keys, the Gateway will start but affected features will fail with auth errors (e.g. `401` from Jina embedding API).
+
+2. **Plugin changes require full restart**: If the new config modifies `plugins.allow` or `plugins.entries` (e.g. removing `a2a-gateway`), hot-reload cannot apply these changes. The Gateway will log:
+   ```
+   [reload] config change requires gateway restart (plugins.allow, plugins.entries.a2a-gateway)
+   ```
+   You must do a full `openclaw gateway restart` or `launchctl kickstart`.
+
+3. **Verify `.env` before restarting**: Always check that `~/.openclaw/.env` has real values for all referenced variables before restarting the Gateway. Missing or placeholder env vars silently degrade features.
+
+**Checklist after config replacement:**
+```bash
+# 1. Validate the config
+openclaw config validate
+
+# 2. Check .env has real values (no placeholders)
+cat ~/.openclaw/.env
+
+# 3. Full restart (not just hot-reload)
+openclaw gateway restart
+
+# 4. Verify all systems
+openclaw gateway status
+openclaw logs --follow    # Watch for auth errors
+```
+
+### LaunchAgent Stuck State (macOS)
+
+When `openclaw gateway restart` reports "Gateway service not loaded" but `launchctl bootstrap` fails with I/O error:
+
+```
+Bootstrap failed: 5: Input/output error
+```
+
+This happens when the LaunchAgent plist has a stale/inconsistent state in launchd (e.g. after config changes that crashed the Gateway, or after `launchctl bootout` didn't fully clean up).
+
+**Recovery sequence:**
+```bash
+# Step 1: Re-install the plist
+openclaw gateway install
+
+# Step 2: Force kickstart (bypasses stale state)
+launchctl kickstart -k gui/$(id -u)/ai.openclaw.gateway
+
+# Step 3: Verify
+ps aux | grep openclaw-gateway | grep -v grep
+openclaw gateway status
+```
+
+The `-k` flag in `launchctl kickstart` kills any existing instance and starts fresh, which resolves the stuck state that `bootstrap` cannot handle.
+
 ### Cron/Heartbeat Not Firing
 
 ```bash

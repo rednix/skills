@@ -1,7 +1,7 @@
 ---
 name: openclaw-guide-maintenance
 description: Comprehensive guide for installing, configuring, operating, and troubleshooting OpenClaw — a self-hosted, multi-channel AI agent gateway. Use when the user asks about OpenClaw setup, configuration, channel management (WhatsApp/Telegram/Discord/Slack/iMessage/etc.), model provider setup, Gateway operations, multi-agent routing, security hardening, troubleshooting, or any maintenance task related to their local OpenClaw installation. Also use when encountering errors from `openclaw` CLI commands or the Gateway daemon.
-version: 2026.3.8
+version: 2026.3.9
 tags: openclaw, gateway, devops, self-hosted, multi-channel, ai-agent
 license: MIT
 ---
@@ -351,6 +351,10 @@ For advanced internals and features, see:
 | `unauthorized` / reconnect loop | Token/password mismatch | Check `OPENCLAW_GATEWAY_TOKEN` or config auth |
 | `device identity required` | Missing device auth | Ensure client completes connect.challenge flow |
 | No replies from bot | Pairing/allowlist/mention gating | Check `openclaw pairing list`, DM policy, mention patterns |
+| `Embedding provider authentication failed (401)` | `.env` has placeholder API key (e.g. `your-jina-api-key-here`) | Replace with real API key in `~/.openclaw/.env`, restart Gateway |
+| `config change requires gateway restart (plugins.*)` | Plugin config changes can't hot-reload | Full `openclaw gateway restart` or `launchctl kickstart -k` |
+| `Bootstrap failed: 5: Input/output error` | LaunchAgent plist in stale/stuck state | `openclaw gateway install` then `launchctl kickstart -k gui/$(id -u)/ai.openclaw.gateway` |
+| `Missing env var "X" referenced at config path: ...` | `.env` missing or variable not defined | Add variable to `~/.openclaw/.env` and restart Gateway |
 
 ## Environment Variables
 
