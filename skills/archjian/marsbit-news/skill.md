@@ -1,8 +1,7 @@
 # Marsbit News Skill
 
 name: marsbit-news  
-description: Retrieve crypto, blockchain and Web3 news articles and flash updates from Marsbit.  
-Marsbit is a crypto and Web3 media platform providing market news, analysis, and real-time updates.  
+description: Retrieve crypto, blockchain and Web3 news articles and flash updates from Marsbit.Marsbit is a crypto and Web3 media platform providing market news, analysis, and real-time updates.  
 keywords: crypto, blockchain, web3, bitcoin, ethereum, defi, nft  
 version: 1.0.0  
 author: Marsbit  
@@ -46,8 +45,6 @@ https://api.marsbit.co/info/ai/articles/latest?limit=5
 Response Example
 
 {
-  "code": 1,
-  "msg": "ok",
   "data": [
     {
       "id": "20260310172909758349",
@@ -87,8 +84,6 @@ https://api.marsbit.co/info/ai/articles/detail?id=20260310163710942215
 Response Example
 
 {
-  "code": 1,
-  "msg": "ok",
   "data": {
     "id": "20260310163710942215",
     "title": "你的AI焦虑，正在被人收割",
@@ -151,8 +146,6 @@ https://api.marsbit.co/info/ai/flashes/latest?limit=10
 Response Example
 
 {
-  "code": 1,
-  "msg": "ok",
   "data": [
     {
       "id": "20260310174744190518",
@@ -262,8 +255,6 @@ Example
 ---
 
 # Error Handling
-
-If `code != 1`, treat the request as failed.
 
 If `data` is empty, return that no matching results were found.
 
