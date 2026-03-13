@@ -39,9 +39,10 @@ metadata:
 
 ### getLatestBlock
 
-- **API**: `getLatestBlock` — Get latest confirmed block (number, hash, size, timestamp, witness, tx count)
+- **API**: `getLatestBlock` — Calls `/api/block/latest`; returns latest solidified block (number, hash, size, timestamp, witness, tx count)
 - **Use when**: User asks for "latest block", "current block", or "block height".
 - **Response**: number, hash, size, timestamp, witness, tx count, etc.
+- **Note**: `/api/block/latest` does not return `witnessName`, `fee`, `energyUsage`, `blockReward`, `voteReward`, `confirmations`, `netUsage`. These may appear as 0 or null in the response—ignore them. For witness name, block reward, fees, or resource usage, use `getBlocks` instead.
 
 ### getBlocks
 
@@ -57,9 +58,11 @@ metadata:
 
 ## Troubleshooting
 
-For MCP connection and rate limit issues, see [README](../README.md#troubleshooting).
+- **MCP connection failed**: If you see "Connection refused", verify TronScan MCP is connected in Settings > Extensions.
+- **API rate limit / 429**: TronScan API has call count and frequency limits when no API key is used. If you encounter rate limiting or 429 errors, go to [TronScan Developer API](https://tronscan.org/#/developer/api) to apply for an API key, then add it to your MCP configuration and retry.
 
 ## Notes
 
 - For "block reward", combine block data with `getChainParameters` (Witness category) if reward rules are needed.
 - Real-time monitoring: poll `getLatestBlock` and/or `getBlockStatistic` for load and burn.
+- `getLatestBlock` may return 0/null for `witnessName`, `blockReward`, `voteReward`, `fee`, `energyUsage`, `netUsage`, `confirmations` (underlying `/api/block/latest` does not provide them); use `getBlocks` when these fields are needed.
