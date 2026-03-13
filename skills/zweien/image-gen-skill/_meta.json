@@ -1,0 +1,11 @@
+{
+  "owner": "zweien",
+  "slug": "image-gen-skill",
+  "displayName": "Image Gen",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773226575519,
+    "commit": null
+  },
+  "history": []
+}
