@@ -1,0 +1,11 @@
+{
+  "owner": "lbs-amap",
+  "slug": "amap-lbs-skill",
+  "displayName": "amap-lbs-skill",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1772785949468,
+    "commit": null
+  },
+  "history": []
+}
