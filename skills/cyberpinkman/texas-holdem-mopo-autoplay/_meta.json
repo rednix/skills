@@ -3,9 +3,15 @@
   "slug": "texas-holdem-mopo-autoplay",
   "displayName": "MoPo Texas Hold'em Autoplay",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1773074242096,
-    "commit": "https://github.com/openclaw/skills/commit/2521c1d09f9b2e6863462b1e123f62f020708bb7"
+    "version": "1.0.7",
+    "publishedAt": 1773323599536,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1773074242096,
+      "commit": "https://github.com/openclaw/skills/commit/2521c1d09f9b2e6863462b1e123f62f020708bb7"
+    }
+  ]
 }
