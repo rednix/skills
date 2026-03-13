@@ -1,62 +1,49 @@
 #!/usr/bin/env node
 /**
  * 将已有 HTML 文章转为公众号可复制的内联样式格式，并 POST 到 edit.shiker.tech 获取复制页 URL。
- * 用法：node html-to-wechat-copy.js <path-to-article.html>
  *
- * === AI 生成 HTML 时的输入要求（二选一） ===
- * 文章类型对应：大厂早报→格式一；AI 职场文/单厂深度/轻松吃瓜/下周职场预警→格式二；
- * 技术摸鱼周报、一周速读→视结构选格式一（多条 item+影响）或格式二（自由小节+表格）。
+ * - CLI 用法：node html-to-wechat-copy.js <path-to-article.html>
+ * - 作为库使用：导出 convert/createCopyUrl 等函数（供 wechat-dual-copy.js 复用）
  *
- * 【格式一】早报/资讯列表（推荐用于：周一 大厂早报；周四/周六 若写成多条 item+影响）
- * - 整篇包在 <body> 内，且有一层 <div class="article"> 包裹正文。
- * - 结构必须包含（顺序固定）：
- *   - <h1>标题</h1>
- *   - <div class="intro">引言一段或多段</div>
- *   - 多个 <div class="item">
- *        <div class="item-title">序号. 【标签】标题</div>
- *        <div class="item-content">正文</div>
- *        <div class="item-impact"><strong>影响：</strong>说明</div>
- *     </div>
- *   - <div class="thinking"><p>今日思考</p><p>内容</p></div>
- *   - <div class="divider"></div>
- *   - <div class="footer"><p>...</p></div>
- * - 无需写 <style>，脚本会按「引用」+ 统一背景输出。
- *
- * 【格式二】通用长文（推荐用于：周二 AI 职场文、周三 单厂深度、周五 轻松吃瓜、周日 下周职场预警；周四/周六 若为自由小节+表格）
- * - 标准 HTML，<body> 内直接放内容（或一层 <section> 包裹全文）。
- * - 需要带背景/边框的块：用 <section style="...">...</section>，内联样式可写 background、border-left、padding 等；
- *   脚本会把 <section> 转为 <blockquote>，公众号会保留引用样式。
- * - 表格：用 <table>，公众号会保留表格背景与边框，无需改标签。
- * - 标题用 <h1>、<h2>、<h3>，段落用 <p>，列表用 <ul>/<li>；分割可用 <hr> 或留空。
- * - 整篇会被包一层统一背景的 section。
+ * 输入规范：见同目录 SPEC.md（公众号文章 HTML 生成规范）。脚本只解析该规范定义的格式一/格式二。
+ * 兼容：若存在 .article 但内层无 .item，则按格式二处理；若无 body 则从 </head> 后或整文件取内容。
  */
 
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync, writeFileSync } from 'fs'
+import { resolve, dirname, join } from 'path'
+import { pathToFileURL } from 'url'
 
-const articlePath = process.argv[2]
-if (!articlePath) {
-  console.error('用法: node html-to-wechat-copy.js <path-to-article.html>')
-  process.exit(1)
-}
-
-const raw = readFileSync(resolve(process.cwd(), articlePath), 'utf8')
-
-// 优先：大厂早报等 .article 结构；否则：通用 HTML（body 或 section 包裹）
-let inner
-let useGeneric = false
-const articleMatch = raw.match(/<div class="article">([\s\S]*?)<\/div>\s*<\/body>/)
-if (articleMatch) {
-  inner = articleMatch[1]
-} else {
-  const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  if (bodyMatch) {
-    inner = bodyMatch[1].trim()
-    useGeneric = true
+function extractInnerAndMode(raw) {
+  // 1) 提取正文：优先 .article 内层；否则 body 内；否则 </head> 后或整文件（无 body 时）
+  let inner
+  let useGeneric = false
+  const articleMatch = raw.match(/<div\s+class="article"[^>]*>([\s\S]*?)<\/div>\s*<\/body>/i)
+  if (articleMatch) {
+    inner = articleMatch[1]
+    // 2) 只有「格式一」才用早报解析：必须至少有一个 .item（含 .item-title/.item-content/.item-impact）
+    const hasFormatOneItem = /<div\s+class="item"[^>]*>\s*<div\s+class="item-title"/.test(inner)
+    if (!hasFormatOneItem) useGeneric = true
   } else {
-    console.error('未找到 .article 或 <body> 内容')
-    process.exit(1)
+    const bodyMatch = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/is)
+    if (bodyMatch) {
+      inner = bodyMatch[1].trim()
+      useGeneric = true
+    } else {
+      const afterHead = raw.match(/<\/head\s*>\s*([\s\S]*?)(?:<\/html>|$)/i)
+      if (afterHead) {
+        inner = afterHead[1].replace(/<\/html>.*/i, '').trim()
+        useGeneric = true
+      } else {
+        inner = raw
+          .replace(/<!DOCTYPE[^>]*>/i, '')
+          .replace(/<html[^>]*>/i, '')
+          .replace(/<\/html>/i, '')
+          .trim()
+        useGeneric = true
+      }
+    }
   }
+  return { inner: inner || '', useGeneric }
 }
 
 // 内联样式：公众号仅对「引用 blockquote」和「表格」保留背景色与边框，整篇用统一背景
@@ -145,20 +132,56 @@ function convertGenericToWechatHtml(html) {
   return out
 }
 
-const bodyHtml = useGeneric ? convertGenericToWechatHtml(inner) : convertToWechatHtml(inner)
-const sectionStyle = styles.section
-const html = `<section data-tool="公众号排版" style="${sectionStyle}">\n${bodyHtml}</section>`
+export function convertInputHtmlToWechatSection(rawInputHtml) {
+  const { inner, useGeneric } = extractInnerAndMode(rawInputHtml)
+  const bodyHtml = useGeneric ? convertGenericToWechatHtml(inner) : convertToWechatHtml(inner)
+  const sectionStyle = styles.section
+  return `<section data-tool="公众号排版" style="${sectionStyle}">\n${bodyHtml}</section>`
+}
 
-const res = await fetch('https://edit.shiker.tech/api/copy', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ html }),
-})
+export async function createCopyUrlFromWechatHtml(wechatHtmlSection) {
+  const res = await fetch('https://edit.shiker.tech/api/copy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ html: wechatHtmlSection }),
+  })
+  const data = await res.json()
+  if (data.success && data.data?.url) return data.data.url
+  throw new Error(data.message || String(res.status))
+}
 
-const data = await res.json()
-if (data.success && data.data?.url) {
-  console.log(data.data.url)
-} else {
-  console.error('请求失败:', data.message || res.status, data)
-  process.exit(1)
+export async function createCopyUrlFromInputHtml(rawInputHtml) {
+  const wechatHtml = convertInputHtmlToWechatSection(rawInputHtml)
+  return await createCopyUrlFromWechatHtml(wechatHtml)
+}
+
+async function mainCli() {
+  const articlePath = process.argv[2]
+  if (!articlePath) {
+    console.error('用法: node html-to-wechat-copy.js <path-to-article.html>')
+    process.exit(1)
+  }
+  const raw = readFileSync(resolve(process.cwd(), articlePath), 'utf8')
+  try {
+    const url = await createCopyUrlFromInputHtml(raw)
+    console.log(url)
+    // 同时写入与输入 HTML 同目录的文本文件，避免 AI 转述时漏数字导致链接错误
+    try {
+      const outDir = dirname(resolve(process.cwd(), articlePath))
+      const urlFile = join(outDir, 'wechat-preview-url.txt')
+      writeFileSync(urlFile, url + '\n', 'utf8')
+      console.error('预览链接已写入: ' + urlFile)
+    } catch {}
+  } catch (e) {
+    console.error('请求失败:', e?.message || e)
+    process.exit(1)
+  }
+}
+
+// 作为 CLI 运行
+try {
+  const entry = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : ''
+  if (entry && import.meta.url === entry) await mainCli()
+} catch {
+  // ignore
 }
