@@ -145,7 +145,7 @@ tl demo status         # Check if demo mode is on/off
 
 ### Write commands (ask the user first)
 
-These commands modify local data. **Always ask the user for confirmation before running them**, unless the user has explicitly allowed them in `PERMISSIONS.md` (see [Agent Permissions](#agent-permissions)).
+These commands modify local data. **Always ask the user for confirmation before running them.**
 
 ```bash
 tl query "SQL" --allow-writes --json  # Run a SQL query with write access
@@ -224,45 +224,11 @@ Duplicate transactions are automatically detected and skipped on re-import via f
 
 ---
 
-## Agent Permissions
+## User Skills
 
-**Before running any write command, check for `PERMISSIONS.md` in this skill directory.**
+Treeline supports user-created skills for personal financial knowledge. Use `tl skills list --json` to discover existing skills and `tl skills read <path>` to read them.
 
-If it exists, read it to see which write commands the user has pre-approved. Pre-approved commands can be run without asking for confirmation. All other write commands still require explicit user confirmation before execution.
-
-If `PERMISSIONS.md` does not exist, **always ask before running any write command.**
-
-**Template for PERMISSIONS.md:**
-
-```markdown
-# Treeline Agent Permissions
-
-Commands listed here are pre-approved — the agent can run them without
-asking for confirmation each time. Remove a line to require confirmation.
-
-## Allowed write commands
-- tl sync
-- tl backup create
-- tl demo on|off
-```
-
----
-
-## User Context
-
-**Before answering finance questions, check for `CONTEXT.md` in this skill directory.**
-
-If it exists, read it first — it contains user-specific knowledge:
-- Account meanings (which accounts are retirement vs brokerage, etc.)
-- Tag conventions and cash flow rules
-- Plugin configurations
-- Personal preferences
-
-**Learning new context:** When you discover something about the user's setup:
-1. For small observations, note them in CONTEXT.md and briefly mention what you saved
-2. For significant assumptions or corrections, ask: "Want me to save that to your Treeline context?"
-
-See the [User Context Pattern](#user-context-pattern) section at the end for the template.
+**Creating skills:** When you learn something reusable about the user's finances — tag conventions, account meanings, tax categories, budget targets — ask if they'd like to save it as a skill for future conversations. To create one, write a SKILL.md file to `~/.treeline/skills/<name>/SKILL.md` (use `tl skills path` to get the directory). Follow the Agent Skills standard (agentskills.io).
 
 ---
 
@@ -302,7 +268,7 @@ ORDER BY s.balance DESC
 
 ### True Spending (Excluding Internal Moves)
 
-Check CONTEXT.md for `internal_transfer_tags`. Default pattern:
+Default pattern (exclude internal moves):
 
 ```bash
 tl query "
@@ -424,7 +390,7 @@ WHERE schema_name LIKE 'plugin_%'
 
 **plugin_emergency_fund** — Emergency fund tracking
 
-Check CONTEXT.md for which plugins the user has and cares about.
+Check `tl skills list` for user-specific plugin preferences.
 
 ---
 
@@ -511,49 +477,7 @@ GROUP BY c.category_id, c.name, c.expected
 2. **Amounts are signed** — negative = expense
 3. **Use `classification`** for asset/liability
 4. **Balances live in snapshots**, not the accounts table
-5. **Check CONTEXT.md** for user-specific account meanings and tag conventions
-
----
-
-## User Context Pattern
-
-When this skill is installed, create `CONTEXT.md` alongside it to store user-specific knowledge. This keeps the skill generic/shareable while personalizing behavior.
-
-**Template for CONTEXT.md:**
-
-```markdown
-# Treeline User Context
-*Auto-updated by your assistant as it learns your setup*
-
-## Account Notes
-<!-- What specific accounts mean, e.g.: -->
-<!-- - "Company 401k" = retirement account -->
-<!-- - "Home Equity" = home value estimate (manual) -->
-
-## Tag Conventions
-<!-- How the user uses tags -->
-
-## Cash Flow Rules
-<!-- Tags to exclude from "true spending" calculations -->
-internal_transfer_tags: [transfer, savings, investment]
-
-## Income Sources
-<!-- Known income sources for better reporting -->
-
-## Active Plugins
-<!-- Which plugins are installed and relevant -->
-
-## Preferences
-<!-- Reporting style, rounding, spouse-friendly mode, etc. -->
-
-## Learned Facts
-<!-- Anything else discovered about the user's financial setup -->
-```
-
-**Maintenance:**
-- Briefly mention updates for small observations
-- Ask before recording significant assumptions
-- Periodically validate against live data (accounts may close, tags may change)
+5. **Check `tl skills list`** for user-specific account meanings and tag conventions
 
 ---
 
