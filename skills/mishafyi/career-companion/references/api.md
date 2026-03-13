@@ -13,12 +13,13 @@ GET https://zerogtalent.com/api/jobs/search
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `q` | string | — | Full-text + fuzzy keyword search |
-| `company` | string | — | Company slug filter |
+| `company` | string | — | Company slug filter (see `references/companies.md`) |
 | `location` | string | — | Location slug (e.g., `california`, `remote`, `texas`, `new-york`) |
 | `employmentType` | string | — | `full-time`, `internship`, `part-time`, `contract` |
 | `remote` | string | — | `true` for remote-only jobs |
-| `limit` | number | 20 | Results per page (max 50) |
+| `limit` | number | 10 | Results per page (max 50) |
 | `offset` | number | 0 | Pagination offset |
+
 ### JSON Response
 
 ```json
@@ -46,9 +47,11 @@ GET https://zerogtalent.com/api/jobs/search
   ],
   "total": 42,
   "hasMore": true,
-  "pagination": { "offset": 0, "limit": 20, "total": 42 }
+  "pagination": { "offset": 0, "limit": 10, "total": 42 }
 }
 ```
+
+Salary fields (`salaryMin`, `salaryMax`, `salaryCurrency`, `salaryInterval`) are null when not available. For salary research, search multiple roles at a company to compare ranges.
 
 ## Get Job Description
 
@@ -56,16 +59,6 @@ GET https://zerogtalent.com/api/jobs/search
 GET https://zerogtalent.com/api/job?company={company-slug}&jobId={externalId}
 ```
 
-Returns the full JSON job object including title, company, location, salary, and the HTML `description` field.
+Returns a `job` object with title, company, location, salary, and an HTML `description` field.
 
-**Important:** Use `externalId` from search results, never the `slug`. The `slug` is for URL display only.
-
-## Job Detail Page URLs
-
-Link to the Zero G Talent job page (not the direct ATS URL) for a better experience:
-
-```
-https://zerogtalent.com/space-jobs/{company-slug}/{job-slug}
-```
-
-Both `company-slug` (from `company.slug`) and `job-slug` (from `slug`) come from the search response.
+**Important:** Use `externalId` from search results, never `slug`. The `slug` is for URL display only.
