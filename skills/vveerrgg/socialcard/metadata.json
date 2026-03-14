@@ -1,6 +1,6 @@
 {
   "name": "socialcard",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Generate beautiful social card images (OG, Twitter, GitHub) with a builder API",
   "author": "Humanjava Enterprises",
   "license": "MIT",
