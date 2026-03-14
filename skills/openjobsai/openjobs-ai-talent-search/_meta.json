@@ -1,0 +1,11 @@
+{
+  "owner": "openjobsai",
+  "slug": "openjobs-ai-talent-search",
+  "displayName": "Openjobs Ai Talent Search",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773316403021,
+    "commit": null
+  },
+  "history": []
+}
