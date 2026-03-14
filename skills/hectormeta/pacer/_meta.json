@@ -1,0 +1,11 @@
+{
+  "owner": "hectormeta",
+  "slug": "pacer",
+  "displayName": "Pacer Skill",
+  "latest": {
+    "version": "0.1.2",
+    "publishedAt": 1773308990501,
+    "commit": null
+  },
+  "history": []
+}
