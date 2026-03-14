@@ -1,0 +1,11 @@
+{
+  "owner": "lyutenant",
+  "slug": "nested-pdf-merger",
+  "displayName": "Nested PDF Merger",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773516274394,
+    "commit": null
+  },
+  "history": []
+}
