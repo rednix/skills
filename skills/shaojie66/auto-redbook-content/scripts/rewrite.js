@@ -3,12 +3,10 @@
 /**
  * AI 改写模块
  * 支持两种模式：
- * - direct: 直接调用 AI API（OpenAI/Anthropic/本地模型）
- * - agent: 通过 sessions_spawn 调用其他 agent（适用于多 agent 架构）
+ * - direct: 直接调用 AI API（需要在 OpenClaw agent 环境中运行）
+ * - agent: 通过 sessions_spawn 调用其他 agent
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
 const path = require('path');
 
 // 加载环境变量
@@ -17,23 +15,19 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const REWRITE_MODE = process.env.REWRITE_MODE || 'direct';
 
 /**
- * 模式 A：直接调用 AI API
+ * 模式 A：通过 OpenClaw agent 调用 AI
+ * 注意：此模式需要在 OpenClaw agent 环境中运行
  */
 async function rewriteWithDirectAI(note) {
-  const AI_PROVIDER = process.env.AI_PROVIDER || 'openai';
-  const AI_MODEL = process.env.AI_MODEL || 'gpt-4';
-  const AI_API_KEY = process.env.AI_API_KEY;
-  const AI_BASE_URL = process.env.AI_BASE_URL;
-
-  if (!AI_API_KEY) {
-    throw new Error('AI_API_KEY 未配置，请在 .env 中设置');
-  }
-
   // 构建提示词
-  const imageInfo = note.imageAnalysis && note.imageAnalysis.length > 0
-    ? `\n\n图片分析结果：\n${note.imageAnalysis.map((img, i) => 
-        `图片 ${i + 1}:\n- 内容描述: ${img.vision || '无'}\n- 文字内容: ${img.ocr || '无'}`
-      ).join('\n\n')}`
+  const imageInfo = note.image_analysis && note.image_analysis.length > 0
+    ? `\n\n图片分析结果：\n${note.image_analysis.map((desc, i) => 
+        `图片 ${i + 1}: ${desc}`
+      ).join('\n')}`
+    : '';
+
+  const ocrInfo = note.ocr_text && note.ocr_text.length > 0
+    ? `\n\n图片文字内容：\n${note.ocr_text.join('\n')}`
     : '';
 
   const prompt = `请帮我改写以下小红书笔记，要求：
@@ -44,8 +38,8 @@ async function rewriteWithDirectAI(note) {
 5. 参考图片分析结果（如有），确保内容与图片一致
 6. 提取 3-5 个相关标签
 
-原标题：${note.title}
-原内容：${note.content}${imageInfo}
+原标题：${note.original_title}
+原内容：${note.original_content}${imageInfo}${ocrInfo}
 
 请以 JSON 格式返回，包含以下字段：
 {
@@ -54,201 +48,12 @@ async function rewriteWithDirectAI(note) {
   "tags": ["标签1", "标签2", "标签3"]
 }`;
 
-  try {
-    let result;
-
-    if (AI_PROVIDER === 'openai') {
-      // 使用 OpenAI API
-      const apiUrl = AI_BASE_URL || 'https://api.openai.com/v1';
-      const response = await callOpenAI(apiUrl, AI_API_KEY, AI_MODEL, prompt);
-      result = JSON.parse(response);
-    } else if (AI_PROVIDER === 'anthropic') {
-      // 使用 Anthropic API
-      const apiUrl = AI_BASE_URL || 'https://api.anthropic.com/v1';
-      const response = await callAnthropic(apiUrl, AI_API_KEY, AI_MODEL, prompt);
-      result = JSON.parse(response);
-    } else if (AI_PROVIDER === 'local') {
-      // 使用本地模型（如 Ollama）
-      const apiUrl = AI_BASE_URL || 'http://localhost:11434';
-      const response = await callLocalModel(apiUrl, AI_MODEL, prompt);
-      result = JSON.parse(response);
-    } else {
-      throw new Error(`不支持的 AI_PROVIDER: ${AI_PROVIDER}`);
-    }
-
-    return {
-      title: result.title,
-      content: result.content,
-      tags: result.tags || [],
-    };
-
-  } catch (error) {
-    console.error(`[AI 改写] 失败: ${error.message}`);
-    throw error;
-  }
-}
-
-/**
- * 调用 OpenAI API
- */
-async function callOpenAI(apiUrl, apiKey, model, prompt) {
-  const https = require('https');
-  const http = require('http');
-
-  return new Promise((resolve, reject) => {
-    const url = new URL(`${apiUrl}/chat/completions`);
-    const client = url.protocol === 'https:' ? https : http;
-
-    const postData = JSON.stringify({
-      model: model,
-      messages: [
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-    });
-
-    const options = {
-      hostname: url.hostname,
-      port: url.port,
-      path: url.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
-
-    const req = client.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          if (json.error) {
-            reject(new Error(json.error.message));
-          } else {
-            const content = json.choices[0].message.content;
-            // 提取 JSON（可能包含在 markdown 代码块中）
-            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
-            resolve(jsonMatch ? jsonMatch[1] || jsonMatch[0] : content);
-          }
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(postData);
-    req.end();
-  });
-}
-
-/**
- * 调用 Anthropic API
- */
-async function callAnthropic(apiUrl, apiKey, model, prompt) {
-  const https = require('https');
-
-  return new Promise((resolve, reject) => {
-    const url = new URL(`${apiUrl}/messages`);
-
-    const postData = JSON.stringify({
-      model: model,
-      max_tokens: 2048,
-      messages: [
-        { role: 'user', content: prompt }
-      ],
-    });
-
-    const options = {
-      hostname: url.hostname,
-      port: url.port || 443,
-      path: url.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          if (json.error) {
-            reject(new Error(json.error.message));
-          } else {
-            const content = json.content[0].text;
-            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
-            resolve(jsonMatch ? jsonMatch[1] || jsonMatch[0] : content);
-          }
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(postData);
-    req.end();
-  });
-}
-
-/**
- * 调用本地模型（Ollama）
- */
-async function callLocalModel(apiUrl, model, prompt) {
-  const http = require('http');
-
-  return new Promise((resolve, reject) => {
-    const url = new URL(`${apiUrl}/api/generate`);
-
-    const postData = JSON.stringify({
-      model: model,
-      prompt: prompt,
-      stream: false,
-    });
-
-    const options = {
-      hostname: url.hostname,
-      port: url.port || 11434,
-      path: url.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
-
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          if (json.error) {
-            reject(new Error(json.error));
-          } else {
-            const content = json.response;
-            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/\{[\s\S]*\}/);
-            resolve(jsonMatch ? jsonMatch[1] || jsonMatch[0] : content);
-          }
-        } catch (error) {
-          reject(error);
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.write(postData);
-    req.end();
-  });
+  console.log('[改写] Direct 模式需要在 OpenClaw agent 环境中运行');
+  console.log('[改写] 提示词:', prompt.substring(0, 200) + '...');
+  
+  // 在实际使用中，这里应该通过 OpenClaw 的工具调用 AI
+  // 例如使用 oracle 或其他 AI 工具
+  throw new Error('Direct 模式需要在 OpenClaw agent 环境中通过 AI 工具调用');
 }
 
 /**
@@ -258,10 +63,14 @@ async function callLocalModel(apiUrl, model, prompt) {
 async function rewriteWithAgent(note) {
   const AGENT_ID = process.env.AGENT_ID || 'libu';
 
-  const imageInfo = note.imageAnalysis && note.imageAnalysis.length > 0
-    ? `\n\n图片分析结果：\n${note.imageAnalysis.map((img, i) => 
-        `图片 ${i + 1}:\n- 内容描述: ${img.vision || '无'}\n- 文字内容: ${img.ocr || '无'}`
-      ).join('\n\n')}`
+  const imageInfo = note.image_analysis && note.image_analysis.length > 0
+    ? `\n\n图片分析结果：\n${note.image_analysis.map((desc, i) => 
+        `图片 ${i + 1}: ${desc}`
+      ).join('\n')}`
+    : '';
+
+  const ocrInfo = note.ocr_text && note.ocr_text.length > 0
+    ? `\n\n图片文字内容：\n${note.ocr_text.join('\n')}`
     : '';
 
   const task = `请帮我改写以下小红书笔记，要求：
@@ -272,8 +81,8 @@ async function rewriteWithAgent(note) {
 5. 参考图片分析结果（如有），确保内容与图片一致
 6. 提取 3-5 个相关标签
 
-原标题：${note.title}
-原内容：${note.content}${imageInfo}
+原标题：${note.original_title}
+原内容：${note.original_content}${imageInfo}${ocrInfo}
 
 请以 JSON 格式返回，包含以下字段：
 {
@@ -282,8 +91,8 @@ async function rewriteWithAgent(note) {
   "tags": ["标签1", "标签2", "标签3"]
 }`;
 
-  console.log(`[Agent 改写] 调用 ${AGENT_ID} 进行改写...`);
-  console.log(`[Agent 改写] 任务: ${task.substring(0, 100)}...`);
+  console.log(`[改写] Agent 模式: 调用 ${AGENT_ID}`);
+  console.log(`[改写] 任务: ${task.substring(0, 100)}...`);
   
   // 注意：这里只是示例，实际需要通过 OpenClaw 的 sessions_spawn 工具调用
   // 在 SKILL.md 中会有完整的调用示例
@@ -315,9 +124,10 @@ module.exports = {
 // 如果直接运行此脚本（用于测试）
 if (require.main === module) {
   const testNote = {
-    title: 'AI绘画新手入门指南｜零基础也能画出大片',
-    content: '最近迷上了AI绘画，从完全不会到现在能画出自己满意的作品...',
-    imageAnalysis: [],
+    original_title: 'AI绘画新手入门指南｜零基础也能画出大片',
+    original_content: '最近迷上了AI绘画，从完全不会到现在能画出自己满意的作品...',
+    image_analysis: [],
+    ocr_text: [],
   };
 
   rewriteNote(testNote)

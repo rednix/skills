@@ -8,34 +8,19 @@
 const { fetchNotes } = require('./fetch');
 const { rewriteByLibu } = require('./rewrite');
 const { writeToFeishu } = require('./write-feishu');
-const fs = require('fs');
 const path = require('path');
+
+// 使用 dotenv 加载环境变量
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 /**
  * 加载配置
  */
 function loadConfig() {
-  const envPath = path.join(__dirname, '..', '.env');
-  
-  if (!fs.existsSync(envPath)) {
-    console.error('配置文件不存在，请创建 .env 文件');
-    process.exit(1);
-  }
-  
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  const config = {};
-  
-  envContent.split('\n').forEach(line => {
-    const match = line.match(/^([^=]+)=(.*)$/);
-    if (match) {
-      config[match[1].trim()] = match[2].trim();
-    }
-  });
-  
   return {
-    maxResults: parseInt(config.XHS_MAX_RESULTS || '3'),
-    appToken: config.FEISHU_APP_TOKEN,
-    tableId: config.FEISHU_TABLE_ID,
+    maxResults: parseInt(process.env.XHS_MAX_RESULTS || '3'),
+    appToken: process.env.FEISHU_APP_TOKEN,
+    tableId: process.env.FEISHU_TABLE_ID,
   };
 }
 
@@ -65,7 +50,7 @@ async function main() {
     
     for (let i = 0; i < notes.length; i++) {
       const note = notes[i];
-      console.log(`\n[${i + 1}/${notes.length}] ${note.title}`);
+      console.log(`\n[${i + 1}/${notes.length}] ${note.original_title}`);
       
       let retries = 3;
       while (retries > 0) {

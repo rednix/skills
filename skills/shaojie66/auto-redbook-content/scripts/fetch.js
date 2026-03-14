@@ -7,7 +7,7 @@
  * 输出到本地 JSON 文件
  */
 
-const { execSync, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -136,15 +136,32 @@ async function fetchNotes(maxResults = 3) {
   let notes = [];
   
   try {
-    const result = execSync(
-      `mcporter call xiaohongshu search_notes --query "AI创作" --count ${maxResults}`,
-      { encoding: 'utf-8', timeout: 30000 }
-    );
+    const result = spawnSync('mcporter', [
+      'call',
+      'xiaohongshu',
+      'search_notes',
+      '--query',
+      'AI创作',
+      '--count',
+      maxResults.toString()
+    ], {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 30000
+    });
     
-    const parsed = JSON.parse(result);
-    if (parsed && parsed.notes && Array.isArray(parsed.notes)) {
-      notes = parsed.notes;
-      console.log(`[MCP] 成功抓取 ${notes.length} 条笔记`);
+    if (result.error) {
+      throw result.error;
+    }
+    
+    if (result.status === 0 && result.stdout) {
+      const parsed = JSON.parse(result.stdout);
+      if (parsed && parsed.notes && Array.isArray(parsed.notes)) {
+        notes = parsed.notes;
+        console.log(`[MCP] 成功抓取 ${notes.length} 条笔记`);
+      }
+    } else {
+      throw new Error('MCP 调用失败');
     }
   } catch (error) {
     console.warn('[MCP] 调用失败，使用模拟数据');
