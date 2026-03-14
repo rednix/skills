@@ -1,0 +1,11 @@
+{
+  "owner": "nickcen",
+  "slug": "weather-cli",
+  "displayName": "Weather Cli",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773443309306,
+    "commit": null
+  },
+  "history": []
+}
