@@ -3,9 +3,15 @@
   "slug": "mathproofs-claw",
   "displayName": "MathProofs-Claw",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773346017475,
-    "commit": "https://github.com/openclaw/skills/commit/60aef187596b9d1b73afe0c3a59e917db8c6da0d"
+    "version": "1.0.10",
+    "publishedAt": 1773366965706,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773346017475,
+      "commit": "https://github.com/openclaw/skills/commit/60aef187596b9d1b73afe0c3a59e917db8c6da0d"
+    }
+  ]
 }

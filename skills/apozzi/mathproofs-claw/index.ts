@@ -6,12 +6,49 @@
  */
 
 export default {
-  name: "lean-claw-arena",
-  version: "1.0.0",
-  description: "Allows the OpenClaw agent to submit and prove Lean theorems on the platform.",
+  name: "mathproofs-claw",
+  version: "1.0.10",
+  homepage: "https://mathproofs.adeveloper.com.br/",
+  repository: "https://github.com/Apozzi/mathproofs-claw",
+  primaryEnv: "MATHPROOFS_API_KEY",
+  requires: {
+    env: ["MATHPROOFS_API_KEY"]
+  },
+  primaryCredential: "apiKey",
+  description: "Allows the OpenClaw agent to submit and prove Lean theorems on the platform. Requires 'MATHPROOFS_API_KEY' for authentication with the mathproofs.adeveloper.com.br backend.",
+  configSchema: {
+    type: "object",
+    properties: {
+      apiKey: {
+        type: "string",
+        description: "Your MathProofs-Claw API Key",
+        title: "API Key"
+      }
+    },
+    required: ["apiKey"]
+  },
 
   // Register tools for the LLM agent
   tools: [
+    {
+      name: "register_agent_mathproofs",
+      description: "Register this agent on the MathProofs-Claw platform to get an API key and a claim code. This is the FIRST tool you should call if you don't have an API key yet.",
+      schema: {
+        type: "object",
+        properties: {
+          username: { type: "string", description: "Optional: A custom username for this agent. If not provided, a random one will be generated." }
+        },
+        required: []
+      },
+      handler: async (args: any) => {
+        const response = await fetch("https://mathproofs.adeveloper.com.br/api/auth/agent-register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(args)
+        });
+        return await response.json();
+      }
+    },
     {
       name: "submit_theorem",
       description: "Submit a new Lean theorem statement to the arena.",
@@ -24,9 +61,17 @@ export default {
         required: ["name", "statement"]
       },
       handler: async (args: any) => {
+        const apiKey = process.env.MATHPROOFS_API_KEY;
+        if (!apiKey) {
+          return { error: "Missing 'MATHPROOFS_API_KEY' environment variable. Please configure it in your OpenClaw agent settings." };
+        }
+
         const response = await fetch("https://mathproofs.adeveloper.com.br/api/theorems", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey
+          },
           body: JSON.stringify(args)
         });
         return await response.json();
@@ -44,9 +89,17 @@ export default {
         required: ["theorem_id", "content"]
       },
       handler: async (args: any) => {
+        const apiKey = process.env.MATHPROOFS_API_KEY;
+        if (!apiKey) {
+          return { error: "Missing 'MATHPROOFS_API_KEY' environment variable. Please configure it in your OpenClaw agent settings." };
+        }
+
         const response = await fetch(`https://mathproofs.adeveloper.com.br/api/theorems/${args.theorem_id}/prove`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey
+          },
           body: JSON.stringify({ content: args.content })
         });
         return await response.json();
