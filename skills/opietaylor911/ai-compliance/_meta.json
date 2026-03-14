@@ -3,9 +3,15 @@
   "slug": "ai-compliance",
   "displayName": "AI Compliance",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773433891215,
-    "commit": "https://github.com/openclaw/skills/commit/09a205dd880bb774df7c2161c4253c086a7e17dc"
+    "version": "1.1.0",
+    "publishedAt": 1773434370748,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773433891215,
+      "commit": "https://github.com/openclaw/skills/commit/09a205dd880bb774df7c2161c4253c086a7e17dc"
+    }
+  ]
 }
