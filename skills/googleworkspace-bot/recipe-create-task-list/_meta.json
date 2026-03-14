@@ -1,0 +1,11 @@
+{
+  "owner": "googleworkspace-bot",
+  "slug": "recipe-create-task-list",
+  "displayName": "Recipe Create Task List",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773393373704,
+    "commit": null
+  },
+  "history": []
+}
