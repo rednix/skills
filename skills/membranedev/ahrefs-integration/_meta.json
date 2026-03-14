@@ -1,0 +1,11 @@
+{
+  "owner": "membranedev",
+  "slug": "ahrefs-integration",
+  "displayName": "Ahrefs",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773262953493,
+    "commit": null
+  },
+  "history": []
+}
