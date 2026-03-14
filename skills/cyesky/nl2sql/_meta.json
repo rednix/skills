@@ -1,0 +1,11 @@
+{
+  "owner": "cyesky",
+  "slug": "nl2sql",
+  "displayName": "自然语言转 SQL 查询助手",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773315376070,
+    "commit": null
+  },
+  "history": []
+}
