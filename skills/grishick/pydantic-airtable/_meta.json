@@ -1,0 +1,11 @@
+{
+  "owner": "grishick",
+  "slug": "pydantic-airtable",
+  "displayName": "Airtable w/Python",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773347775724,
+    "commit": null
+  },
+  "history": []
+}
