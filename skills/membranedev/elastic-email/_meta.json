@@ -1,0 +1,11 @@
+{
+  "owner": "membranedev",
+  "slug": "elastic-email",
+  "displayName": "Elastic Email",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773464537886,
+    "commit": null
+  },
+  "history": []
+}
