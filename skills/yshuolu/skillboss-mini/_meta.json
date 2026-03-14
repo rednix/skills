@@ -3,9 +3,15 @@
   "slug": "skillboss-mini",
   "displayName": "Skillboss",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773250285898,
-    "commit": "https://github.com/openclaw/skills/commit/c834a85cd9f1792688131d22e1f90775ceec889a"
+    "version": "1.1.0",
+    "publishedAt": 1773359460873,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773250285898,
+      "commit": "https://github.com/openclaw/skills/commit/c834a85cd9f1792688131d22e1f90775ceec889a"
+    }
+  ]
 }

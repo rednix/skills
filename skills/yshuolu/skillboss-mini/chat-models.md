@@ -29,6 +29,8 @@
 | `huggingface/{org}/{model}` | Any HuggingFace model — dynamic, no pre-registration |
 
 ```bash
-run.mjs --model bedrock/claude-4-5-sonnet --prompt "Explain quantum computing"
-run.mjs --model openai/gpt-4o-mini --prompt "Summarize this" --context "Be concise"
+curl -s -X POST https://api.heybossai.com/v1/chat/completions \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "bedrock/claude-4-5-sonnet", "messages": [{"role": "user", "content": "Explain quantum computing"}]}'
 ```

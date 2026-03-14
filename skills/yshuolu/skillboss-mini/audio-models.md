@@ -27,7 +27,8 @@
 | `replicate/stability-ai/stable-audio-2.5` | Up to 3 minutes |
 
 ```bash
-run.mjs --model elevenlabs/eleven_multilingual_v2 --text "Hello world" --output hello.mp3
-run.mjs --model openai/whisper-1 --file recording.m4a
-run.mjs --model replicate/meta/musicgen --prompt "upbeat electronic" --duration 30 --output track.mp3
+curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "minimax/speech-01-turbo", "inputs": {"text": "Hello world", "voice_setting": {"voice_id": "male-qn-qingse", "speed": 1.0}}}'
 ```

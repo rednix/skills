@@ -20,6 +20,8 @@
 | `replicate/851-labs/background-remover` | Background removal v2 |
 
 ```bash
-run.mjs --model mm/img --prompt "A sunset over mountains" --output sunset.png
-run.mjs --model vertex/gemini-3-pro-image-preview --prompt "A cat" --output cat.png
+curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "mm/img", "inputs": {"prompt": "A sunset over mountains"}}'
 ```

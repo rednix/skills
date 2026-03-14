@@ -7,6 +7,8 @@
 | `vertex/veo-3.1-fast-generate-preview` | Google Veo 3.1 |
 
 ```bash
-run.mjs --model mm/t2v --prompt "A cat playing" --output video.mp4
-run.mjs --model mm/i2v --prompt "Zoom in slowly" --image "https://example.com/photo.jpg" --output video.mp4
+curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "mm/t2v", "inputs": {"prompt": "A cat playing with yarn"}}'
 ```

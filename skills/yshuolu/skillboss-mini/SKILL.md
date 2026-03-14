@@ -10,76 +10,73 @@ metadata: {"clawdbot":{"requires":{"env":["SKILLBOSS_API_KEY"]},"primaryEnv":"SK
 One API key, 50+ models across providers (Bedrock, OpenAI, Vertex, ElevenLabs, Replicate, Minimax, and more). Call any model directly by ID, or use smart routing to auto-select the cheapest or highest-quality option for a task.
 
 **Base URL:** `https://api.heybossai.com/v1`
+**Auth:** `-H "Authorization: Bearer $SKILLBOSS_API_KEY"`
 
 ## List Models
 
 ```bash
-curl -s -X POST https://api.heybossai.com/v1/models \
-  -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\"}"
+curl -s https://api.heybossai.com/v1/models \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY"
 ```
 
 Filter by type:
 
 ```bash
-curl -s -X POST https://api.heybossai.com/v1/models \
-  -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"types\":\"image\"}"
+curl -s "https://api.heybossai.com/v1/models?types=image" \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY"
 ```
 
-Types: `chat`, `image`, `video`, `tts`, `stt`, `music`, `search`, `tools`
-
-## Smart Mode (auto-select best model)
-
-List available task types:
+Get full docs for specific models:
 
 ```bash
-curl -s -X POST https://api.heybossai.com/v1/pilot \
-  -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"discover\":true}"
+curl -s "https://api.heybossai.com/v1/models?ids=mm/img,bedrock/claude-4-5-sonnet" \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY"
 ```
 
-Run a task (auto-selects best model):
-
-```bash
-curl -s -X POST https://api.heybossai.com/v1/pilot \
-  -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"type\":\"image\",\"inputs\":{\"prompt\":\"A sunset over mountains\"}}"
-```
+Types: `chat`, `image`, `video`, `tts`, `stt`, `music`, `search`, `scraper`, `email`, `storage`, `ppt`, `embedding`
 
 ## Chat
 
 ```bash
-curl -s -X POST https://api.heybossai.com/v1/run \
+curl -s -X POST https://api.heybossai.com/v1/chat/completions \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"bedrock/claude-4-5-sonnet\",\"inputs\":{\"messages\":[{\"role\":\"user\",\"content\":\"Explain quantum computing\"}]}}"
+  -d '{
+    "model": "bedrock/claude-4-5-sonnet",
+    "messages": [{"role": "user", "content": "Explain quantum computing"}]
+  }'
 ```
 
 | Parameter | Description |
 |-----------|-------------|
 | `model` | `bedrock/claude-4-5-sonnet`, `bedrock/claude-4-6-opus`, `openai/gpt-5`, `vertex/gemini-2.5-flash`, `deepseek/deepseek-chat` |
-| `inputs.messages` | Array of `{role, content}` objects |
-| `inputs.system` | Optional system prompt string |
-| `inputs.temperature` | Optional, 0.0–1.0 |
-| `inputs.max_tokens` | Optional, max output tokens |
+| `messages` | Array of `{role, content}` objects |
+| `system` | Optional system prompt |
+| `temperature` | Optional, 0.0–1.0 |
+| `max_tokens` | Optional, max output tokens |
 
-Response: `choices[0].message.content` or `content[0].text`
+Response: `choices[0].message.content`
 
 ## Image Generation
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"mm/img\",\"inputs\":{\"prompt\":\"A sunset over mountains\"}}"
+  -d '{
+    "model": "mm/img",
+    "inputs": {"prompt": "A sunset over mountains"}
+  }'
 ```
 
 Save to file:
 
 ```bash
 URL=$(curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"mm/img\",\"inputs\":{\"prompt\":\"A sunset over mountains\"}}" \
-  | grep -o '"image_url":"[^"]*"' | cut -d'"' -f4)
+  -d '{"model": "mm/img", "inputs": {"prompt": "A sunset over mountains"}}' \
+  | jq -r '.image_url // .result.image_url // .data[0]')
 curl -sL "$URL" -o sunset.png
 ```
 
@@ -96,16 +93,24 @@ Response: `image_url`, `data[0]`, or `generated_images[0]`
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"mm/t2v\",\"inputs\":{\"prompt\":\"A cat playing with yarn\"}}"
+  -d '{
+    "model": "mm/t2v",
+    "inputs": {"prompt": "A cat playing with yarn"}
+  }'
 ```
 
 Image-to-video:
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"mm/i2v\",\"inputs\":{\"prompt\":\"Zoom in slowly\",\"image\":\"https://example.com/photo.jpg\"}}"
+  -d '{
+    "model": "mm/i2v",
+    "inputs": {"prompt": "Zoom in slowly", "image": "https://example.com/photo.jpg"}
+  }'
 ```
 
 | Parameter | Description |
@@ -121,16 +126,20 @@ Response: `video_url`
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"minimax/speech-01-turbo\",\"inputs\":{\"text\":\"Hello world\",\"input\":\"Hello world\",\"voice\":\"alloy\"}}"
+  -d '{
+    "model": "minimax/speech-01-turbo",
+    "inputs": {"text": "Hello world", "voice_setting": {"voice_id": "male-qn-qingse", "speed": 1.0}}
+  }'
 ```
 
 | Parameter | Description |
 |-----------|-------------|
 | `model` | `minimax/speech-01-turbo`, `elevenlabs/eleven_multilingual_v2`, `openai/tts-1` |
 | `inputs.text` | Text to speak |
-| `inputs.voice` | Voice name (e.g. `alloy`, `nova`, `shimmer`) |
-| `inputs.voice_id` | Voice ID (for ElevenLabs) |
+| `inputs.voice` | Voice name (e.g. `alloy`, `nova`, `shimmer`) for OpenAI |
+| `inputs.voice_id` | Voice ID for ElevenLabs |
 
 Response: `audio_url` or binary audio data
 
@@ -138,15 +147,13 @@ Response: `audio_url` or binary audio data
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"openai/whisper-1\",\"inputs\":{\"audio_data\":\"BASE64_AUDIO\",\"filename\":\"recording.mp3\"}}"
+  -d '{
+    "model": "openai/whisper-1",
+    "inputs": {"audio_data": "BASE64_AUDIO", "filename": "recording.mp3"}
+  }'
 ```
-
-| Parameter | Description |
-|-----------|-------------|
-| `model` | `openai/whisper-1` |
-| `inputs.audio_data` | Base64-encoded audio |
-| `inputs.filename` | Original filename with extension |
 
 Response: `text`
 
@@ -154,8 +161,12 @@ Response: `text`
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"replicate/elevenlabs/music\",\"inputs\":{\"prompt\":\"upbeat electronic\",\"duration\":30}}"
+  -d '{
+    "model": "replicate/elevenlabs/music",
+    "inputs": {"prompt": "upbeat electronic", "duration": 30}
+  }'
 ```
 
 | Parameter | Description |
@@ -170,14 +181,13 @@ Response: `audio_url`
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"replicate/remove-bg\",\"inputs\":{\"image\":\"https://example.com/photo.jpg\"}}"
+  -d '{
+    "model": "replicate/remove-bg",
+    "inputs": {"image": "https://example.com/photo.jpg"}
+  }'
 ```
-
-| Parameter | Description |
-|-----------|-------------|
-| `model` | `replicate/remove-bg`, `replicate/background-remover` |
-| `inputs.image` | Image URL |
 
 Response: `image_url` or `data[0]`
 
@@ -185,24 +195,30 @@ Response: `image_url` or `data[0]`
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"reducto/parse\",\"inputs\":{\"document_url\":\"https://example.com/file.pdf\"}}"
+  -d '{
+    "model": "reducto/parse",
+    "inputs": {"document_url": "https://example.com/file.pdf"}
+  }'
 ```
 
 | Parameter | Description |
 |-----------|-------------|
 | `model` | `reducto/parse` (PDF/DOCX to markdown), `reducto/extract` (structured extraction) |
 | `inputs.document_url` | URL of the document |
-| `inputs.instructions` | For extract: `{"schema": {...}}` JSON schema |
-
-Response: `result` (parsed content)
+| `inputs.instructions` | For extract: `{"schema": {...}}` |
 
 ## Web Search
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"linkup/search\",\"inputs\":{\"query\":\"latest AI news\",\"depth\":\"standard\",\"outputType\":\"searchResults\"}}"
+  -d '{
+    "model": "linkup/search",
+    "inputs": {"query": "latest AI news", "depth": "standard", "outputType": "searchResults"}
+  }'
 ```
 
 | Parameter | Description |
@@ -216,8 +232,12 @@ curl -s -X POST https://api.heybossai.com/v1/run \
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"email/send\",\"inputs\":{\"to\":\"user@example.com\",\"subject\":\"Hello\",\"html\":\"<p>Hi there</p>\"}}"
+  -d '{
+    "model": "email/send",
+    "inputs": {"to": "user@example.com", "subject": "Hello", "html": "<p>Hi</p>"}
+  }'
 ```
 
 ## SMS Verification
@@ -226,16 +246,47 @@ Send OTP:
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"prelude/verify-send\",\"inputs\":{\"target\":{\"type\":\"phone_number\",\"value\":\"+1234567890\"}}}"
+  -d '{
+    "model": "prelude/verify-send",
+    "inputs": {"target": {"type": "phone_number", "value": "+1234567890"}}
+  }'
 ```
 
 Verify OTP:
 
 ```bash
 curl -s -X POST https://api.heybossai.com/v1/run \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d "{\"api_key\":\"$SKILLBOSS_API_KEY\",\"model\":\"prelude/verify-check\",\"inputs\":{\"target\":{\"type\":\"phone_number\",\"value\":\"+1234567890\"},\"code\":\"123456\"}}"
+  -d '{
+    "model": "prelude/verify-check",
+    "inputs": {"target": {"type": "phone_number", "value": "+1234567890"}, "code": "123456"}
+  }'
+```
+
+## Smart Mode (auto-select best model)
+
+List task types:
+
+```bash
+curl -s -X POST https://api.heybossai.com/v1/pilot \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"discover": true}'
+```
+
+Run a task:
+
+```bash
+curl -s -X POST https://api.heybossai.com/v1/pilot \
+  -H "Authorization: Bearer $SKILLBOSS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "image",
+    "inputs": {"prompt": "A sunset over mountains"}
+  }'
 ```
 
 ## Available Models (50+)
