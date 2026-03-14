@@ -1,0 +1,11 @@
+{
+  "owner": "emotibot5",
+  "slug": "zaobo-news",
+  "displayName": "早播新闻",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773369938743,
+    "commit": null
+  },
+  "history": []
+}
