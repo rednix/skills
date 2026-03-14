@@ -1,0 +1,11 @@
+{
+  "owner": "unixlamadev-spec",
+  "slug": "image-gen-bot",
+  "displayName": "Image Gen Bot",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773366034479,
+    "commit": null
+  },
+  "history": []
+}
