@@ -1,0 +1,11 @@
+{
+  "owner": "openclawb17-stack",
+  "slug": "agentfuel-api",
+  "displayName": "Agentfuel Api",
+  "latest": {
+    "version": "1.2.0",
+    "publishedAt": 1773467939659,
+    "commit": null
+  },
+  "history": []
+}
