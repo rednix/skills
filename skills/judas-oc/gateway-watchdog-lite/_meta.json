@@ -1,0 +1,11 @@
+{
+  "owner": "judas-oc",
+  "slug": "gateway-watchdog-lite",
+  "displayName": "Gateway Watchdog Lite",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1773311331817,
+    "commit": null
+  },
+  "history": []
+}
