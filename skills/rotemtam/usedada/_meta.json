@@ -3,11 +3,16 @@
   "slug": "usedada",
   "displayName": "dada",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1773259286581,
-    "commit": "https://github.com/openclaw/skills/commit/4bf655af674c02cbe2012c4bc510de5178a53c6e"
+    "version": "0.3.1",
+    "publishedAt": 1773393724668,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1773259286581,
+      "commit": "https://github.com/openclaw/skills/commit/4bf655af674c02cbe2012c4bc510de5178a53c6e"
+    },
     {
       "version": "0.1.0",
       "publishedAt": 1773244706214,

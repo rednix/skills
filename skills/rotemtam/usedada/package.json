@@ -1,6 +1,6 @@
 {
   "name": "@usedada/plugin",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "OpenClaw skill for dada — hosted backend infra for openclaw agents.",
   "type": "module",
   "main": "./SKILL.md",

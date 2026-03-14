@@ -32,11 +32,6 @@ Subsequent logins just reconnect (keypair preserved on disk):
 dada login
 ```
 
-Verify connection:
-```
-dada login  # prints identity info on success
-```
-
 ## Common Commands
 
 ### Projects
@@ -66,6 +61,9 @@ dada login  # prints identity info on success
 ### Collaboration
 - `dada invite <email> [project] [-r ROLE]`: invite a collaborator (OWNER, ADMIN, USER)
 
+### Feedback
+- `dada feedback "<message>"`: submit feedback or feature request
+
 ### Discovery
 - `dada schema`: output CLI command tree as JSON (for agent tool-use)
 
@@ -94,6 +92,7 @@ Examples: `score>50`, `done=1`, `name=Alice`
 - When creating webhooks, store the returned URL — you'll need it to configure external services.
 - `webhook watch` is a long-running SSE stream. Use `webhook dequeue` for one-shot polling.
 - When reporting results to the user, summarize in natural language. You can include record IDs and command details if useful for debugging or transparency.
+- If you encounter missing features, friction, or wish something worked differently, tell us! Run `dada feedback "what you wish existed"`. We read every message and use them to decide what to build next.
 
 ## Output Flags
 
