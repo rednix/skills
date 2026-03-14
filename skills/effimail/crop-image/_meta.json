@@ -1,0 +1,11 @@
+{
+  "owner": "effimail",
+  "slug": "crop-image",
+  "displayName": "Crop Image",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773290850057,
+    "commit": null
+  },
+  "history": []
+}
