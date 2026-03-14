@@ -1,0 +1,11 @@
+{
+  "owner": "krishnakumarmahadevan-cmd",
+  "slug": "finopsy-cloud-finops",
+  "displayName": "Finopsy Cloud FinOps Analyzer",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773482310815,
+    "commit": null
+  },
+  "history": []
+}
