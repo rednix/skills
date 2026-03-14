@@ -1,0 +1,11 @@
+{
+  "owner": "tyzzt",
+  "slug": "wsl-powershell",
+  "displayName": "WSL-PowerShell Controller",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773283690244,
+    "commit": null
+  },
+  "history": []
+}
