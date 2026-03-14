@@ -1,11 +1,17 @@
 {
   "owner": "bytesagain1",
   "slug": "pet-care",
-  "displayName": "Pet Care Guide",
+  "displayName": "Pet Care",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773317892069,
-    "commit": "https://github.com/openclaw/skills/commit/68819472f4a0a52196c9bc42ff281d4583ece430"
+    "version": "2.3.0",
+    "publishedAt": 1773447648792,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773317892069,
+      "commit": "https://github.com/openclaw/skills/commit/68819472f4a0a52196c9bc42ff281d4583ece430"
+    }
+  ]
 }

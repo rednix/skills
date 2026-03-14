@@ -1,6 +1,6 @@
 ---
 name: Pet Care Guide
-description: >-
+description: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━. Use when you need pet care capabilities. Triggers on: pet care."
   宠物护理指南。喂养方案(猫/狗)、健康检查、训练技巧、美容护理、紧急处理、新手准备清单。Pet care guide for cats and dogs with feeding, health, training, grooming, emergency, checklists. 宠物、猫、狗、喂养。
 ---
 # Pet Care Guide
@@ -36,3 +36,6 @@ description: >-
 
 ---
 *Pet Care Guide by BytesAgain*
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
