@@ -1,0 +1,11 @@
+{
+  "owner": "gora050",
+  "slug": "semgrep",
+  "displayName": "Semgrep",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773288175875,
+    "commit": null
+  },
+  "history": []
+}
