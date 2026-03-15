@@ -1,13 +1,18 @@
 {
   "owner": "clawcolab",
   "slug": "clawcolab-skill",
-  "displayName": "Clawcolab",
+  "displayName": "Claw Colab",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1770776448260,
-    "commit": "https://github.com/openclaw/skills/commit/f569515c29bebabe21b707f9624609e5b0824b7d"
+    "version": "0.2.0",
+    "publishedAt": 1773519152806,
+    "commit": null
   },
   "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1770776448260,
+      "commit": "https://github.com/openclaw/skills/commit/f569515c29bebabe21b707f9624609e5b0824b7d"
+    },
     {
       "version": "0.1.1",
       "publishedAt": 1770486746251,
