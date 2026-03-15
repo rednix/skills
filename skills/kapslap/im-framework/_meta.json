@@ -3,9 +3,15 @@
   "slug": "im-framework",
   "displayName": "Immanent Metaphysics Framework",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1771798073991,
-    "commit": "https://github.com/openclaw/skills/commit/a06736214f2d0ef6760395a5b0a25a25710d74db"
+    "version": "1.1.0",
+    "publishedAt": 1773433812230,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1771798073991,
+      "commit": "https://github.com/openclaw/skills/commit/a06736214f2d0ef6760395a5b0a25a25710d74db"
+    }
+  ]
 }

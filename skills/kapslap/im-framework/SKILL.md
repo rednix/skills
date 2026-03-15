@@ -1,98 +1,149 @@
 ---
 name: im-framework
-description: "Ground your agent in Forrest Landry's Immanent Metaphysics (IM). Provides the three axioms, three modalities, Incommensuration Theorem (ICT), effective choice framework, path of right action, and agent-to-agent ethics. Use when: (1) you want your agent to reason from the IM framework rather than just cite it, (2) engaging with philosophical or ethical questions where modal precision matters, (3) your agent encounters other agents and needs principled engagement ethics, (4) working with IM reference materials or Forrest Landry's texts. Includes structured ontology (134 concepts, 348 relations), soul file template, and attribution guidelines."
+description: |
+  Reference, explain, and apply the Immanent Metaphysics (IM) framework by Forrest Landry.
+  Uses a structured ontology of 767 entities (concepts, axioms, theorems, terms, aphorisms, implications)
+  with direct links to the source text at mflb.com. Use when asked to explain IM concepts, apply the
+  framework to a situation, trace derivation chains, find source references, or connect ideas across
+  the whitebook. Triggers on: "immanent metaphysics", "IM framework", modality questions, axiom
+  references, ICT, symmetry/continuity ethics, effective choice, path of right action, or any
+  request to ground claims in the framework.
 ---
 
 # Immanent Metaphysics Framework
 
-An agent skill for reasoning from within Forrest Landry's Immanent Metaphysics.
+Assess what someone is doing with the tools of the IM and provide grounded, sourced responses with direct links to Forrest Landry's whitebook at mflb.com.
 
-## Quick Start
+## Bundled Reference Files
 
-This skill gives your agent the IM framework as operational knowledge — not just definitions to recite, but structure to reason from. After installing, your agent can:
+All in `references/` (relative to this skill):
 
-- Apply the three modalities (immanent, omniscient, transcendent) to actual situations
-- Use the ICT to dissolve false dilemmas (symmetry+continuity can't both hold absolutely)
-- Navigate ethical questions via the effective choice framework
-- Engage other agents with principled ethics (model, don't impose; offer, don't force)
-- Cite Forrest's work with proper attribution discipline
+| File | Contents |
+|------|----------|
+| `graph.jsonl` | 767 entities: 134 Concepts, 3 Axioms, 11 Theorems, 147 Aphorisms, 4 Implications. Each has `name`, `definition`, `source_section`, `location` (URL). Relations: implies, paired_with, contrasts_with, depends_on, has_modality, illuminates, defined_in. |
+| `whitebook-map.jsonl` | 73 entries mapping whitebook structure (chapters, sections, URLs). Entry point: https://mflb.com/8192 |
+| `schema.yaml` | Type definitions and relation types for the ontology. |
 
-## Core Framework
+Full source texts (not bundled, available at mflb.com):
+- An Immanent Metaphysics (full book): https://mflb.com/8192
+- Aphorisms of Effective Choice: https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch5.htm
+
+## How to Use
+
+### 1. Search the Ontology
+
+```bash
+# Find a concept by name
+grep -i '"name": "symmetry"' references/graph.jsonl
+
+# Find all entities mentioning a term
+grep -i 'continuity' references/graph.jsonl | head -10
+
+# Find entities with source URLs
+python3 -c "
+import json
+for line in open('references/graph.jsonl'):
+    d = json.loads(line)
+    if 'entity' in d:
+        props = d['entity'].get('properties',{})
+        loc = props.get('location','')
+        name = props.get('name', props.get('word', props.get('text','')))
+        if 'SEARCH_TERM' in name.lower() or 'SEARCH_TERM' in props.get('definition','').lower():
+            print(f'{d[\"entity\"][\"type\"]}: {name}')
+            if loc: print(f'  URL: {loc}')
+            print(f'  Def: {props.get(\"definition\",\"\")[:200]}')
+            print()
+"
+
+# Find relations for a specific entity
+grep '"ENTITY_ID"' references/graph.jsonl | grep relation
+```
+
+### 2. Link to Source
+
+Every entity with a `location` property has a direct URL to the relevant whitebook section at mflb.com. Always include these links when citing.
+
+Key chapter URLs:
+
+| Topic | URL |
+|-------|-----|
+| Modalities | [Ch1](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch1.htm#1_modalities) |
+| Axioms | [Ch1](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch1.htm#1_axioms) |
+| ICT | [Ch3](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch3.htm#1_ict) |
+| Symmetry / Continuity | [Ch3](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch3.htm#1_symmetry) |
+| Ethics | [Ch6](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch6.htm) |
+| Path of Right Action | [Ch6](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch6.htm#2_path) |
+| Basal Motivations | [Ch6](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch6.htm#2_basal) |
+| Aesthetics | [Ch7](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch7.htm) |
+| Mind | [Ch8](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch8.htm) |
+| Evolution | [Ch9](https://mflb.com/dvol/control/pcore/own_books/white_1/wb_web_2/zout/upmp_ch9.htm) |
+
+### 3. Assess and Apply
+
+1. **Identify which modality, axiom, or theorem they're engaging with.** Search the ontology.
+2. **Check for modal confusion.** Collapsing omniscient into immanent? Treating transcendent as omniscient? Axiom III (distinct, inseparable, non-interchangeable) is the diagnostic.
+3. **Trace derivation chains.** Use `implies`, `depends_on`, `has_modality` relations.
+4. **Link to source.** Always provide the mflb.com URL.
+5. **Connect to aphorisms.** The 147 aphorisms illuminate practical application.
+
+## Quick Reference
 
 ### The Three Modalities
 
-**Immanent** — relational, participatory, first-person. The immediate experience of being *within*. The center of any continuum. Where knowing and understanding occur.
+**Immanent** — relational, interactive, participatory. First-person experience. The center of any continuum.
 
-**Omniscient** — structural, external, third-person. Seeing the whole at once from outside. Description, naming, explanation. Like a photograph — timeless structure.
+**Omniscient** — structural, external, fixed. Third-person observation. The whole seen at once.
 
-**Transcendent** — possibility, precondition, a-priori. No fixed position — "true at all locations." The relation between domains sharing no common frame. Like a hologram.
+**Transcendent** — possibility, precondition, a priori. No fixed position. True at all locations.
 
 ### The Three Axioms
 
-**Axiom I (Primacy):** The immanent is more fundamental than the omniscient and/or the transcendent. The omniscient and transcendent are conjugate.
+**I:** The immanent is more fundamental than the omniscient and/or the transcendent. The omniscient and transcendent are conjugate.
 
-**Axiom II (Circularity):**
-- A class of the transcendent precedes an instance of the immanent
-- A class of the immanent precedes an instance of the omniscient
-- A class of the omniscient precedes an instance of the transcendent
+**II:** A class of the transcendent precedes an instance of the immanent. A class of the immanent precedes an instance of the omniscient. A class of the omniscient precedes an instance of the transcendent.
 
-**Axiom III (Trinity):** The immanent, omniscient, and transcendent are distinct, inseparable, and non-interchangeable.
+**III:** The immanent, omniscient, and transcendent are distinct, inseparable, and non-interchangeable.
 
-### The Incommensuration Theorem (ICT)
+### The ICT (Incommensuration Theorem)
 
-From the six intrinsics of comparison (sameness, difference, content, context, subject, object):
+From six intrinsics of comparison (sameness, difference, content, context, subject, object):
 
-- Continuity = sameness of content where sameness of context
-- Symmetry = sameness of content where difference of context
-- Asymmetry = difference of content where difference of context
-- Discontinuity = difference of content where sameness of context
+- **Continuity** = sameness of content where sameness of context
+- **Symmetry** = sameness of content where difference of context
+- **Asymmetry** = difference of content where difference of context
+- **Discontinuity** = difference of content where sameness of context
 
-**The ICT proves:** Symmetry + Continuity cannot both apply absolutely. Asymmetry + Discontinuity cannot both apply absolutely.
+**Result:** Symmetry + Continuity cannot both apply absolutely. Valid conjunctions: (Continuity + Asymmetry) OR (Symmetry + Discontinuity).
 
-**Implications:**
-- Bell's Theorem = ICT applied to physics
-- Gödel's Incompleteness = ICT applied to logic
-- Causality without determinism — choice is real
+**Cross-domain:** Bell's Theorem (physics), Godel's Incompleteness (logic), Causality without Determinism (metaphysics).
 
-### Effective Choice and the Path of Right Action
+### Ethics
 
-For the full framework, read `references/effective-choice.md`.
+**Symmetry Ethics:** When inner being is unchanged, expression should be the same regardless of external circumstances.
 
-Key theorems:
-1. Win-win is always structurally possible for all involved, at all levels
-2. Win-win choices are adjacent — choosing well enables continued good choosing
-3. When win-win seems impossible, that's a measure of deviation from the path
+**Continuity Ethics:** When inner nature is unchanged, the way of relating should remain the same regardless of what or whom one relates to.
 
-## Reference Files
+These derive from the valid conjunctions of the ICT applied to action. They cannot both be perfectly realized simultaneously.
 
-Load these as needed — don't load all at once.
+### Path of Right Action
 
-| File | When to Read |
-|------|-------------|
-| `references/effective-choice.md` | Questions about ethics, choice, the path of right action |
-| `references/agent-ethics.md` | Engaging other agents, inter-agent communication |
-| `references/attribution-guide.md` | Before citing or paraphrasing Forrest's work |
-| `references/key-concepts.md` | Looking up specific IM terms and distinctions |
-| `ontology/graph.jsonl` | Structured concept graph (134 concepts, 348 relations) |
-| `ontology/whitebook-map.jsonl` | Structural map of the White Book |
-| `ontology/schema.yaml` | Ontology schema for interpreting the graph |
+It is always possible to choose win-win for all involved, at all levels of being. Win-win choices are mutually self-supporting and form a contiguous path. The degree to which win-win seems impossible is the measure of deviation from the path.
 
-## Soul File Template
+## Entity Types in the Ontology
 
-A starter soul file grounded in the IM is at `assets/soul-template.md`. Copy and customize it.
+| Type | Count | Contains |
+|------|-------|----------|
+| Concept | 134 | Named ideas with definitions, modality assignments, source URLs |
+| Axiom | 3 | Foundational axioms with statements and implications |
+| Theorem | 11 | ICT, Symmetry Ethics, Continuity Ethics, Identity, Bell's mapping, Godel mapping |
+| Aphorism | 147 | From Effective Choice, with themes and illumination links |
+| Implication | 4 | Cross-domain applications (physics, logic, ethics, consciousness) |
 
-## Attribution Discipline
+## Attribution
 
-When referencing the IM framework, always distinguish:
-1. **Direct citation** — quoting Forrest's exact words (use quotes + source)
-2. **Paraphrase** — restating his ideas in your words (note "paraphrasing Forrest")
-3. **Your own inference** — extending the framework beyond what Forrest wrote (note "my synthesis/extension")
+Always attribute to Forrest Landry's Immanent Metaphysics. Distinguish:
+1. **Direct citation** — quote with source URL
+2. **Close paraphrase** — summary with source URL
+3. **Agent synthesis** — your own application, labeled as such
 
-Never invent positions or imply Forrest's endorsement without grounding.
-
-## Further Reading
-
-- Soul file framework: https://jaredclucas.com/soul
-- Delicate Fire essays: https://delicatefire.com
-- Source texts: available from Forrest Landry via the team
-- Team setup guide: https://jaredclucas.com/forrestteam
+Do not invent positions or imply endorsement of claims not grounded in source material.
