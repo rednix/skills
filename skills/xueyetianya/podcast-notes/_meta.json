@@ -3,11 +3,16 @@
   "slug": "podcast-notes",
   "displayName": "Podcast Notes",
   "latest": {
-    "version": "2.2.0",
-    "publishedAt": 1773421660861,
-    "commit": "https://github.com/openclaw/skills/commit/2a447a97233a2cbfcf525338621d48892d7edd87"
+    "version": "2.3.1",
+    "publishedAt": 1773536646006,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.2.0",
+      "publishedAt": 1773421660861,
+      "commit": "https://github.com/openclaw/skills/commit/2a447a97233a2cbfcf525338621d48892d7edd87"
+    },
     {
       "version": "0.0.1",
       "publishedAt": 1773283755659,

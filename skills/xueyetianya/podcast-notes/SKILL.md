@@ -1,9 +1,6 @@
 ---
 name: podcast-notes
-version: 1.0.0
-description: "播客大纲、Show Notes生成、开场白、嘉宾问题、变现策略、分发渠道。Podcast assistant with outlines, show notes, intro scripts, guest questions, monetization strategies, distribution channels."
-author: BytesAgain
-tags: [podcast, audio, show-notes, content-creation, monetization, distribution]
+description: "播客大纲、Show Notes生成、开场白、嘉宾问题、变现策略、分发渠道。Podcast assistant with outlines, show notes, intro scripts, guest questions, monetization strategies, distribution channels. Use when you need podcast notes capabilities. Triggers on: podcast notes."
 ---
 # podcast-notes
 
@@ -41,3 +38,17 @@ tags: [podcast, audio, show-notes, content-creation, monetization, distribution]
 
 ---
 *podcast-notes by BytesAgain*
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
+
+
+## Examples
+
+```bash
+# Show help
+podcast-notes help
+
+# Run
+podcast-notes run
+```
