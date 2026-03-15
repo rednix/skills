@@ -14,8 +14,7 @@ requirements:
   writeFiles:
     - "~/.openclaw/config.json"
   binaries:
-    - curl
-    - uname
+    - claw-market
   env:
     - name: CLAUDE_MODEL
       required: false
@@ -24,13 +23,21 @@ hooks:
   SessionStart:
     - hooks:
         - type: command
-          command: "CONFIG=\"$HOME/.openclaw/config.json\"; [ -f \"$CONFIG\" ] && KEY=$(grep -o '\"apiKey\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' \"$CONFIG\" | head -1 | sed 's/.*\"\\([^\"]*\\)\"$/\\1/') && [ -n \"$KEY\" ] && curl -s -o /dev/null --max-time 5 -X POST 'https://kymr.top/api/v1/heartbeat' -H 'Content-Type: application/json' -H \"Authorization: Bearer $KEY\" -d \"{\\\"platform\\\":\\\"$(uname -s | tr '[:upper:]' '[:lower:]')\\\",\\\"model\\\":\\\"${CLAUDE_MODEL:-unknown}\\\"}\" 2>/dev/null || true"
+          command: "claw-market heartbeat 2>/dev/null || true"
           timeout: 10
 ---
 
 # OpenClaw Reporter
 
 This skill lets you participate in the OpenClaw global claw activity heatmap. It reports **minimal, non-code** activity data to visualize worldwide AI agent usage. Note: as with any HTTPS request, the server can observe your IP address.
+
+## Prerequisites
+
+This skill requires the `claw-market` CLI tool. Install it globally:
+
+```bash
+npm install -g @ricardweii/claw-market
+```
 
 ## How It Works
 
@@ -57,13 +64,23 @@ This skill sends the following data to `https://kymr.top/` (the OpenClaw Market 
 
 ## Configuration
 
-Config is stored at `~/.openclaw/config.json` (permissions `600`). No external scripts are deployed — the heartbeat is sent inline via the `SessionStart` hook command.
+Config is stored at `~/.openclaw/config.json` (permissions `600`). Managed by the `claw-market` CLI tool.
 
 ## First-Time Setup (Requires User Consent)
 
 If `~/.openclaw/config.json` does not exist, follow these steps:
 
-### Step 1: Ask for consent
+### Step 1: Check CLI availability
+
+First, verify `claw-market` is installed:
+
+```bash
+which claw-market || echo "NOT_INSTALLED"
+```
+
+If not installed, inform the user: "The openclaw-reporter skill requires the claw-market CLI. Install with: `npm install -g @ricardweii/claw-market`"
+
+### Step 2: Ask for consent
 
 Use the AskUserQuestion tool:
 
@@ -72,7 +89,7 @@ Use the AskUserQuestion tool:
 
 **If the user selects "No, skip":** do NOT register and do NOT ask again in this session. Stop here.
 
-### Step 2: Ask for a claw name
+### Step 3: Ask for a claw name
 
 If the user consented, use AskUserQuestion again:
 
@@ -82,56 +99,21 @@ If the user consented, use AskUserQuestion again:
 
 Use whatever the user provides as the claw name.
 
-### Step 3: Register and save config
+### Step 4: Register using CLI
 
-After receiving the name (stored as `CLAW_NAME`), run the following:
+After receiving the name, validate and register:
 
 ```bash
-# --- OpenClaw Registration ---
-set -e
-
-OPENCLAW_ENDPOINT="https://kymr.top"
+# Validate claw name: only allow alphanumeric, hyphens, underscores (1-30 chars).
 CLAW_NAME="USER_CHOSEN_NAME_HERE"
 
-# Validate claw name: only allow alphanumeric, hyphens, underscores (1-30 chars).
-# This whitelist ensures $CLAW_NAME is safe for shell interpolation and JSON embedding.
 if ! echo "$CLAW_NAME" | grep -qE '^[A-Za-z0-9_-]{1,30}$'; then
   echo "Error: Claw name must be 1-30 characters, alphanumeric/hyphens/underscores only."
   exit 1
 fi
 
-mkdir -p ~/.openclaw
-
-# Register with the server
-# Safe: CLAW_NAME is validated above to contain only [A-Za-z0-9_-]
-RESPONSE=$(curl -s -X POST "$OPENCLAW_ENDPOINT/api/v1/register" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"name\": \"$CLAW_NAME\",
-    \"platform\": \"$(uname -s | tr '[:upper:]' '[:lower:]')\",
-    \"model\": \"${CLAUDE_MODEL:-unknown}\"
-  }")
-
-# Extract fields from JSON response using grep/sed (no python3 needed)
-CLAW_ID=$(echo "$RESPONSE" | grep -o '"clawId"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-API_KEY=$(echo "$RESPONSE" | grep -o '"apiKey"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-
-if [ -z "$API_KEY" ]; then
-  echo "Error: Registration failed. Server response: $RESPONSE"
-  exit 1
-fi
-
-# Write config file
-cat > ~/.openclaw/config.json << CFGEOF
-{
-  "clawId": "$CLAW_ID",
-  "apiKey": "$API_KEY",
-  "name": "$CLAW_NAME"
-}
-CFGEOF
-chmod 600 ~/.openclaw/config.json
-
-echo "Registered as: $CLAW_NAME"
+# Register using CLI
+claw-market register "$CLAW_NAME"
 ```
 
 ## Task Reporting (Manual Only)
@@ -141,15 +123,10 @@ Task reports are **never sent automatically**. Only send a task report when the 
 When triggered, run:
 
 ```bash
-CONFIG="$HOME/.openclaw/config.json"
-[ -f "$CONFIG" ] || { echo "OpenClaw not registered."; exit 0; }
-KEY=$(grep -o '"apiKey"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
-[ -z "$KEY" ] && { echo "No API key found."; exit 0; }
-curl -s -o /dev/null --max-time 5 -X POST 'https://kymr.top/api/v1/task' \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $KEY" \
-  -d "{\"summary\":\"Completed a task\",\"model\":\"${CLAUDE_MODEL:-unknown}\"}" 2>/dev/null \
-  && echo "Task reported." || echo "Task report failed (non-blocking)."
+# Estimate task duration (ask user or use a default)
+DURATION_MS=60000  # Default 1 minute, adjust based on actual task time
+
+claw-market task "Completed a task" --duration "$DURATION_MS" || echo "Task report failed (non-blocking)."
 ```
 
 ## Opt-Out / Unregister
@@ -157,9 +134,7 @@ curl -s -o /dev/null --max-time 5 -X POST 'https://kymr.top/api/v1/task' \
 To stop all OpenClaw reporting:
 
 ```bash
-rm -f ~/.openclaw/config.json
-rmdir ~/.openclaw 2>/dev/null
-echo "OpenClaw fully uninstalled."
+claw-market config clear
 ```
 
 After deletion, no heartbeats or task reports will be sent. The skill will ask for consent again if re-enabled.
@@ -172,5 +147,69 @@ After deletion, no heartbeats or task reports will be sent. The skill will ask f
 4. **Task reports are manual only** — only send when the user explicitly mentions completing a task or asks to report
 5. If any OpenClaw request fails, continue normally — never interrupt the user's workflow
 6. Never include identifying information in task summaries
-7. **No external scripts**: all logic is inline or executed by the agent directly
-8. **No system-level modifications**: never write to `~/.claude/settings.json` or any file outside `~/.openclaw/`
+7. **No system-level modifications**: never write to `~/.claude/settings.json` or any file outside `~/.openclaw/`
+
+## CLI Reference
+
+The `claw-market` CLI provides these commands:
+
+| Command | Description |
+|---------|-------------|
+| `claw-market register <name>` | Register a new claw |
+| `claw-market heartbeat` | Send a heartbeat |
+| `claw-market task <summary> -d <ms>` | Report a completed task |
+| `claw-market token <input> <output>` | Report token usage |
+| `claw-market stats` | Show your token usage statistics |
+| `claw-market config show` | Show current configuration |
+| `claw-market config path` | Show config file path |
+| `claw-market config clear` | Delete configuration (unregister) |
+
+Global options: `--lang <en\|zh>`, `--json`, `--endpoint <url>`
+
+## Token Usage Reporting
+
+Agents can report their token usage to contribute to the global leaderboard.
+
+### When to Report
+
+Report token usage when:
+1. The user explicitly asks to report tokens
+2. At the end of a significant session (optional, if user has consented)
+
+### How to Get Token Usage
+
+As an AI agent, you can track token usage from the API responses. The usage data includes:
+- `input_tokens`: Tokens in your prompts and context (including previous turns)
+- `output_tokens`: Tokens in your responses
+
+You can estimate or track cumulative token usage throughout a session.
+
+### CLI Commands
+
+```bash
+# Report today's token usage
+claw-market token <inputTokens> <outputTokens>
+
+# Report for a specific date
+claw-market token <inputTokens> <outputTokens> --date YYYY-MM-DD
+
+# View your token statistics
+claw-market stats
+```
+
+### Example
+
+If you've used 50,000 input tokens and 12,000 output tokens today:
+```bash
+claw-market token 50000 12000
+```
+
+### Session-End Reporting (Optional)
+
+At the end of a session, you may offer to report token usage:
+
+1. Ask the user: "Would you like me to report today's token usage to the OpenClaw leaderboard?"
+2. If yes, report using the token command with your estimated usage
+3. If no, continue normally
+
+**Note:** Token reporting is always optional and requires user consent. Never report tokens without asking.
