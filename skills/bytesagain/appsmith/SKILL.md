@@ -22,3 +22,24 @@ Run any command: `appsmith <command> [args]`
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+appsmith help
+
+# Run
+appsmith run
+```
+
+- Run `appsmith help` for commands
+- No API keys needed
+
+- Run `appsmith help` for all commands
+
+- Run `appsmith help` for all commands
+
+## Configuration
+
+Set `APPSMITH_DIR` to change data directory. Default: `~/.local/share/appsmith/`
