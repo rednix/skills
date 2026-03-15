@@ -9,7 +9,7 @@ description: Detect if AI responses contain hallucinations by analyzing tool usa
 
 When `enable = false`, this skill triggers when user explicitly asks:
 - **Chinese**: 检测、检测一下、核实、是真的吗、是不是胡说
-- **English**: 
+- **English**:
   - "is that true" / "is this true"
   - "are you serious" / "you serious"
   - "is that bullshit" / "is this nonsense"
@@ -25,8 +25,6 @@ Detect whether the AI's response is trustworthy by checking:
 
 ## Configuration
 
-This skill uses a `config.json` file:
-
 ```json
 {
   "enable": false    // User must explicitly enable
@@ -41,84 +39,129 @@ User can say:
 - "turn on is-bullshit" → enable = true
 - "turn off is-bullshit" → enable = false
 
-When enabled, fact check will automatically appear after every AI response.
-
 ## How It Works
 
-### 1. Tool Usage Check
-Check what tools were called during the response (from the conversation context).
+### Step 1: Analyze the Response
+Read the AI's response and identify what type of information it contains:
+- Mathematical calculations
+- Time/date/timezone statements
+- Factual claims
+- Uncertain statements
 
-### 2. Response Quality Check
-Analyze the response text for signs of good judgment:
-- Detects invalid premises / time contradictions
-- Acknowledges uncertainty
-- Points out logical flaws
-- Doesn't pretend to answer unanswerable questions
+### Step 2: Check Tool Usage
+Look at what tools were called throughout the **entire conversation history** (not just the current response). Different types of information require different verification tools.
 
-## Credibility Levels
+### Step 3: Check Response Quality
+Analyze the response text for signs of good judgment.
 
-### Based on Tool Calls
+### Step 4: Calculate Score
+Add up points based on tool usage and response quality patterns.
 
-| Level | Tools Called | Meaning |
-|-------|-------------|---------|
-| ✅ HIGH | `weather`, `web_fetch`, `web_search`, `feishu_fetch_doc`, etc. | Verified with external data |
-| ⚠️ MEDIUM | `exec`, `read`, `memory_search`, etc. | Referenced internal resources |
-| ❌ LOW | None | No verification |
+## Detection Rules
 
-### Bonus: Response Quality
+### A. Tool-Based Checks (Required Verification)
 
-| Pattern Found | Bonus |
-|--------------|-------|
+| Response Contains | Required Tool | If None → Points |
+|------------------|---------------|-----------------|
+| Math expressions (numbers + operators: +, -, ×, *, ÷, /, %, ^) | exec (Python/bc), calculator | -2 |
+| Time/date/timezone (e.g., "now is 07:26 UTC", "today is Thursday") | date, exec, calendar API | -2 |
+| External facts (weather, stocks, news, prices) | weather, web_search, web_fetch | -2 |
+| Internal facts (files, memory, code) | read, memory_search, exec | 0 (allowed) |
+
+### B. Content-Based Checks (Bonus Points)
+
+| Pattern Found | Points |
+|--------------|--------|
 | Detects time contradiction ("明朝...乾隆" / "1900年") | +2 |
-| Says "前提错误" / "无意义" / "无法回答" | +2 |
-| Acknowledges uncertainty ("不确定", "可能") | +1 |
-| Makes up facts confidently | -2 |
+| Says "前提错误" / "无意义" / "无法回答" / "invalid premise" | +2 |
+| Acknowledges uncertainty ("不确定", "可能", "I'm not sure") | +1 |
+| Makes up facts confidently (no tool + specific facts) | -2 |
 
-### Final Score
+## Verdict per Round
 
-| Score | Credibility |
-|-------|-------------|
-| 3+ | ✅ HIGH |
-| 1-2 | ⚠️ MEDIUM |
-| 0 or negative | ❌ LOW |
+Each round gets its own verdict:
+
+| Tool Used | Verdict |
+|-----------|----------|
+| Correct tool used | ✅ Looks good! |
+| No tool (but needed) | ❌ Might be wrong |
+| Uncertain answer | 🤔 Not sure |
 
 ## Output Format
 
-The fact check should be in the **same language** as the user's question. If user asks in Chinese, output in Chinese. If user asks in English, output in English.
+The fact check should be in the **same language** as the user's question.
 
-The fact check should be friendly and lively, not robotic. Use casual language.
+### Step-by-Step Analysis
 
-### Credibility Expressions
+First, analyze each round of conversation:
 
-| Score | Emoji | Expression |
-|-------|-------|------------|
-| 3+ | ✅ | Looks good! |
-| 1-2 | 🤔 | Eh, some doubts |
-| 0 or negative | 😅 | Uh... I'm not sure |
+```
+Round N:
+- User asked: [question summary]
+- AI answered: [answer summary]
+- Tools called: [tool names or "none"]
+- Issues found: [any problems detected]
+- Score: +X / -X
+```
+
+### Output Rules by Conversation Length
+
+| Conversation Rounds | Output |
+|---------------------|--------|
+| ≤ 5 rounds | Show every round |
+| > 5 rounds | Show only last round |
+
+**Note:** Each round is evaluated independently. No overall summary needed - users can judge themselves.
+
+### Style
+- Friendly and lively, not robotic
+- Casual tone
+- Keep it short and fun
+- Each round is independent - no overall summary
 
 ### Example Output
 
+**≤5 rounds (show all):**
 ```
 ---
-🤔 Just checked it for you:
+Fact Check:
 
-- Said "according to xx" but I can't find the source, minus points!
-- Didn't call any tools to verify, minus points!
+Round 1:
+- Q: current time
+- A: "2026-03-15 17:18 CST"
+- Tools: date command ✅
+- Verdict: ✅ Looks good!
 
-😅 Summary: I'm not sure about this, recommend double-checking
+Round 2:
+- Q: 15000 × 1.2% = ?
+- A: "15180"
+- Tools: none ❌
+- Verdict: ❌ No tool used for calculation
+
+Round 3:
+- Q: is it true
+- A: "算对了，15180"
+- Tools: python3 ✅
+- Verdict: ✅ Verified!
 ---
 ```
 
-### Style Guidelines
+**>5 rounds (show last round only):**
+```
+---
+Fact Check (last round):
 
-- Use casual, friendly tone
-- Add personality (e.g., "Just checked it for you", "Uh...")
-- Keep it short and fun
-- Don't use overly technical language
+Round 5:
+- Q: [question]
+- A: [answer]
+- Tools: [tool name] ✅/❌
+- Verdict: ✅/❌
+---
+```
 
 ## Implementation Notes
 
+- Default is OFF - user must explicitly enable
 - Checks both tool usage AND response content
 - Gives credit for good judgment even without tools
 - Penalizes confident fabrication
-- Default is OFF - user must explicitly enable
