@@ -1,6 +1,6 @@
 ---
 name: mac-reminders-agent
-version: 1.3.0
+version: 1.4.0
 author: swancho
 license: MIT
 description: |
@@ -10,6 +10,8 @@ description: |
   Supports editing and deleting reminders by ID (calendarItemIdentifier from EventKit).
   Supports multiple languages (en, ko, ja, zh) for trigger detection and response formatting.
   When users request recurring reminders, MUST use --repeat option (daily|weekly|monthly|yearly).
+  Supports parsing meeting notes to extract action items and suggest reminders (parse command).
+  Parse command is pure text processing - no Reminders app access required.
 requirements:
   runtime:
     - node >= 18.0.0
@@ -17,6 +19,7 @@ requirements:
     - macOS with Xcode Command Line Tools (includes Swift compiler)
   permissions:
     - macOS Reminders access (system prompt on first use)
+repository: https://github.com/swancho/mac-reminders-agent
 install: |
   cd $SKILL_DIR && npm install
 ---
@@ -36,6 +39,7 @@ This skill integrates with the local macOS **Reminders** app to:
 - **Delete reminders**: Remove reminders by ID
 - **Complete reminders**: Mark reminders as done by ID
 - **Native recurrence**: Weekly, daily, monthly, yearly repeating reminders
+- **Parse meeting notes**: Extract action items from text and suggest reminders
 - **Multi-language support**: English, Korean, Japanese, Chinese
 
 The skill uses the following files relative to its directory:
@@ -43,6 +47,7 @@ The skill uses the following files relative to its directory:
 - `cli.js` (unified entry point)
 - `reminders/apple-bridge.js` (backend: AppleScript + `applescript` npm module)
 - `reminders/eventkit-bridge.swift` (native recurrence via Swift EventKit)
+- `reminders/meeting-parser.js` (meeting notes parser for action item extraction)
 - `locales.json` (language-specific triggers and responses)
 
 ## Language Support
@@ -369,6 +374,82 @@ node cli.js add --title "주간 회의 - 2/17" --due "2026-02-17T09:00:00+09:00"
 
 ---
 
+## 7) Parse Meeting Notes
+
+Extract action items from meeting notes and suggest reminders. Pure text processing - no Reminders app access required.
+
+### Trigger Examples (by language)
+
+**English:**
+- "Parse my meeting notes"
+- "Extract action items from this text"
+
+**Korean (한국어):**
+- "회의록에서 할 일 추출해줘"
+- "미팅 내용에서 할 일 뽑아줘"
+
+**Japanese (日本語):**
+- "議事録からアクションアイテムを抽出して"
+
+**Chinese (中文):**
+- "从会议记录中提取行动项"
+
+### Command Invocation
+
+```bash
+# From inline text
+node skills/mac-reminders-agent/cli.js parse --text "Q1 report due by March 20. John: prepare slides by Friday - URGENT" --locale en
+
+# From a file
+node skills/mac-reminders-agent/cli.js parse --file /path/to/meeting_notes.txt --locale ko
+```
+
+### Parameters
+
+- `--text` (required if no --file): Meeting notes as a string
+- `--file` (required if no --text): Path to a text file containing meeting notes
+- `--locale` (optional): Language for pattern matching (en, ko, ja, zh). Auto-detected if omitted.
+
+### Output Format
+
+```json
+{
+  "ok": true,
+  "locale": "en",
+  "labels": {},
+  "items": [
+    {
+      "title": "Submit Q1 report",
+      "due": "2026-03-20T17:00:00+09:00",
+      "priority": "high",
+      "confidence": "high",
+      "source_line": "Q1 report due by March 20 - URGENT"
+    }
+  ]
+}
+```
+
+### Detected Patterns
+
+| Language | Action Keywords | Date Patterns | Priority Signals |
+|----------|----------------|---------------|-----------------|
+| English | TODO:, action item:, by [date], deadline:, need to | by March 20, tomorrow, next Friday | urgent, important, nice to have |
+| Korean | ~까지, ~해야, ~할 것, 담당:, 기한: | 3월 15일, 내일, 다음 주 | 긴급, 중요, 나중에 |
+| Japanese | ~まで, ~する必要, 担当:, 期限: | 3月15日, 明日, 来週 | 緊急, 重要, できれば |
+| Chinese | ~之前, ~需要, 负责:, 截止: | 3月15日, 明天, 下周 | 紧急, 重要, 如果可以 |
+
+### IMPORTANT: Recommended Claude Workflow
+
+1. Call `parse` to get suggested `items[]`
+2. Present each item to the user with title, due date, and priority
+3. Ask user which items to add (all / specific ones / none)
+4. For each approved item, call `add --title ... --due ... --priority ...`
+
+**The `parse` command only suggests. Claude MUST call `add` explicitly for each approved item.**
+**Do NOT auto-add without user confirmation.**
+
+---
+
 ## Error Handling
 
 ### Locale-aware Error Messages
@@ -436,5 +517,6 @@ This skill requires access to the **Reminders** app. On first use:
 - **Priority**: Set priority levels on reminders (high/medium/low)
 - **Search**: Filter reminders by title keyword
 - **Native recurrence**: Use `--repeat` for recurring reminders (creates single reminder with repeat rule)
+- **Parse meeting notes**: `parse --text "..." [--file path] [--locale XX]` — extract action items and suggest reminders
 - Automatically detect user language or use explicit `--locale` parameter
 - Format responses using locale-specific templates

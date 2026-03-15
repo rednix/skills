@@ -104,6 +104,9 @@ async function main() {
   node cli.js edit --id "ID" [--title "NEW"] [--due ISO_DATETIME] [--note "NEW"] [--priority high|medium|low|none] [--locale en|ko|ja|zh]
   node cli.js delete --id "ID" [--locale en|ko|ja|zh]
   node cli.js complete --id "ID" [--locale en|ko|ja|zh]
+  node cli.js parse --text "MEETING_NOTES" [--locale en|ko|ja|zh]
+  node cli.js parse --file /path/to/notes.txt [--locale en|ko|ja|zh]
+  node cli.js parse /path/to/notes.txt [--locale en|ko|ja|zh]
 
 Supported locales: en (English), ko (한국어), ja (日本語), zh (中文)
 `);
@@ -274,6 +277,31 @@ Supported locales: en (English), ko (한국어), ja (日本語), zh (中文)
         ...result,
         locale,
         message
+      }));
+    } else if (cmd === 'parse') {
+      const { parseMeetingText } = require('./reminders/meeting-parser');
+
+      let text = '';
+      const filePath = args.file || args._[1]; // --file or positional arg
+      if (filePath) {
+        if (!fs.existsSync(filePath)) {
+          console.error('Error: file not found:', filePath);
+          process.exit(1);
+        }
+        text = fs.readFileSync(filePath, 'utf8');
+      } else if (args.text) {
+        text = args.text;
+      } else {
+        console.error('Error: --file <path>, --text "<content>", or file path is required for parse');
+        process.exit(1);
+      }
+
+      const result = parseMeetingText(text, locale);
+      console.log(JSON.stringify({
+        ok: true,
+        locale,
+        labels: (loc.parse && loc.parse.responses) || {},
+        items: result.items
       }));
     } else {
       console.error('Unknown command:', cmd);

@@ -66,6 +66,22 @@
       "list_not_found": "List '{name}' not found.",
       "no_search_results": "No reminders matching '{query}'.",
       "calendars_header": "Reminder Lists"
+    },
+    "parse": {
+      "triggers": [
+        "Parse my meeting notes",
+        "Extract action items from this text",
+        "Find tasks in my notes",
+        "What are the action items from this meeting?"
+      ],
+      "responses": {
+        "parse_header": "Action Items Found",
+        "parse_none": "No action items detected.",
+        "parse_suggest": "Found {count} suggested reminder(s):",
+        "parse_item": "{title} (due: {due}, priority: {priority})",
+        "parse_item_nodue": "{title} (priority: {priority})",
+        "parse_confirm": "Would you like to add these reminders?"
+      }
     }
   },
   "ko": {
@@ -135,6 +151,22 @@
       "list_not_found": "'{name}' 목록을 찾을 수 없어요.",
       "no_search_results": "'{query}'에 해당하는 미리알림이 없어요.",
       "calendars_header": "미리알림 목록"
+    },
+    "parse": {
+      "triggers": [
+        "회의록에서 할 일 추출해줘",
+        "이 텍스트에서 액션 아이템 찾아줘",
+        "회의 노트 파싱해줘",
+        "미팅 내용에서 할 일 뽑아줘"
+      ],
+      "responses": {
+        "parse_header": "발견된 액션 아이템",
+        "parse_none": "액션 아이템을 찾지 못했어요.",
+        "parse_suggest": "제안된 미리알림 {count}개를 찾았어요:",
+        "parse_item": "{title} (마감: {due}, 우선순위: {priority})",
+        "parse_item_nodue": "{title} (우선순위: {priority})",
+        "parse_confirm": "이 미리알림들을 추가할까요?"
+      }
     }
   },
   "ja": {
@@ -204,6 +236,21 @@
       "list_not_found": "「{name}」リストが見つかりません。",
       "no_search_results": "「{query}」に該当するリマインダーがありません。",
       "calendars_header": "リマインダーリスト"
+    },
+    "parse": {
+      "triggers": [
+        "議事録からアクションアイテムを抽出して",
+        "このテキストからタスクを見つけて",
+        "会議メモを解析して"
+      ],
+      "responses": {
+        "parse_header": "見つかったアクションアイテム",
+        "parse_none": "アクションアイテムが見つかりませんでした。",
+        "parse_suggest": "{count}件のリマインダー候補が見つかりました：",
+        "parse_item": "{title}（期限：{due}、優先度：{priority}）",
+        "parse_item_nodue": "{title}（優先度：{priority}）",
+        "parse_confirm": "これらのリマインダーを追加しますか？"
+      }
     }
   },
   "zh": {
@@ -273,6 +320,21 @@
       "list_not_found": "找不到「{name}」列表。",
       "no_search_results": "没有找到与「{query}」相关的提醒。",
       "calendars_header": "提醒列表"
+    },
+    "parse": {
+      "triggers": [
+        "从会议记录中提取行动项",
+        "从这段文字中找出任务",
+        "解析会议笔记"
+      ],
+      "responses": {
+        "parse_header": "发现的行动项",
+        "parse_none": "未发现行动项。",
+        "parse_suggest": "找到 {count} 个建议提醒：",
+        "parse_item": "{title}（截止：{due}，优先级：{priority}）",
+        "parse_item_nodue": "{title}（优先级：{priority}）",
+        "parse_confirm": "是否添加这些提醒？"
+      }
     }
   }
 }
