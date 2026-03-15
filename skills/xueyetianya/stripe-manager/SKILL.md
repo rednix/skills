@@ -5,8 +5,7 @@ description: "Error: --action required. Use when you need stripe manager capabil
 
 # Stripe Manager
 
-
-A comprehensive Stripe payment management toolkit for listing customers, charges, and subscriptions, creating payment links, checking account balances, managing products and prices, handling refunds, and retrieving payment analytics — all from the command line using the Stripe REST API.
+A complete Stripe payment management toolkit for listing customers, charges, and subscriptions, creating payment links, checking account balances, managing products and prices, handling refunds, and retrieving payment analytics — all from the command line using the Stripe REST API.
 
 ## Description
 
@@ -14,21 +13,21 @@ Stripe Manager provides full access to your Stripe account for payment operation
 
 ## Requirements
 
-- `STRIPE_API_KEY` — Stripe secret API key (starts with `sk_live_` or `sk_test_`)
-- Get your API keys from https://dashboard.stripe.com/apikeys
+- `get-balance` — Get Balance
+- `list-customers` — List Customers
+- `create-customer` — Create Customer
+- `get-customer` — Get Customer
+- `list-charges` — List Charges
+- `list-subscriptions` — List Subscriptions
+- `list-products` — List Products
+- `list-invoices` — List Invoices
+- `list-events` — List Events
+- Get your API keys from [configured-endpoint]
 
 ## Commands
 
-- `create-customer` — Execute create-customer
-- `env` — -gt 0 ]; do
-- `get-balance` — Execute get-balance
-- `get-customer` — Error: --customer-id required
-- `list-charges` — Execute list-charges
-- `list-customers` — Execute list-customers
-- `list-events` — Execute list-events
-- `list-invoices` — Execute list-invoices
-- `list-products` — Execute list-products
-- `list-subscriptions` — Execute list-subscriptions
+See commands above.
+
 ## Environment Variables
 
 | Variable | Required | Description |
