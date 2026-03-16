@@ -1,11 +1,17 @@
 {
   "owner": "lovelcp",
   "slug": "catch-claw",
-  "displayName": "CatchClaw",
+  "displayName": "Catchclaw Agentar",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773141780186,
-    "commit": "https://github.com/openclaw/skills/commit/b57242c3cdb97c6623a2d1df8e1be3efc76aaa60"
+    "version": "3.2.0",
+    "publishedAt": 1773573609749,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773141780186,
+      "commit": "https://github.com/openclaw/skills/commit/b57242c3cdb97c6623a2d1df8e1be3efc76aaa60"
+    }
+  ]
 }

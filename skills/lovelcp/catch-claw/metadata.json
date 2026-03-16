@@ -1,0 +1,6 @@
+{
+  "name": "agentar-cli",
+  "version": "3.2.0",
+  "description": "Standalone CLI for searching, listing, installing, and exporting agentars.",
+  "api_base_url": "https://catchclaw.me"
+}
