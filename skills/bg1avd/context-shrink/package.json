@@ -1,6 +1,6 @@
 {
   "name": "context-shrink",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Auto-compress session memories when context usage exceeds 60%",
   "type": "hook",
   "main": "handler.ts",

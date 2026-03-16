@@ -45,7 +45,7 @@ graph TD
 编辑 `handler.ts` 中的 `CONTEXT_THRESHOLD`：
 
 ```typescript
-const CONTEXT_THRESHOLD = 0.6; // 60% - 可改为 0.7/0.8
+const CONTEXT_THRESHOLD = 0.85; // 85% - 可改为 0.7/0.8
 ```
 
 ### 保留策略
@@ -58,7 +58,7 @@ const MIN_FILES_TO_KEEP = 5; // 至少保留 5 个文件
 ### 压缩模型
 
 ```typescript
-const COMPRESSION_MODEL = 'ollama-remote/qwen2.5:0.5b'; // 轻量模型
+const COMPRESSION_MODEL = 'ollama/qwen2.5:0.5b'; // 轻量模型
 ```
 
 ## 文件结构

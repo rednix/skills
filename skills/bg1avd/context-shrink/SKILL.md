@@ -1,9 +1,9 @@
 ---
 name: context-shrink
 slug: context-shrink
-description: "Auto-compress session memories when context usage exceeds 60%"
+description: "Auto-compress session memories when context usage exceeds 85%"
 type: hook
-version: 1.0.0
+version: 1.0.2
 author: Lin
 license: MIT
 ---
@@ -14,7 +14,7 @@ Auto-compresses session memories when context usage exceeds 60% threshold. Clean
 
 ## Features
 
-- **自动触发**: 当 context 使用率 ≥ 60% 时自动执行
+- **自动触发**: 当 context 使用率 ≥ 85% 时自动执行
 - **智能清理**: 保留最近 3 天的详细日志
 - **压缩存储**: 旧日志压缩后写入 MEMORY.md
 - **Git 提交**: 自动 commit 变更记录
@@ -22,10 +22,10 @@ Auto-compresses session memories when context usage exceeds 60% threshold. Clean
 ## Configuration
 
 ```typescript
-CONTEXT_THRESHOLD = 0.6     // 60% 触发阈值
+CONTEXT_THRESHOLD = 0.85     // 85% 触发阈值
 DAYS_TO_KEEP = 3           // 保留最近 N 天日志
 MIN_FILES_TO_KEEP = 5      // 至少保留文件数
-COMPRESSION_MODEL = 'ollama-remote/qwen2.5:3b'
+COMPRESSION_MODEL = 'ollama/qwen2.5:3b'
 ```
 
 ## Changelog

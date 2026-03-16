@@ -3,7 +3,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 
 // 配置参数
-const CONTEXT_THRESHOLD = 0.6; // 60% 触发阈值
+const CONTEXT_THRESHOLD = 0.85; // 60% 触发阈值
 const DAYS_TO_KEEP = 3; // 保留最近 N 天日志
 const MIN_FILES_TO_KEEP = 5; // 至少保留文件数
 const COMPRESSION_MODEL = 'ollama-remote/qwen2.5:0.5b'; // 轻量压缩模型
