@@ -3,9 +3,15 @@
   "slug": "nlm-cli",
   "displayName": "Nlm Cli",
   "latest": {
-    "version": "0.1.0",
-    "publishedAt": 1773240605337,
-    "commit": "https://github.com/openclaw/skills/commit/84d7f749b204faa5836ca0f5d17818cd8882fcfb"
+    "version": "0.1.1",
+    "publishedAt": 1773463908696,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.0",
+      "publishedAt": 1773240605337,
+      "commit": "https://github.com/openclaw/skills/commit/84d7f749b204faa5836ca0f5d17818cd8882fcfb"
+    }
+  ]
 }

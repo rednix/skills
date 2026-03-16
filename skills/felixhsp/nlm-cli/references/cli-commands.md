@@ -45,6 +45,20 @@ node {baseDir}/scripts/nlm.mjs source delete <source-id> --confirm
 
 ## Studio 内容生成
 
+优先规则：
+- 当目标是**生成演示文稿 / PPT / 幻灯片 / 视频概览**，尤其需要指定语言、视觉风格、叙事风格、受众或内容约束时，优先使用 `notebook query` 触发生成
+- `slides create`、`video create` 仍可作为底层回退命令，但不应再作为默认首选路径
+
+推荐示例：
+
+```bash
+node {baseDir}/scripts/nlm.mjs notebook query <notebook> "请用中文回答。我希望生成PPT演示文稿，风格要求：使用黏土定格动画风格……"
+node {baseDir}/scripts/nlm.mjs notebook query <notebook> "请用中文回答。我希望生成视频概览，风格要求：使用黏土定格动画风格……"
+node {baseDir}/scripts/nlm.mjs studio status <notebook>
+```
+
+可用 create / revise 命令（回退或补充用）：
+
 ```bash
 node {baseDir}/scripts/nlm.mjs audio create <notebook> --confirm
 node {baseDir}/scripts/nlm.mjs audio create <notebook> --format deep_dive --length long --confirm

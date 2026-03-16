@@ -35,14 +35,18 @@ node {baseDir}/scripts/nlm.mjs <command> [args...]
 node {baseDir}/scripts/nlm.mjs login
 node {baseDir}/scripts/nlm.mjs notebook list
 node {baseDir}/scripts/nlm.mjs source add <notebook_id> --url "https://example.com" --wait
-node {baseDir}/scripts/nlm.mjs slides create <notebook_id> --confirm
+node {baseDir}/scripts/nlm.mjs notebook query <notebook_id> "请用中文回答。我希望生成PPT演示文稿，风格要求：……"
+node {baseDir}/scripts/nlm.mjs notebook query <notebook_id> "请用中文回答。我希望生成视频概览，风格要求：……"
 node {baseDir}/scripts/nlm.mjs studio status <notebook_id>
 node {baseDir}/scripts/nlm.mjs download slide-deck <notebook_id> --id <artifact_id> --format pdf --output slides.pdf
 ```
 
 ## 工作规则
-- 优先使用名词在前的子命令风格，例如 `notebook list`、`source add`、`slides create`、`download slide-deck`
+- 优先使用名词在前的子命令风格，例如 `notebook list`、`source add`、`notebook query`、`download slide-deck`
 - 如果用户希望来源在导入后立刻可用，执行 `source add` 时加上 `--wait`
+- 当用户有“生成/创建演示文稿、PPT、幻灯片、视频概览、Video Overview、指定视觉风格或叙事风格”等诉求时，**优先使用 `notebook query` 触发生成**，不要先默认走 `slides create`、`video-overview create` 之类的 create 命令
+- 对这类生成请求，在 query 里直接写清楚：输出语言、产物类型（PPT/视频概览）、目标受众、风格要求、叙事方式、约束条件；必要时明确要求“请现在开始生成”
+- 只有当用户明确要求直接调用底层 create 命令，或 query 路线失效/不支持时，才回退到对应的 create 命令
 - 在生成类命令执行后，用 `studio status <notebook_id>` 检查进度和 artifact ID
 - 下载产物时，优先使用专门的 `download <type>` 命令，不要依赖手动抓取原始 artifact 元数据
 - 如果认证过期、当前 Google 账号不对、或 profile 不一致，重新执行 `login` 或切换 profile
