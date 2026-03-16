@@ -1,0 +1,11 @@
+{
+  "owner": "willamhou",
+  "slug": "hf-papers",
+  "displayName": "Hugging Face Papers",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773643849043,
+    "commit": null
+  },
+  "history": []
+}
