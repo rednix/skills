@@ -3,11 +3,16 @@
   "slug": "tronscan-block-info",
   "displayName": "TronScan Block Info",
   "latest": {
-    "version": "1.0.3",
-    "publishedAt": 1773393544362,
-    "commit": "https://github.com/openclaw/skills/commit/e19d5dd806cd26a2c60ae35809d99b5cd6b41164"
+    "version": "1.0.4",
+    "publishedAt": 1773451378953,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.3",
+      "publishedAt": 1773393544362,
+      "commit": "https://github.com/openclaw/skills/commit/e19d5dd806cd26a2c60ae35809d99b5cd6b41164"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1773290156353,

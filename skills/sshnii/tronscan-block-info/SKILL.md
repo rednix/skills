@@ -8,7 +8,7 @@ description: |
 metadata:
   author: tronscan-mcp
   version: "1.0"
-  mcp-server: tronscan
+  mcp-server: https://mcp.tronscan.org/mcp
 ---
 
 # Block Info
