@@ -3,11 +3,16 @@
   "slug": "recipe-compare-sheet-tabs",
   "displayName": "Recipe Compare Sheet Tabs",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773393364842,
-    "commit": "https://github.com/openclaw/skills/commit/ff0bfe5a416d7876fbc2586f5835ffdc65bc69c3"
+    "version": "1.0.2",
+    "publishedAt": 1773432596608,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773393364842,
+      "commit": "https://github.com/openclaw/skills/commit/ff0bfe5a416d7876fbc2586f5835ffdc65bc69c3"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1772921146184,
