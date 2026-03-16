@@ -3,9 +3,15 @@
   "slug": "ai-brand-naming",
   "displayName": "Ai Brand Naming",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773536296714,
-    "commit": "https://github.com/openclaw/skills/commit/7096f5ef9e624cb7651505656dd02a8900118966"
+    "version": "1.0.34",
+    "publishedAt": 1773630129804,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773536296714,
+      "commit": "https://github.com/openclaw/skills/commit/7096f5ef9e624cb7651505656dd02a8900118966"
+    }
+  ]
 }
