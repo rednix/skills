@@ -26,7 +26,7 @@ $env:JISU_API_KEY="your_appkey_here"
 
 ## 脚本路径
 
-脚本文件：`skill/character/character.py`
+脚本文件：`skills/character/character.py`
 
 ## 使用方式与请求参数
 
@@ -34,10 +34,10 @@ $env:JISU_API_KEY="your_appkey_here"
 
 ```bash
 # full（默认）
-python3 skill/character/character.py questions
+python3 skills/character/character.py questions
 
 # simple
-python3 skill/character/character.py questions '{"version":"simple"}'
+python3 skills/character/character.py questions '{"version":"simple"}'
 ```
 
 请求 JSON：
@@ -59,7 +59,7 @@ python3 skill/character/character.py questions '{"version":"simple"}'
 #### 2.1 获取第一题
 
 ```bash
-python3 skill/character/character.py next '{"version":"full"}'
+python3 skills/character/character.py next '{"version":"full"}'
 ```
 
 返回里会包含：
@@ -74,7 +74,7 @@ python3 skill/character/character.py next '{"version":"full"}'
 把上一轮返回的 `cursor` 与 `picked` 带上，再附加 `choice`（A 或 B）：
 
 ```bash
-python3 skill/character/character.py next '{"version":"full","cursor":0,"picked":[],"choice":"A"}'
+python3 skills/character/character.py next '{"version":"full","cursor":0,"picked":[],"choice":"A"}'
 ```
 
 当最后一题完成后，返回将包含：
@@ -106,13 +106,13 @@ python3 skill/character/character.py next '{"version":"full","cursor":0,"picked"
 如果你已经在对话里收集到所有编码（例如 `x1,y1,x2,...`），可直接提交：
 
 ```bash
-python3 skill/character/character.py answer '{"version":"simple","answer":"x1,y1,x2,y2"}'
+python3 skills/character/character.py answer '{"version":"simple","answer":"x1,y1,x2,y2"}'
 ```
 
 也支持传数组：
 
 ```bash
-python3 skill/character/character.py answer '{"version":"simple","answers":["x1","y1","x2","y2"]}'
+python3 skills/character/character.py answer '{"version":"simple","answers":["x1","y1","x2","y2"]}'
 ```
 
 ### 4. 本地交互模式（终端逐题输入）
@@ -120,7 +120,7 @@ python3 skill/character/character.py answer '{"version":"simple","answers":["x1"
 适合你自己在命令行里跑一遍测试（会逐题提示输入 A/B）：
 
 ```bash
-python3 skill/character/character.py quiz '{"version":"full"}'
+python3 skills/character/character.py quiz '{"version":"full"}'
 ```
 
 ## 常见错误码
@@ -148,7 +148,7 @@ python3 skill/character/character.py quiz '{"version":"full"}'
 ## 在 OpenClaw 中的推荐用法
 
 1. 用户提问：「给我做一个 MBTI 测试（简单版）。」  
-2. 代理调用：`python3 skill/character/character.py next '{"version":"simple"}'`，把返回的 `question` 展示给用户，只让用户回答 A 或 B。  
+2. 代理调用：`python3 skills/character/character.py next '{"version":"simple"}'`，把返回的 `question` 展示给用户，只让用户回答 A 或 B。  
 3. 用户每回答一次，代理把上一轮的 `cursor/picked` 带回，再加上 `choice` 调用 `next`，继续拿下一题。  
 4. 当返回 `done: true` 时，把 `result` 里的 `type/name/summary/characteristic` 等字段整理成自然语言结果，并给出适合的职业建议（`field/job`）。  
 

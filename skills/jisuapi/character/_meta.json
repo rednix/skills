@@ -3,9 +3,15 @@
   "slug": "character",
   "displayName": "MBTI性格测试 - MBTI Personality Test",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1772791138110,
-    "commit": "https://github.com/openclaw/skills/commit/4da8e3d51b850b4a1e495487ae4c7d30fc2f095c"
+    "version": "1.0.1",
+    "publishedAt": 1773632700328,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1772791138110,
+      "commit": "https://github.com/openclaw/skills/commit/4da8e3d51b850b4a1e495487ae4c7d30fc2f095c"
+    }
+  ]
 }
