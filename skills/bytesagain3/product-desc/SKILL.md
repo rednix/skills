@@ -1,6 +1,8 @@
 ---
+version: "2.0.0"
 name: product-desc
 description: "产品描述生成器。产品文案撰写、SEO优化、卖点提炼、竞品对比、多语言本地化。Product description writer with SEO, bullet points, comparison, localization. 产品描述、产品文案、卖点、电商文案。Use when writing product descriptions. Triggers on: product desc."
+author: BytesAgain
 ---
 # product-desc
 
@@ -19,7 +21,6 @@ description: "产品描述生成器。产品文案撰写、SEO优化、卖点提
 - **compare** — compare
 - **localize** — localize
 
-
 ## 专业建议
 
 - 文案撰写 (write)**: 提供产品名+特点，生成吸引人的描述
@@ -33,3 +34,17 @@ description: "产品描述生成器。产品文案撰写、SEO优化、卖点提
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+product-desc help
+
+# Run
+product-desc run
+```
+
+## Commands
+
+Run `product-desc help` to see all available commands.
