@@ -3,9 +3,15 @@
   "slug": "nini-git-workflow",
   "displayName": "Git Workflow",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1772767036591,
-    "commit": "https://github.com/openclaw/skills/commit/d3ebcaabc6acd70aaa652bb31db665017c7f5e37"
+    "version": "0.2.1",
+    "publishedAt": 1773656220022,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1772767036591,
+      "commit": "https://github.com/openclaw/skills/commit/d3ebcaabc6acd70aaa652bb31db665017c7f5e37"
+    }
+  ]
 }
