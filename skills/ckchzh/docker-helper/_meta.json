@@ -3,11 +3,16 @@
   "slug": "docker-helper",
   "displayName": "Docker Helper",
   "latest": {
-    "version": "2.2.0",
-    "publishedAt": 1773421214866,
-    "commit": "https://github.com/openclaw/skills/commit/9111b4ac625e03c94ab97ab5f9988d2db0e4a4e3"
+    "version": "2.3.4",
+    "publishedAt": 1773665797793,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.2.0",
+      "publishedAt": 1773421214866,
+      "commit": "https://github.com/openclaw/skills/commit/9111b4ac625e03c94ab97ab5f9988d2db0e4a4e3"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1773206241728,
