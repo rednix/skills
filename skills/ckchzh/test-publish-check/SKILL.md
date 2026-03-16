@@ -1,7 +1,9 @@
 ---
+version: "2.0.0"
 name: Test & Publish Checker
-description: >-
+description: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━. Use when you need test publish check capabilities. Triggers on: test publish check."
   项目发布前检查工具。代码质量检查、API测试、部署检查清单、版本管理、上线前审查、回归测试。Pre-publish quality checker for code, API, deployment, versioning, launch review, regression testing. 发布检查、上线审查、质量保证、QA、测试、部署。Use before releasing any software, website, app, or content to production.
+author: BytesAgain
 ---
 # Test & Publish Checker
 
@@ -29,8 +31,6 @@ test-publish-check api "用户认证API v2.0"
 test-publish-check launch "新版本 v3.2.0"
 ```
 
-## Tips
-
 1. **发布前至少过一遍 `launch` 清单** — 90%的线上事故可以避免
 2. **版本号遵循 SemVer** — MAJOR.MINOR.PATCH，不要乱来
 3. **永远有回滚方案** — 没有回滚方案=裸奔上线
@@ -40,6 +40,6 @@ test-publish-check launch "新版本 v3.2.0"
 ## About
 
 Part of the BytesAgain productivity toolkit. Visit [bytesagain.com](https://bytesagain.com) for more tools.
-
 ---
-Powered by BytesAgain | bytesagain.com | hello@bytesagain.com
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
