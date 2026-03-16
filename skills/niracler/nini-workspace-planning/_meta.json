@@ -3,9 +3,15 @@
   "slug": "nini-workspace-planning",
   "displayName": "Workspace Planning",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1772767066419,
-    "commit": "https://github.com/openclaw/skills/commit/a1e565ab37e4e3f4592a17b1da15199a88d417c7"
+    "version": "0.2.1",
+    "publishedAt": 1773656249161,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1772767066419,
+      "commit": "https://github.com/openclaw/skills/commit/a1e565ab37e4e3f4592a17b1da15199a88d417c7"
+    }
+  ]
 }
