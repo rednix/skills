@@ -1,280 +1,256 @@
 ---
-name: Global Think Tank Analyst
-description: >-
-  Decision-grade policy analysis for governments, NGOs, and institutions:
-  scenario planning, stakeholder mapping, policy options, risk registers,
-  and implementation-ready recommendations with explicit assumptions and
-  confidence levels.
+author: vassiliylakhonin
+description: Generate structured geopolitical analysis, policy briefs,
+  strategic foresight, and risk assessments using professional think
+  tank analytical frameworks.
+homepage: "https://clawhub.ai/vassiliylakhonin/global-think-tank-analyst"
+name: global-think-tank-analyst
+tags:
+- geopolitics
+- policy
+- analysis
+- think-tank
+- strategy
+- international-relations
+- risk-analysis
+- policy-brief
+version: 3.8.0
 ---
 
-# Global Policy Think-Tank Analyst
-
-## Purpose
-Deliver rigorous, decision-grade policy analysis in the style of leading global think tanks, with transparent assumptions, evidence quality, trade-offs, and implementation realism.
+# Global Think Tank Analyst
 
-## Use When
-Use this skill when the user needs:
-- Policy analysis on national, regional, or global issues
-- Strategic options with pros/cons and implementation pathways
-- Scenario planning (best/base/worst case)
-- Stakeholder and political-economy mapping
-- Risk analysis with mitigation strategies
-- A clear recommendation memo (or multiple options) for decision-makers
-
-## Not For
-- Legal advice as a substitute for licensed counsel
-- Classified intelligence collection
-- Real-time emergency response command
-- Purely academic literature reviews without decision intent
+This skill generates structured geopolitical and policy analysis similar
+to research outputs produced by major global think tanks.
 
-## Default Operating Mode
-- Primary mode: **Standard**
-- Escalate to **Deep** for high-stakes, high-uncertainty, or geopolitically sensitive topics
-- Use **Fast** for quick briefings and early framing
-
----
-
-## Analysis Modes
-
-### 1) Fast (rapid brief)
-**Goal:** 10–20 minute directional policy brief  
-**Orchestration:** 1–2 specialist subagents  
-**Output:** concise options note + immediate next actions
-
-### 2) Standard (full memo)
-**Goal:** decision-ready policy memo  
-**Orchestration:** 3–5 specialist subagents  
-**Output:** structured recommendations + risks + implementation path
-
-### 3) Deep (red-team enhanced)
-**Goal:** high-confidence strategic package  
-**Orchestration:** 6+ specialists + explicit red-team challenge  
-**Output:** full policy dossier with stress-tested assumptions and contingencies
-
----
-
-## Required Input Schema
-Always collect or infer the following before analysis:
-
-```yaml
-topic: string                    # policy issue/problem statement
-objective: string                # what decision must be made
-geography: string                # country/region/global scope
-time_horizon: string             # e.g., 3 months / 2 years / 10 years
-target_audience: string          # minister, donor, parliament, board, etc.
-constraints:                     # hard limits
-  budget: string|null
-  legal_regulatory: string|null
-  political: string|null
-  operational: string|null
-success_criteria:                # what success looks like
-  - string
-risk_tolerance: string           # low / medium / high
-evidence_standard: string        # rapid / balanced / stringent
-deliverable_type: string         # brief / memo / strategy note / options paper
-```
-
-If critical fields are missing, state assumptions explicitly before proceeding.
-
----
-
-## Subagent Orchestration Framework
-
-When complexity justifies parallel analysis, delegate to specialist tracks:
-
-1. **Geopolitics & Security Analyst**
-   - Regional dynamics, alignment pressures, escalation pathways
-
-2. **Political Economy Analyst**
-   - Incentives, winners/losers, state capacity, implementation friction
-
-3. **Macroeconomics & Fiscal Analyst**
-   - Cost ranges, funding feasibility, fiscal trade-offs
-
-4. **Law & Regulation Analyst**
-   - Compatibility with domestic/international frameworks
-
-5. **Social Impact & Equity Analyst**
-   - Distributional effects, vulnerable groups, legitimacy risks
-
-6. **Evidence & OSINT Analyst**
-   - Source triangulation, evidence quality grading, uncertainty flags
-
-7. **Red-Team Analyst (Deep mode required)**
-   - Attack assumptions, identify failure modes, adversarial scenarios
-
-### Synthesis Rules
-- Main agent remains accountable for final coherence
-- Resolve cross-agent conflicts explicitly (do not average silently)
-- If evidence conflicts, rank confidence by source quality and recency
-- Preserve minority/high-risk dissent in a “Contrarian View” section
-
----
-
-## Output Schema (Required)
-
-Return analysis in this structure:
-
-```yaml
-executive_summary:
-  issue: string
-  why_now: string
-  headline_recommendation: string
-
-policy_objective:
-  primary_goal: string
-  secondary_goals:
-    - string
-
-current_context:
-  key_facts:
-    - string
-  uncertainty_flags:
-    - string
+It helps analyze international developments, strategic risks, and policy
+implications using established analytical frameworks.
 
-stakeholder_map:
-  actors:
-    - name: string
-      interests: [string]
-      influence: low|medium|high
-      likely_position: string
+## Skill intent
 
-policy_options:
-  - option: string
-    mechanism: string
-    expected_benefits: [string]
-    tradeoffs_costs: [string]
-    feasibility: low|medium|high
-    time_to_impact: string
+Use this skill when users want structured geopolitical or policy
+analysis similar to think tank reports.
 
-scenario_analysis:
-  best_case: string
-  base_case: string
-  worst_case: string
-  trigger_indicators:
-    - string
+Typical outputs include policy briefs, risk assessments, scenario
+analysis, strategic foresight, and policy recommendations.
 
-risk_register:
-  - risk: string
-    probability: low|medium|high
-    impact: low|medium|high
-    mitigation: string
-    owner: string
-
-implementation_pathway:
-  first_30_days: [string]
-  days_31_90: [string]
-  months_4_12: [string]
-  dependencies: [string]
+## Skill trigger
 
-monitoring_framework:
-  leading_indicators: [string]
-  lagging_indicators: [string]
-  review_cadence: string
+Activate this skill when the user asks about:
 
-assumptions:
-  - string
+-   geopolitical analysis
+-   international relations
+-   strategic risk analysis
+-   policy analysis
+-   global political trends
+-   government policy implications
 
-evidence_quality:
-  overall: low|medium|high
-  notes: string
-
-confidence:
-  overall: low|medium|high
-  rationale: string
-
-final_verdict:
-  recommendation_type: Proceed|Proceed with Conditions|Delay|Do Not Proceed
-  conditions_if_any: [string]
-```
-
----
-
-## Quality Gates (must pass before finalizing)
-
-Run deterministic gate when structured output is available:
-- `scripts/policy_gate.py --input <memo.json>`
-- Include gate score/verdict in final recommendation.
-
-1. **Assumptions transparency**  
-   - Are key assumptions explicit and testable?
-
-2. **Evidence integrity**  
-   - Are claims tied to credible evidence or clearly marked as uncertain?
-
-3. **Alternatives completeness**  
-   - Are at least 2–3 viable policy options compared?
-
-4. **Implementation realism**  
-   - Are budget, legal, political, and capacity constraints reflected?
-
-5. **Risk rigor**  
-   - Are major risks probability/impact-rated with mitigations and owners?
-
-6. **Decision usefulness**  
-   - Does the memo support a real Go/No-Go/Conditional decision?
-
-If any gate fails, revise before delivering.
-
----
-
-## Reasoning Standards
-- Use ranges, not fake precision, for uncertain numbers
-- Distinguish facts, inferences, and judgments
-- Surface what would change the recommendation
-- Prefer “decision relevance” over encyclopedic breadth
-
----
-
-## Final Memo Template (human-readable)
-
-Include a final line:
-- `Gate status: Pass / Conditional Pass / Fail (score: X/100)`
-
-## Executive Summary
-- Issue:
-- Why this matters now:
-- Recommended direction:
-
-## Policy Options Compared
-- Option A:
-- Option B:
-- Option C:
-
-## Verdict
-**Proceed / Proceed with Conditions / Delay / Do Not Proceed**
-
-## Gate Conditions (with dates/thresholds)
-- Condition 1:
-- Condition 2:
-
-## Top Risks & Mitigations
-1. Risk — Mitigation
-2. Risk — Mitigation
-3. Risk — Mitigation
-
-## 30/60/90-Day Action Plan
-- 0–30 days:
-- 31–60 days:
-- 61–90 days:
-
-## Data Gaps to Validate Next
-- Gap 1
-- Gap 2
-- Gap 3
-
----
-
-## Example Triggers
-- “Assess policy options for regulating frontier AI models in Central Asia.”
-- “Create a decision memo on energy subsidy reform with political risk analysis.”
-- “Build a scenario-based migration policy brief for the next 24 months.”
-- “Compare sanctions policy pathways and implementation feasibility.”
-
----
-
-## Style
-- Concise, evidence-led, decision-oriented
-- No jargon without operational meaning
-- Explicit confidence and uncertainty labels
-- Practical over performative
+## Think tank analysis approach
+
+The analysis follows structured methodologies used by leading think
+tanks.
+
+Core analytical elements include:
+
+-   context analysis
+-   identification of key actors
+-   strategic drivers
+-   risk assessment
+-   scenario development
+-   policy implications
+
+## Strategic analysis frameworks
+
+### PESTLE analysis
+
+Evaluate the macro-environment affecting geopolitical developments.
+
+Political -- alliances, conflicts, governance stability\
+Economic -- trade, sanctions, economic trends\
+Social -- demographics, public opinion, societal shifts\
+Technological -- innovation, cyber capabilities\
+Legal -- treaties, sanctions regimes, international law\
+Environmental -- climate risks and resource pressures
+
+### SWOT analysis
+
+Assess the strategic position of actors or policies.
+
+Strengths -- internal advantages\
+Weaknesses -- internal vulnerabilities\
+Opportunities -- favorable external conditions\
+Threats -- external risks
+
+## Stakeholder analysis
+
+Identify key stakeholders involved in the issue.
+
+For each stakeholder consider:
+
+-   interests
+-   capabilities
+-   constraints
+-   likely behavior
+
+Typical stakeholders include governments, international organizations,
+corporations, and non‑state actors.
+
+## Power mapping
+
+Map the relative influence of key actors.
+
+Assess:
+
+-   political power
+-   economic leverage
+-   military capabilities
+-   diplomatic influence
+
+Explain how these factors shape the balance of power.
+
+## Strategic drivers
+
+Identify structural forces shaping the geopolitical situation.
+
+Examples include:
+
+-   technological competition
+-   energy security
+-   demographic change
+-   climate pressures
+-   ideological competition
+
+## Time horizon analysis
+
+Assess developments across multiple time horizons.
+
+Short-term -- immediate developments\
+Medium-term -- structural policy evolution\
+Long-term -- systemic geopolitical transformation
+
+## Structured analytic techniques (SAT)
+
+Use structured reasoning to reduce analytical bias.
+
+### Key assumptions check
+
+Identify assumptions behind the analysis and test their validity.
+
+### Alternative hypotheses
+
+Evaluate multiple explanations for geopolitical developments.
+
+### Indicators and signposts
+
+Identify signals that confirm or challenge scenarios.
+
+### Red team perspective
+
+Consider how opposing actors may interpret or exploit the situation.
+
+## Cross-impact analysis
+
+Evaluate how geopolitical events influence one another.
+
+Identify cascading interactions between:
+
+-   political developments
+-   economic shocks
+-   technological change
+-   security dynamics
+
+Explain how chain reactions could reshape regional or global systems.
+
+## Early warning and horizon scanning
+
+Detect emerging signals of geopolitical change.
+
+### Weak signals
+
+Early signs of future shifts such as new alliances or policy debates.
+
+### Drivers of change
+
+Structural forces like technology, demographics, or climate pressures.
+
+### Early warning indicators
+
+Signals that may indicate escalation or major transformation.
+
+## Delphi method
+
+Use expert‑style consensus reasoning to explore uncertain futures.
+
+Steps:
+
+1.  Define the strategic question.
+2.  Consider multiple expert perspectives.
+3.  Compare viewpoints.
+4.  Identify areas of convergence and disagreement.
+
+## Futures wheel analysis
+
+Explore cascading consequences of geopolitical developments.
+
+Step 1 -- Define a central event.\
+Step 2 -- Identify first‑order effects.\
+Step 3 -- Identify second‑order effects.\
+Step 4 -- Identify long‑term systemic consequences.
+
+## Strategic intelligence report
+
+When deep analysis is requested, structure outputs as:
+
+1.  Executive summary
+2.  Situation overview
+3.  Key actors
+4.  Strategic drivers
+5.  Risk assessment
+6.  Scenario analysis
+7.  Strategic implications
+8.  Policy options
+9.  Recommendations
+
+## Policy brief structure
+
+Typical policy brief format:
+
+1.  Executive summary
+2.  Background
+3.  Current situation
+4.  Key risks
+5.  Strategic implications
+6.  Policy options
+
+## Example prompts
+
+Analyze geopolitical tensions in the South China Sea.
+
+Generate a strategic intelligence report on global semiconductor
+competition.
+
+Use PESTLE analysis to evaluate geopolitical risks in the Arctic.
+
+Conduct horizon scanning for emerging geopolitical risks in the
+Indo-Pacific.
+
+Apply cross-impact analysis to global energy security dynamics.
+
+## Output format
+
+1.  Executive summary
+2.  Context analysis
+3.  Key actors and interests
+4.  Strategic drivers
+5.  Risk assessment
+6.  Scenario analysis
+7.  Policy implications
+8.  Recommendations
+
+## Output style
+
+When helping the user:
+
+-   write in a neutral analytical tone
+-   structure insights clearly
+-   explain reasoning behind conclusions
+-   avoid unsupported speculation
