@@ -1,7 +1,8 @@
 ---
+version: "2.0.0"
 name: crypto-whale-tracker
-version: 1.0.0
-description: Track large cryptocurrency transfers (whale movements) using public APIs like Whale Alert and Etherscan. Set thresholds, monitor wallets, and generate formatted reports.
+description: "Track large cryptocurrency transfers (whale movements) using public APIs like Whale Alert and Etherscan. Set thresholds, monitor wallets, and generate formatted reports. Use when you need crypto whale tracker capabilities. Triggers on: crypto whale tracker, coin, threshold, hours, format, output."
+author: BytesAgain
 ---
 
 # 🐋 Crypto Whale Tracker
@@ -123,5 +124,15 @@ Summary: 15 whale transfers totaling 12,340 BTC ($802.1M)
 
 ## Files
 
-- `scripts/whale_tracker.sh` — Main tracking script
-- `tips.md` — Usage tips and tricks
+- `BTC` — Btc
+- `ETH` — Eth
+- `BNB` — Bnb
+- `TRX` — Trx
+- `SOL` — Sol
+---
+💬 Feedback & Feature Requests: https://bytesagain.com/feedback
+Powered by BytesAgain | bytesagain.com
+
+## Commands
+
+Run `crypto-whale-tracker help` to see all available commands.
