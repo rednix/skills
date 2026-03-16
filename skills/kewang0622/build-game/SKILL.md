@@ -77,15 +77,18 @@ Generate procedural Three.js model that captures the essence → Document the ma
 | Genre | Camera | Controls | Import |
 |-------|--------|----------|--------|
 | FPS / shooter | PerspectiveCamera + PointerLockControls | WASD + mouse look + click shoot | PointerLockControls |
-| Third-person action/adventure | PerspectiveCamera + follow cam (lerp) | WASD + mouse orbit + click action | — |
-| RPG / Pokemon (overworld) | PerspectiveCamera or Ortho + top-down follow | WASD/arrows to move, E to interact | — |
+| Third-person action/adventure | PerspectiveCamera + orbit cam (mouse drag) | WASD (camera-relative!) + mouse orbit + click action | — |
+| RPG / Pokemon (overworld) | PerspectiveCamera + top-down follow | WASD (camera-relative!) + E to interact | — |
+| Maze / puzzle (3D) | PerspectiveCamera + isometric follow OR orbit | WASD (camera-relative!) | — |
 | RPG / Pokemon (battle) | PerspectiveCamera + fixed angles | Click/keyboard menu selection | — |
 | Racing | PerspectiveCamera + chase cam | WASD or arrows | — |
 | Top-down / RTS / Tower defense | OrthographicCamera | Click-to-move, click-to-place | — |
 | Platformer | PerspectiveCamera + side-follow | Arrows + space | — |
-| Puzzle | PerspectiveCamera or Ortho + orbit | Click/drag | OrbitControls |
-| Survival / open-world | PerspectiveCamera + third-person | WASD + mouse + E interact | — |
+| Puzzle (2D-ish) | PerspectiveCamera or Ortho + orbit | Click/drag | OrbitControls |
+| Survival / open-world | PerspectiveCamera + orbit cam (mouse drag) | WASD (camera-relative!) + mouse + E interact | — |
 | Fighting | PerspectiveCamera + side-view fixed | Arrows + action keys | — |
+
+**CRITICAL camera rule**: For ALL third-person games, WASD MUST move the player relative to the CAMERA direction, NOT world axes. When the camera faces east, pressing W should move the player east. See `engine-patterns.md` Third-Person Pattern for the correct implementation. Using world-axis movement feels broken and disorienting.
 
 ## Phase 2A: Design — New Game
 
@@ -222,29 +225,52 @@ Where `${SKILL_DIR}` is the directory containing this SKILL.md file.
 
 **Always maximize visual and gameplay quality. The game should look and feel like a polished indie title, not a tech demo. Spend extra tokens on graphics. Read `reference/graphics-quality.md` for every game.**
 
+### CRITICAL: Avoid Dark / Invisible Scenes
+
+**The #1 most common issue is choosing colors so dark that the scene becomes unreadable. Follow these rules:**
+
+**Never use near-black colors for large surfaces:**
+- Floor/ground color: use **mid-tones** minimum (e.g. `0x4a6a4a` for grass, `0x666688` for stone, `0x887766` for dirt). NEVER `0x0a0a0a`–`0x1a1a1a`.
+- Wall colors: minimum `0x334455` range. Walls must be clearly visible against the background.
+- Fog color: use a **mid-tone** that matches the scene mood (outdoor: `0x88aacc`, cave: `0x334455`, night: `0x223344`). NEVER `0x000000`–`0x111111`.
+- `scene.background`: NEVER near-black unless outer space. Use the sky dome shader or a color that matches fog.
+- Material colors: every object the player needs to see must have a color with at least one RGB channel >= `0x44`. A `0x0a0a15` floor is invisible.
+
+**Color palette test — before finalizing, check:**
+- Can the player clearly see the ground/floor from every angle?
+- Can the player see walls, obstacles, and boundaries?
+- Is the player character clearly visible against the background?
+- Can the player distinguish different objects from each other?
+- If ANY answer is no: lighten those surface colors. Don't rely on lighting alone — dark base colors + any lighting = still dark.
+
+**Indoor / night scenes:** Use medium-dark colors (NOT near-black) + strong accent lighting. A dark server room should have `0x2a2a40` walls, not `0x0a0a0a`. A cave should have `0x445544` rock, not `0x111111`. Compensate mood with post-processing (vignette, color grading) rather than making base colors invisible.
+
 ### Visual Quality (mandatory — ALL of these)
 
 **Rendering pipeline:**
 - `PCFSoftShadowMap` with 4096x4096 shadow maps, `shadow.normalBias = 0.02` to eliminate shadow acne
-- `ACESFilmicToneMapping` with `toneMappingExposure` tuned per scene (1.0–1.4)
+- `ACESFilmicToneMapping` with `toneMappingExposure` tuned per scene (**1.0–1.4**, default 1.2, NEVER below 1.0)
 - `outputColorSpace = THREE.SRGBColorSpace`
 - `setPixelRatio(Math.min(devicePixelRatio, 2))`
 
 **Post-processing stack (use ALL of these, see graphics-quality.md for code):**
 - RenderPass → **SSAO** (SSAOPass for ambient occlusion depth) → **Bloom** (UnrealBloomPass, subtle 0.25–0.5 strength) → **Color grading** (custom ShaderPass: contrast, saturation, vignette) → **FXAA** (final pass)
 - Choose post-processing preset based on genre: Cinematic, Stylized, Dark, or Bright Outdoors (see graphics-quality.md)
+- **Vignette intensity MUST be <= 0.3** — stronger vignette darkens edges too much
 
 **Lighting rig (minimum 4 lights):**
-- **Key light**: DirectionalLight (warm, high intensity 2.0–3.0, casts shadow)
-- **Fill light**: DirectionalLight (cool-toned, opposite side, 0.4–0.8 intensity, no shadow)
-- **Hemisphere light**: sky color + ground color for ambient gradient
+- **Key light**: DirectionalLight (warm, intensity **2.0–3.0**, casts shadow)
+- **Fill light**: DirectionalLight (cool-toned, opposite side, **0.5–1.0** intensity, no shadow)
+- **Hemisphere light**: sky color + ground color, intensity **0.4–0.6**
+- **Ambient light**: intensity **0.5–0.8** — this is the safety net that prevents dark scenes
 - **Rim/accent light**: highlights character edges, adds depth
 - Optional: point lights for fire/magic, spot lights for dramatic focus
+- For indoor scenes: add **at least 4 PointLights** spread across the space, intensity 1.0+, range covering the full room
 
 **Sky (NEVER use flat background color):**
 - Use a gradient **sky dome shader** (see graphics-quality.md `createSkyDome`) with sun disc + halo glow
 - Match fog color to horizon color of sky dome
-- For night scenes: add star field using point sprites
+- For night scenes: use dark blue (NOT black) sky + star field + moon, and boost ambient light to compensate
 
 **Materials — use MeshPhysicalMaterial for key objects:**
 - **Ice/glass/water**: `transmission`, `thickness`, `ior` for realistic transparency
@@ -300,15 +326,28 @@ Where `${SKILL_DIR}` is the directory containing this SKILL.md file.
 
 ## Phase 5: Serve and Deliver
 
+### Local server
 ```bash
 bash "${CLAUDE_SKILL_DIR}/scripts/serve.sh" /tmp/game-build
 ```
 
+### Publish to the web (here.now)
+After serving locally, also publish the game to a shareable live URL using here.now (24-hour anonymous link):
+
+```bash
+bash /home/ke/.agents/skills/here-now/scripts/publish.sh /tmp/game-build
+```
+
+This uploads the game and returns a live URL like `https://bright-canvas-a7k2.here.now/`. The link lasts 24 hours (anonymous) or permanently (with `HERENOW_API_KEY`).
+
+If the publish script is not found, fall back to just the local server.
+
 Tell the user:
-1. The URL
-2. Full controls mapping
-3. Game objective and mechanics summary
-4. What can be iterated on (suggest possible additions/changes)
+1. The **local URL** (localhost)
+2. The **shareable live URL** (here.now) — mention it expires in 24 hours
+3. Full controls mapping
+4. Game objective and mechanics summary
+5. What can be iterated on (suggest possible additions/changes)
 
 ## Phase 6: Update Progress Tracking
 
@@ -349,6 +388,8 @@ After every generation or iteration, update `/tmp/game-build/progress.md`:
 ## Phase 7: Self-Review Checklist
 
 Before delivering, verify:
+- [ ] **VISIBILITY**: No near-black colors on floors, walls, fog, or background. Every surface the player interacts with must be clearly visible. Use mid-tone base colors, not dark ones.
+- [ ] **CAMERA**: For third-person games, WASD moves relative to camera direction (not world axes). Mouse drag orbits camera.
 - [ ] All `scene.add()` calls present for created objects
 - [ ] `.castShadow = true` on visible objects
 - [ ] Camera/raycaster configured for the game type

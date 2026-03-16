@@ -184,29 +184,89 @@ function applyScreenShake(delta) {
 
 ## Third-Person Pattern
 
+**IMPORTANT**: WASD must move the player relative to CAMERA facing, not world axes. The camera orbits with mouse drag. This is the standard third-person feel (like every modern 3D game).
+
 ```javascript
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-const cameraOffset = new THREE.Vector3(0, 5, -8);
+
+// Camera orbit state
+let cameraYaw = 0;       // horizontal orbit angle (radians)
+let cameraPitch = 0.4;   // vertical angle (0 = level, positive = looking down)
+const cameraDistance = 10;
+const cameraPitchMin = 0.1, cameraPitchMax = 1.2;
 const cameraTarget = new THREE.Vector3();
+let isDragging = false;
+
+// Mouse drag to orbit camera
+document.addEventListener('mousedown', (e) => { if (e.button === 0 || e.button === 2) isDragging = true; });
+document.addEventListener('mouseup', () => { isDragging = false; });
+document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    cameraYaw -= e.movementX * 0.005;
+    cameraPitch = THREE.MathUtils.clamp(cameraPitch + e.movementY * 0.005, cameraPitchMin, cameraPitchMax);
+});
+document.addEventListener('contextmenu', e => e.preventDefault()); // prevent right-click menu
 
 function updateCamera(delta) {
-    const desiredPos = player.position.clone().add(
-        cameraOffset.clone().applyQuaternion(player.quaternion)
+    // Spherical coords around player
+    const desiredPos = new THREE.Vector3(
+        player.position.x + Math.sin(cameraYaw) * Math.cos(cameraPitch) * cameraDistance,
+        player.position.y + Math.sin(cameraPitch) * cameraDistance + 2,
+        player.position.z + Math.cos(cameraYaw) * Math.cos(cameraPitch) * cameraDistance
     );
-    camera.position.lerp(desiredPos, 5 * delta);
-    cameraTarget.lerp(player.position.clone().add(new THREE.Vector3(0, 2, 0)), 10 * delta);
+    camera.position.lerp(desiredPos, 8 * delta);
+    cameraTarget.lerp(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 10 * delta);
     camera.lookAt(cameraTarget);
 }
 
+// WASD movement RELATIVE TO CAMERA (not world axes!)
 function updatePlayer(delta) {
-    const moveDir = new THREE.Vector3(inputX, 0, inputZ).normalize();
-    if (moveDir.length() > 0) {
+    const inputZ = Number(!!keys['KeyW']) - Number(!!keys['KeyS']);  // forward/back
+    const inputX = Number(!!keys['KeyD']) - Number(!!keys['KeyA']);  // strafe
+
+    if (inputX !== 0 || inputZ !== 0) {
+        // Get camera's forward direction projected onto XZ plane
+        const camForward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw)).normalize();
+        const camRight = new THREE.Vector3(camForward.z, 0, -camForward.x);
+
+        // Combine into world-space movement direction
+        const moveDir = camForward.multiplyScalar(inputZ).add(camRight.multiplyScalar(inputX)).normalize();
+
+        // Rotate character to face movement direction
         const targetAngle = Math.atan2(moveDir.x, moveDir.z);
-        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetAngle, 8 * delta);
-        player.position.addScaledVector(
-            new THREE.Vector3(Math.sin(player.rotation.y), 0, Math.cos(player.rotation.y)),
-            speed * delta
-        );
+        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetAngle, 10 * delta);
+
+        // Move
+        player.position.addScaledVector(moveDir, speed * delta);
+    }
+}
+```
+
+### Top-down / Isometric Third-Person (for maze, puzzle, strategy games)
+
+For games viewed from above (mazes, puzzles, etc.), use a fixed or semi-fixed camera:
+
+```javascript
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
+// Fixed isometric-ish angle
+const cameraOffset = new THREE.Vector3(0, 15, 10);
+
+function updateCamera(delta) {
+    const desired = player.position.clone().add(cameraOffset);
+    camera.position.lerp(desired, 6 * delta);
+    camera.lookAt(player.position.x, 0, player.position.z);
+}
+
+// WASD moves in screen-relative directions (up=forward on screen, not world-north)
+function updatePlayer(delta) {
+    const inputZ = Number(!!keys['KeyW']) - Number(!!keys['KeyS']);
+    const inputX = Number(!!keys['KeyD']) - Number(!!keys['KeyA']);
+    if (inputX !== 0 || inputZ !== 0) {
+        // For top-down: W moves "into screen" (negative Z), D moves right (positive X)
+        const moveDir = new THREE.Vector3(inputX, 0, -inputZ).normalize();
+        const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetAngle, 10 * delta);
+        player.position.addScaledVector(moveDir, speed * delta);
     }
 }
 ```

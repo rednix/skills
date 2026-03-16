@@ -3,9 +3,15 @@
   "slug": "build-game",
   "displayName": "3D Game Builder",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773264151264,
-    "commit": "https://github.com/openclaw/skills/commit/d4a2245ffe6bc6439caebfb64b49f68c068790f3"
+    "version": "1.2.0",
+    "publishedAt": 1773266902131,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773264151264,
+      "commit": "https://github.com/openclaw/skills/commit/d4a2245ffe6bc6439caebfb64b49f68c068790f3"
+    }
+  ]
 }
