@@ -1,6 +1,6 @@
 ---
 name: palaia
-version: "1.8.1"
+version: "1.9.0"
 description: >
   Local, crash-safe persistent memory for OpenClaw agents.
   Replaces built-in memory-core with semantic search, projects, and scope-based access control.
@@ -621,7 +621,7 @@ This is the most important section for avoiding duplicated knowledge. Get this r
 **The test:** "Is this a static fact about the project?" → project file. "Is this knowledge that evolves, gets shared, or should be actively surfaced?" → Palaia. "Is this a bug or feature request?" → external tracker.
 
 **Best practice: persist concrete work state, not just project names.**
-When saving active context, write the exact step, blocker, and next action — not just "working on Project X". Bad: `palaia write "Working on PT 2.0"`. Good: `palaia write "PT 2.0: testing Railway MCP integration, blocked on /mcp command timeout, next step: check logs at /var/log/railway.log" --project pt --tag active-work`. This ensures continuity across sessions and context switches — the next session knows exactly where to pick up.
+When saving active context, write the exact step, blocker, and next action — not just "working on Project X". Bad: `palaia write "Working on the API"`. Good: `palaia write "API auth module: implementing JWT refresh tokens, blocked on token expiry race condition, next step: add mutex around refresh logic" --project myapp --tag active-work`. This ensures continuity across sessions and context switches — the next session knows exactly where to pick up.
 
 **Common mistakes to avoid:**
 - Writing a release checklist into CONTEXT.md instead of `palaia write --type process`
@@ -741,7 +741,9 @@ If queries are slow, check:
 ### Provider choice matters on CPU systems
 - **fastembed**: ~0.3s per embedding, lightweight, no GPU needed — **recommended for most systems**
 - **sentence-transformers**: ~16s per embedding on CPU (loads PyTorch) — only use if you have a GPU
+- **gemini**: Cloud-based via Gemini API (`GEMINI_API_KEY` required). Model: `gemini-embedding-exp-03-07` (default) or `text-embedding-004`. No local compute needed.
 - If both are installed, set the chain explicitly: `palaia config set-chain fastembed bm25`
+- Cloud providers (openai, gemini) can be combined with local fallback: `palaia config set-chain gemini fastembed bm25`
 - Switching providers invalidates the embedding cache — run `palaia warmup` after any chain change
 
 ### Write incrementally, not at session end
@@ -760,6 +762,15 @@ If your session crashes, the knowledge survives. If you write at the end, it doe
 
 ### Use processes for anything repeatable
 Release checklists, deployment steps, review procedures — write them as `--type process`. Palaia will automatically surface relevant processes when you write or query related topics (Process Nudge). This only works if the process exists in Palaia, not in a markdown file.
+
+### Parallel writes are safe
+Palaia uses kernel-level file locking (`fcntl.flock`) with a Write-Ahead Log (WAL) to ensure data integrity. Multiple concurrent `palaia write` calls — such as those from OpenClaw's parallel tool calling — are safe:
+- Each write acquires an exclusive lock before touching the store
+- The WAL guarantees crash recovery even if a write is interrupted mid-operation
+- No entry loss, no corruption, no cross-contamination between parallel writes
+- Lock timeout is 5 seconds (configurable via `lock_timeout_seconds`); stale locks (>60s) are auto-detected and overridden
+
+This means agents can safely issue multiple `palaia write` commands in parallel without coordination.
 
 ### Tags are your future self's search terms
 Pick tags that your future self (or another agent) would search for. Good tags: `decision`, `learning`, `blocker`, `adr`, `release`, `config`. Bad tags: `important`, `note`, `misc`. Use `--project` consistently — it's the primary filter for all multi-project setups.
