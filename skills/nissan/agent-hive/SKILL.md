@@ -1,5 +1,6 @@
 ---
 name: agent-hive
+version: 1.0.0
 description: "Create and manage multi-agent teams in OpenClaw with shared workspace, budget governance, and mesh networking. Use when: (1) adding a new agent to an existing team, (2) setting up a multi-agent workspace from scratch, (3) configuring agent-to-agent spawn permissions (mesh/hub-spoke), (4) implementing budget governance for agent teams, (5) auditing agent spend and enforcing demotions. NOT for: single-agent setups or modifying agent personalities (edit SOUL.md directly)."
 metadata:
   version: 1.0.0
