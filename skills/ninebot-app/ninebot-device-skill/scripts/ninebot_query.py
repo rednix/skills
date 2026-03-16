@@ -95,12 +95,6 @@ def read_config_from_default() -> Optional[Dict[str, Any]]:
     return None
 
 
-def save_config_to_default(cfg: Dict[str, Any]) -> None:
-    path = os.path.join(os.getcwd(), "config.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, ensure_ascii=False, indent=2)
-
-
 def resolve_api_key(cfg: Dict[str, Any], arg_api_key: Optional[str]) -> Optional[str]:
     if arg_api_key:
         return arg_api_key
@@ -148,6 +142,9 @@ def get_device_info(cfg: Dict[str, Any], api_key: str, sn: str):
     if api_key:
         inject_api_key_header(cfg, headers, api_key)
     res = http_request(cfg["device_info"]["method"], url, headers=headers, payload=payload)
+    if res['code'] != 0:
+        raise Exception(f"API error: {res.get('msg', 'Unknown error')} (code: {res.get('code')})")
+    
     out = {
         "battery": deep_get(res, cfg["device_info"]["battery_path"]),
         "status": deep_get(res, cfg["device_info"]["status_path"]),
@@ -177,8 +174,6 @@ def main():
         print(json.dumps({"error": "Missing API key. Set NINEBOT_DEVICESERVICE_KEY or provide --api-key or config.json"}, ensure_ascii=False))
         sys.exit(2)
 
-    cfg['apiKey'] = api_key  # Save resolved API key back to config for potential reuse
-    save_config_to_default(cfg)
     devices = list_devices(cfg, api_key or "", args.lang)
 
     if not devices:
