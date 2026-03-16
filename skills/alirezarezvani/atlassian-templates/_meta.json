@@ -1,11 +1,17 @@
 {
   "owner": "alirezarezvani",
   "slug": "atlassian-templates",
-  "displayName": "Atlassian Templates",
+  "displayName": "atlassian-templates",
   "latest": {
-    "version": "2.1.1",
-    "publishedAt": 1773193908453,
-    "commit": "https://github.com/openclaw/skills/commit/3a4ef616e55b3bed93ed176b72e711ec908dfb9d"
+    "version": "1.0.0",
+    "publishedAt": 1773243794375,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.1.1",
+      "publishedAt": 1773193908453,
+      "commit": "https://github.com/openclaw/skills/commit/3a4ef616e55b3bed93ed176b72e711ec908dfb9d"
+    }
+  ]
 }
