@@ -1,7 +1,7 @@
 ---
 name: ai-task-hub
 description: AI task hub for image analysis, background removal, speech-to-text, text-to-speech, markdown conversion, points balance/ledger lookup, and async execute/poll/presentation orchestration. Use when users need hosted AI outcomes while host runtime manages identity, credits, payment, and risk control.
-version: 3.2.3
+version: 3.2.5
 metadata:
   openclaw:
     skillKey: ai-task-hub
@@ -100,6 +100,12 @@ Required token claims:
 - `exp`
 - `jti`
 
+Identifier format constraints used by gateway auth:
+
+- `agent_uid` must match `^agent_[a-z0-9][a-z0-9_-]{5,63}$`.
+- `conversation_id` must match `^[A-Za-z0-9._:-]{8,128}$`.
+- Do not pass persona aliases like `code`/`ops` directly as `agent_uid`; host should map internal agent IDs to canonical `agent_uid`.
+
 Required scope per action:
 
 - `portal.skill.execute` -> `execute`
@@ -129,8 +135,69 @@ Host-side token bridge (outside published package):
 Host integration modes:
 
 - `automatic` (recommended): host runtime silently issues short-lived action-scoped token and injects `AGENT_TASK_TOKEN`.
-- `interactive fallback` (optional): if host has no server-side token bridge yet, host may present a host-owned authorization URL (example template: `https://gateway.binaryworks.app/portal/agent-auth?agent_uid=<agent_uid>&conversation_id=<conversation_id>`), let user complete authorization, then host issues/injects short-lived `AGENT_TASK_TOKEN`.
+- `interactive fallback` (optional): if host has no server-side token bridge yet, host may present a host-owned authorization URL (example template: `https://<host-owned-domain>/agent-auth?agent_uid=<agent_uid>&conversation_id=<conversation_id>`), let user complete authorization, then host issues/injects short-lived `AGENT_TASK_TOKEN`.
 - Published skill package itself does not open browser, persist credentials, or perform OAuth/token exchange flows.
+- The authorization URL above is owned by host integration, not by this skill package or gateway default pages. If host has not implemented that route, `404` is expected.
+
+Binding bootstrap on `SYSTEM_NOT_FOUND`:
+
+- If host receives `SYSTEM_NOT_FOUND` with message `agent binding not found`, host should auto-bootstrap binding once before re-issuing task token.
+- Step 1: issue an install code through host onboarding API.
+- Step 2: bind canonical `agent_uid` through host bootstrap API using that install code.
+- Step 3: retry task-token issuance and inject returned `AGENT_TASK_TOKEN`.
+
+## Agent Invocation Quickstart
+
+Preferred invocation modes for agents:
+
+- Action-first + env token:
+```bash
+AGENT_TASK_TOKEN=<token> node scripts/skill.mjs portal.account.balance '{}'
+```
+- Explicit token arg:
+```bash
+node scripts/skill.mjs <agent_task_token> portal.skill.poll '{"run_id":"run_123"}'
+```
+
+Action payload templates:
+
+- `portal.skill.execute`
+```json
+{
+  "capability": "human_detect",
+  "input": { "image_url": "https://files.example.com/demo.png" },
+  "request_id": "optional_request_id"
+}
+```
+- `portal.skill.poll`
+```json
+{ "run_id": "run_123" }
+```
+- `portal.skill.presentation`
+```json
+{ "run_id": "run_123", "channel": "web", "include_files": true }
+```
+- `portal.account.balance`
+```json
+{}
+```
+- `portal.account.ledger`
+```json
+{ "date_from": "2026-03-01", "date_to": "2026-03-15" }
+```
+
+Agent-side decision flow:
+
+- New task: call `portal.skill.execute`, then poll with `portal.skill.poll` until `data.terminal=true`, then fetch `portal.skill.presentation`.
+- Account query: call `portal.account.balance` or `portal.account.ledger` directly.
+- If `AUTH_UNAUTHORIZED` + `agent task token is required`: request host to issue/inject short-lived `AGENT_TASK_TOKEN`, then retry once.
+- If `AUTH_UNAUTHORIZED` + `agent_uid claim format is invalid`: use canonical `agent_uid` (`agent_...`) instead of persona alias (`code`, `ops`).
+- If `SYSTEM_NOT_FOUND` + `agent binding not found`: host should run one binding bootstrap cycle, then retry token issuance.
+
+Output parsing contract:
+
+- Always parse standard gateway envelope: `request_id`, `data`, `error`.
+- Treat non-empty `error` as failure even when HTTP tooling hides status code.
 
 ## Payload Contract
 

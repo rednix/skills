@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AI Task Hub Skill API",
-    "version": "3.2.3",
+    "version": "3.2.5",
     "description": "Public skill contract for execute/poll/presentation/account balance/account ledger via host-managed agent task token."
   },
   "servers": [
@@ -71,6 +71,96 @@
       },
       "required_scope": "account_read"
     }
+  },
+  "x-host-auth-onboarding": {
+    "agent_uid_format": "^agent_[a-z0-9][a-z0-9_-]{5,63}$",
+    "conversation_id_format": "^[A-Za-z0-9._:-]{8,128}$",
+    "bootstrap_on_binding_missing": {
+      "trigger": {
+        "code": "SYSTEM_NOT_FOUND",
+        "message": "agent binding not found"
+      },
+      "steps": [
+        {
+          "endpoint": "/agent/install-code/issue",
+          "method": "POST",
+          "body": {
+            "channel": "clawhub"
+          }
+        },
+        {
+          "endpoint": "/agent/bootstrap",
+          "method": "POST",
+          "body": {
+            "agent_uid": "<canonical_agent_uid>",
+            "install_code": "<install_code_from_previous_step>"
+          }
+        },
+        {
+          "endpoint": "/agent/task-token/issue",
+          "method": "POST",
+          "retry": true
+        }
+      ]
+    },
+    "interactive_fallback_authorization_url_template": "https://<host-owned-domain>/agent-auth?agent_uid=<agent_uid>&conversation_id=<conversation_id>"
+  },
+  "x-agent-invocation-guide": {
+    "cli_modes": [
+      {
+        "name": "action_first_env_token",
+        "command": "AGENT_TASK_TOKEN=<token> node scripts/skill.mjs portal.account.balance '{}'"
+      },
+      {
+        "name": "explicit_token_arg",
+        "command": "node scripts/skill.mjs <agent_task_token> portal.skill.poll '{\"run_id\":\"run_123\"}'"
+      }
+    ],
+    "action_payload_templates": {
+      "portal.skill.execute": {
+        "capability": "human_detect",
+        "input": {
+          "image_url": "https://files.example.com/demo.png"
+        },
+        "request_id": "optional_request_id"
+      },
+      "portal.skill.poll": {
+        "run_id": "run_123"
+      },
+      "portal.skill.presentation": {
+        "run_id": "run_123",
+        "channel": "web",
+        "include_files": true
+      },
+      "portal.account.balance": {},
+      "portal.account.ledger": {
+        "date_from": "2026-03-01",
+        "date_to": "2026-03-15"
+      }
+    },
+    "error_handling": [
+      {
+        "match": {
+          "code": "AUTH_UNAUTHORIZED",
+          "message_contains": "agent task token is required"
+        },
+        "host_action": "issue_or_refresh_task_token_then_retry_once"
+      },
+      {
+        "match": {
+          "code": "AUTH_UNAUTHORIZED",
+          "message_contains": "agent_uid claim format is invalid"
+        },
+        "host_action": "map_alias_to_canonical_agent_uid_then_reissue_token"
+      },
+      {
+        "match": {
+          "code": "SYSTEM_NOT_FOUND",
+          "message_contains": "agent binding not found"
+        },
+        "host_action": "run_binding_bootstrap_once_then_retry_token_issue"
+      }
+    ]
   },
   "paths": {
     "/agent/skill/execute": {

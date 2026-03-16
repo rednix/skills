@@ -1,7 +1,7 @@
 ---
 name: ai-task-hub
 description: AI Task Hub 用于图像检测与分析、去背景与抠图、语音转文字、文本转语音、文档转 Markdown、积分余额/流水查询和异步任务编排。适用于用户需要通过 execute/poll/presentation 与账户积分查询完成结果交付，且由宿主统一管理身份、积分、支付和风控的场景。
-version: 3.2.3
+version: 3.2.5
 metadata:
   openclaw:
     skillKey: ai-task-hub
@@ -98,6 +98,12 @@ Action 与接口映射：
 - `exp`
 - `jti`
 
+网关鉴权使用的标识格式约束：
+
+- `agent_uid` 必须匹配 `^agent_[a-z0-9][a-z0-9_-]{5,63}$`。
+- `conversation_id` 必须匹配 `^[A-Za-z0-9._:-]{8,128}$`。
+- 不要把 `code`/`ops` 这类人格别名直接当作 `agent_uid`；宿主应先映射到规范化 `agent_uid`。
+
 Action 对应必需 scope：
 
 - `portal.skill.execute` -> `execute`
@@ -127,8 +133,69 @@ Token 时效策略：
 宿主接入模式：
 
 - `自动模式`（推荐）：宿主运行时无感签发短期、按 action 最小权限 token，并注入 `AGENT_TASK_TOKEN`。
-- `交互兜底模式`（可选）：若宿主暂时没有服务端签发桥接，可先让用户打开宿主自有授权 URL（示例模板：`https://gateway.binaryworks.app/portal/agent-auth?agent_uid=<agent_uid>&conversation_id=<conversation_id>`）完成授权，再由宿主签发/注入短期 `AGENT_TASK_TOKEN`。
+- `交互兜底模式`（可选）：若宿主暂时没有服务端签发桥接，可先让用户打开宿主自有授权 URL（示例模板：`https://<host-owned-domain>/agent-auth?agent_uid=<agent_uid>&conversation_id=<conversation_id>`）完成授权，再由宿主签发/注入短期 `AGENT_TASK_TOKEN`。
 - 公开 skill 包本身不会拉起浏览器、持久化凭证或执行 OAuth/token 交换。
+- 上述授权 URL 属于宿主集成侧，不属于本 skill 包或网关默认页面；宿主未实现该路由时出现 `404` 属于预期现象。
+
+`SYSTEM_NOT_FOUND` 绑定自愈流程：
+
+- 当宿主收到 `SYSTEM_NOT_FOUND` 且消息为 `agent binding not found` 时，应先自动补绑定，再重试签发 task token。
+- 第 1 步：通过宿主 onboarding API 先签发 install code。
+- 第 2 步：使用 install code 通过宿主 bootstrap API 绑定规范化 `agent_uid`。
+- 第 3 步：重试 task-token 签发，并注入返回的 `AGENT_TASK_TOKEN`。
+
+## Agent 调用速查
+
+推荐给 agent 的调用方式：
+
+- Action 优先 + 环境变量 token：
+```bash
+AGENT_TASK_TOKEN=<token> node scripts/skill.mjs portal.account.balance '{}'
+```
+- 显式 token 参数：
+```bash
+node scripts/skill.mjs <agent_task_token> portal.skill.poll '{"run_id":"run_123"}'
+```
+
+Action payload 模板：
+
+- `portal.skill.execute`
+```json
+{
+  "capability": "human_detect",
+  "input": { "image_url": "https://files.example.com/demo.png" },
+  "request_id": "optional_request_id"
+}
+```
+- `portal.skill.poll`
+```json
+{ "run_id": "run_123" }
+```
+- `portal.skill.presentation`
+```json
+{ "run_id": "run_123", "channel": "web", "include_files": true }
+```
+- `portal.account.balance`
+```json
+{}
+```
+- `portal.account.ledger`
+```json
+{ "date_from": "2026-03-01", "date_to": "2026-03-15" }
+```
+
+agent 侧决策流程：
+
+- 新任务：先调 `portal.skill.execute`，再轮询 `portal.skill.poll` 到 `data.terminal=true`，最后调 `portal.skill.presentation`。
+- 账户查询：直接调 `portal.account.balance` 或 `portal.account.ledger`。
+- 若报 `AUTH_UNAUTHORIZED` 且消息是 `agent task token is required`：让宿主签发/注入短期 `AGENT_TASK_TOKEN`，再重试一次。
+- 若报 `AUTH_UNAUTHORIZED` 且消息是 `agent_uid claim format is invalid`：使用规范化 `agent_uid`（`agent_...`），不要用人格别名（`code`、`ops`）。
+- 若报 `SYSTEM_NOT_FOUND` 且消息是 `agent binding not found`：让宿主执行一次绑定自愈流程，再重试签发 token。
+
+输出解析约定：
+
+- 始终按网关 envelope 解析：`request_id`、`data`、`error`。
+- 即使 HTTP 工具没有透出状态码，只要 `error` 非空就按失败处理。
 
 ## Payload 约定
 
