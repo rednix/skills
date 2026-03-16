@@ -1,148 +1,379 @@
-# Bittensor Subnet 85 "Vibe Miner" Skill
+# Bittensor SN85 VidAIo Miner Skill
 
-**Author:** Mark Jeffrey  
-**Description:** Complete automated setup for mining Bittensor Subnet 85 (VidAIo) — video upscaling and compression mining with GPU acceleration.
+Deploy and optimize video compression/upscaling miners on Bittensor Subnet 85 (VidAIo).
 
-## What This Skill Does
+## Overview
 
-Guides users through setting up profitable video processing miners on Bittensor Subnet 85:
-- **Upscaler miner** — Upscale SD→HD, HD→4K using RealESRGAN (video2x)
-- **Compressor miner** — High-quality video compression with AV1/HEVC
-- **Storage setup** — BackBlaze B2 or Hippius decentralized storage
-- **Monitoring** — Rank tracking, incentive monitoring, health checks
-- **Optimizations** — Includes critical patches for VMAF quality scoring and video2x speed
+**Subnet:** 85 (VidAIo/Vibe)  
+**Task:** Video compression (HEVC/AV1) and upscaling (SD→HD, HD→4K)  
+**Repo:** https://github.com/Cazure8/vidaio-subnet  
+**GPU Required:** RTX 3090+ (4090 recommended)  
+**Platform:** Vast.ai recommended (cheap GPU rentals)
+
+## Architecture
+
+SN85 runs **dual miners** (compression + upscaling) with separate backend services:
+
+```
+Validator → Miner (axon) → Backend Service (Flask) → ffmpeg/video2x
+```
+
+**4 PM2 Processes:**
+1. `video-miner` — Upscaling axon (receives SD2HD/HD24K tasks)
+2. `video-miner-compress` — Compression axon (receives HEVC/AV1 tasks)
+3. `video-upscaler` — Backend service (port 19000)
+4. `video-compressor` — Backend service (port 19001)
 
 ## Prerequisites
 
-**Required:**
-1. **NVIDIA GPU** — RTX 3090/4090 recommended (needs NVENC hardware encoding)
-2. **TAO Wallet** — 1-2 τ minimum (≈$200-400 at current prices)
-3. **Storage** — BackBlaze B2 account OR Hippius access
-4. **Linux** — Ubuntu 22.04+ recommended
-5. **Skills** — Basic command line, SSH access if using Vast.ai
+```bash
+# Bittensor wallet with at least 0.4τ for registration
+btcli wallet create --wallet.name moltypython
+btcli wallet new_hotkey --wallet.name moltypython --hotkey mining
+btcli wallet new_hotkey --wallet.name moltypython --hotkey mining2
 
-**Recommended Platform:**
-- **Vast.ai** — Rent RTX 4090 for ~$0.30/hr (~$216/month)
-- **Alternative** — Own hardware or other GPU cloud providers
+# Register both hotkeys
+btcli subnet register --netuid 85 --wallet.name moltypython --wallet.hotkey mining
+btcli subnet register --netuid 85 --wallet.name moltypython --wallet.hotkey mining2
+```
 
-## Expected Returns
+## Vast.ai Setup
 
-Based on live mining data (March 2026):
-- **Upscaler earnings:** ~$14/day (top 5% miners)
-- **Compressor earnings:** ~$9/day (top 65% miners)
-- **Combined:** ~$23/day (~$690/month)
-- **Break-even:** ~2-3 weeks on Vast.ai rental
+### 1. Launch Instance
 
-*Returns vary with TAO price, network competition, and subnet emissions.*
+**Requirements:**
+- RTX 4090 (24GB VRAM)
+- 64GB+ disk
+- Ubuntu 24.04 (NVENC support verified)
+- **At least 4 open TCP ports** (SSH + 3 miner ports)
 
-## How to Use This Skill
+**Template:**
+```
+Image: nvidia/cuda:13.0.2-cudnn9-devel-ubuntu24.04
+Disk: 64GB
+GPU: RTX 4090
+```
 
-Agent will guide you through:
-1. Creating/importing TAO wallet
-2. Setting up GPU instance (Vast.ai or bare metal)
-3. Configuring storage (BackBlaze or Hippius)
-4. Installing dependencies and mining software
-5. Registering on subnet (costs ~0.13 τ per miner)
-6. Starting miners and monitoring performance
+### 2. Critical Port Configuration
 
-## What Makes This Different
+⚠️ **Vast.ai occupies ports 8080, 11111, 18384 by default** (Jupyter, Portal, Syncthing). Do NOT use these!
 
-**Includes hard-won optimizations:**
-- ✅ **VMAF quality scoring** — Critical patch that many miners miss (causes rank decline)
-- ✅ **video2x speed optimization** — 10-50x faster than default Python implementation
-- ✅ **Vast.ai port workarounds** — Handles occupied ports (8080, 11111, 18384)
-- ✅ **Score decay awareness** — 0.8 decay factor, strategies to maintain rank
-- ✅ **Dual miner setup** — Both upscaler + compressor for maximum earnings
+**Recommended mapping:**
+```
+Internal → External (Vast assigns)
+19000    → 26565  (upscaler backend)
+19001    → 26833  (compressor backend)
+22       → XXXXX  (SSH)
+```
 
-## Agent Instructions
+Vast.ai routes external ports through Caddy reverse proxy. You MUST configure Caddy to forward without auth:
 
-When user requests SN85 mining setup:
+```bash
+# Edit /etc/caddy/Caddyfile
+sudo tee /etc/caddy/Caddyfile << 'EOF'
+:8384 {
+    reverse_proxy localhost:19000
+}
 
-### Phase 1: Prerequisites Check
-1. Verify GPU availability (query user about Vast.ai vs own hardware)
-2. Check TAO wallet exists (`btcli wallet list`)
-3. Verify wallet balance (need 1-2 τ minimum)
-4. Confirm storage choice (BackBlaze B2 or Hippius)
+:1111 {
+    reverse_proxy localhost:19001
+}
+EOF
 
-### Phase 2: Environment Setup
-1. If Vast.ai: Guide through instance creation (RTX 4090, Ubuntu 22.04, Docker)
-2. If bare metal: Verify NVIDIA drivers, CUDA, docker/PM2
-3. Clone vidaio-subnet repository
-4. Install dependencies (use `scripts/install.sh`)
+sudo systemctl reload caddy
+```
 
-### Phase 3: Storage Configuration
-1. If BackBlaze: Guide through B2 bucket creation, save credentials
-2. If Hippius: Set up using hippius skill, configure S3-compatible endpoint
-3. Update miner configs with storage credentials
+**Verify external access:**
+```bash
+curl -I http://<VAST_PUBLIC_IP>:<EXTERNAL_PORT>
+# Should return 404 from Bittensor axon, NOT 401 Unauthorized
+```
 
-### Phase 4: Apply Patches
-1. Apply VMAF calculation patch (`patches/validator_merger_vmaf.patch`)
-2. Verify video2x installation (should use CLI, not Python)
-3. Test GPU encoding (NVENC support)
+## Installation
 
-### Phase 5: Registration
-1. Create hotkeys if needed (`btcli wallet new_hotkey`)
-2. Register upscaler on SN85 (costs 0.13 τ)
-3. Register compressor on SN85 (costs 0.13 τ)
-4. Configure port mappings (Vast.ai: map internal→external)
+```bash
+# Clone repo
+cd /root
+git clone https://github.com/Cazure8/vidaio-subnet.git
+cd vidaio-subnet
 
-### Phase 6: Start Miners
-1. Launch PM2 services (upscaler, compressor, workers)
-2. Verify axon connectivity
-3. Wait for first tasks (upscaler should receive within 30-60min)
+# Install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -e .
 
-### Phase 7: Monitor
-1. Check incentive/rank with `scripts/monitor.sh`
-2. Verify VMAF calculation in logs (look for "🎯 Calculating final video VMAF")
-3. Alert if crash loops detected
-4. Track earnings over immunity period (7200 blocks ≈ 24h)
+# Copy wallets from local machine
+scp -P <VAST_SSH_PORT> -r ~/.bittensor/wallets/moltypython root@<VAST_IP>:/root/.bittensor/wallets/
+```
 
-## Key Files
+### Install Optimized ffmpeg
 
-- **SKILL.md** — This file
-- **scripts/install.sh** — Full dependency installation
-- **scripts/register.sh** — Subnet registration helper
-- **scripts/monitor.sh** — Status checking and alerts
-- **scripts/storage_setup.sh** — BackBlaze/Hippius configuration
-- **patches/validator_merger_vmaf.patch** — Critical quality scoring fix
-- **configs/miner_upscaler.json** — Upscaler configuration template
-- **configs/miner_compressor.json** — Compressor configuration template
+System ffmpeg lacks NVENC. Use BtbN static build:
+
+```bash
+cd /tmp
+wget https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+tar xf ffmpeg-master-latest-linux64-gpl.tar.xz
+sudo cp ffmpeg-master-latest-linux64-gpl/bin/* /usr/local/bin/
+ffmpeg -version | grep libsvtav1  # Verify AV1 support
+```
+
+### Install video2x for Upscaling
+
+```bash
+pip install video2x==6.3.1
+# Downloads NCNN models automatically on first run
+```
+
+## PM2 Startup (Critical!)
+
+⚠️ **MUST set PYTHONPATH or imports fail!**
+
+```bash
+cd /root/vidaio-subnet
+
+# Upscaler miner (UID 165 in our case)
+PYTHONPATH=/root/vidaio-subnet pm2 start venv/bin/python --name video-miner --interpreter none \
+  -- neurons/miner.py --netuid 85 --subtensor.network finney \
+  --wallet.name moltypython --wallet.hotkey mining \
+  --axon.port 19000 --axon.external_port 26565 --logging.debug
+
+# Compressor miner (UID 78 in our case)
+PYTHONPATH=/root/vidaio-subnet pm2 start venv/bin/python --name video-miner-compress --interpreter none \
+  -- neurons/miner_compress.py --netuid 85 --subtensor.network finney \
+  --wallet.name moltypython --wallet.hotkey mining2 \
+  --axon.port 19001 --axon.external_port 26833 --logging.debug
+
+# Upscaler backend
+PYTHONPATH=/root/vidaio-subnet pm2 start venv/bin/python --name video-upscaler --interpreter none \
+  -- services/upscaling/server.py
+
+# Compressor backend
+PYTHONPATH=/root/vidaio-subnet pm2 start venv/bin/python --name video-compressor --interpreter none \
+  -- services/compress/server.py
+
+pm2 save
+pm2 startup  # Auto-start on reboot
+```
+
+**Verify ports match registration:**
+```bash
+pm2 logs video-miner --lines 50 --nostream | grep "AxonInfo.*26565"
+pm2 logs video-miner-compress --lines 50 --nostream | grep "AxonInfo.*26833"
+# If wrong port appears, kill and restart with correct --axon.external_port
+```
+
+## Optimizations (Production-Ready)
+
+### 1. Upscaler Speed Fix
+
+**Problem:** Default config tries 4x upscaling on 4K input → GPU OOM/truncation.
+
+**Fix:** Dynamic scaling based on input resolution.
+
+Edit `/root/vidaio-subnet/services/upscaling/server.py`:
+
+```python
+# Around line 60, replace hardcoded scale=4 with:
+input_width = int(probe['streams'][0]['width'])
+if input_width >= 3840:  # 4K input
+    scale = 2  # 4K → 8K
+elif input_width >= 1920:  # HD input
+    scale = 2  # HD → 4K
+else:  # SD input
+    scale = 4  # SD → HD
+```
+
+**Restart:** `pm2 restart video-upscaler`
+
+### 2. Compressor Speed Optimization
+
+**Problem:** AV1 encoding takes 90-155s (validator timeout is ~60s).
+
+**Fixes:**
+
+#### A. Use fastest AV1 preset
+Edit `/root/vidaio-subnet/services/compress/utils/encoder_configs.py`:
+
+```python
+# Line ~40, change preset for all scene types:
+"preset": "12",  # Was 10, now 12 (fastest)
+```
+
+#### B. Add encoding timeout
+Edit `/root/vidaio-subnet/services/compress/utils/encode_video.py`:
+
+```python
+# Around line 80, add timeout to subprocess.run():
+result = subprocess.run(
+    cmd,
+    capture_output=True,
+    text=True,
+    timeout=45  # Kill if exceeds 45s
+)
+```
+
+#### C. Skip VMAF validation (trust lookup table)
+Edit `/root/vidaio-subnet/services/compress/compression_optimized.py`:
+
+```python
+# Line ~120, set:
+skip_vmaf = True  # Saves 5-10s per task
+```
+
+**Restart:** `pm2 restart video-compressor`
+
+### 3. Network Timeout Fix
+
+**Problem:** Large video downloads timeout with default 5s httpx connect timeout.
+
+Edit `/root/vidaio-subnet/vidaio_subnet_core/utilities/file_handler.py`:
+
+```python
+# Line ~30, replace httpx.AsyncClient() with:
+async with httpx.AsyncClient(
+    timeout=httpx.Timeout(30.0, read=120.0, write=30.0, pool=None)
+) as client:
+```
+
+**Restart:** `pm2 restart video-miner video-miner-compress`
+
+### 4. DNS Fix (Docker resolver issue)
+
+```bash
+echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/resolv.conf
+```
+
+## Monitoring
+
+### Check Registration Status
+
+```bash
+btcli wallet overview --wallet.name moltypython --wallet.hotkey mining --subtensor.network finney
+btcli wallet overview --wallet.name moltypython --wallet.hotkey mining2 --subtensor.network finney
+```
+
+Look for:
+- UID assigned (e.g., 165, 78)
+- INCENTIVE > 0 (means earning)
+- EMISSION > 0 (τ per day)
+
+### Check Task Activity
+
+```bash
+# Upscaler
+pm2 logs video-miner --lines 50 | grep "Receiving"
+
+# Compressor
+pm2 logs video-miner-compress --lines 50 | grep "Receiving"
+```
+
+Healthy output:
+```
+✅✅✅ Receiving SD2HD Request from validator: 5EUq... with uid: 1
+🛜🛜🛜 Receiving CompressionRequest from validator: 5EUq... with uid: 1 | VMAF: 89.0 | Codec: hevc
+```
+
+### Backend Response Times
+
+```bash
+# Check upscaler timing
+pm2 logs video-upscaler --lines 100 | grep "Completed\|took"
+
+# Check compressor timing
+pm2 logs video-compressor --lines 100 | grep "Completed\|took"
+```
+
+Target: <50s per task (validator timeout ~60s)
 
 ## Troubleshooting
 
-**Compressor crash loops:**
-- Check for Python syntax errors in validator_merger.py
-- Verify VMAF patch applied correctly
-- Look for port conflicts
+### 1. Zero Incentive Despite Tasks
 
-**Low incentive scores:**
-- Verify VMAF calculation is running (check logs for "🎯 Calculating")
-- Ensure GPU encoding is working (NVENC)
-- Check network connectivity (axon reachable)
+**Symptoms:** Receiving validator requests but INCENTIVE = 0.00
 
-**Deregistration risk:**
-- Monitor incentive (if below 0.002, at risk)
-- Upscaler has priority (better task frequency)
-- Consider running upscaler only if capital limited
+**Causes:**
+- Tasks timing out (>60s)
+- Output quality below threshold (VMAF, resolution)
+- Tasks failing silently (check backend logs)
 
-## Safety Notes
+**Debug:**
+```bash
+pm2 logs video-compressor --lines 200 | grep -i "error\|timeout\|failed"
+pm2 logs video-upscaler --lines 200 | grep -i "error\|timeout\|failed"
+```
 
-- **Test on testnet first** if unsure
-- **Start with one miner** to verify setup before registering second
-- **Monitor closely** during immunity period (first 24h)
-- **Backups** — Keep wallet mnemonics secure and offline
-- **Costs** — Registration is non-refundable, calculate ROI before committing
+### 2. "ModuleNotFoundError: No module named 'services'"
 
-## Support
+**Cause:** Missing PYTHONPATH
 
-This skill packages real mining experience from March 2026. All optimizations are battle-tested.
+**Fix:** Kill all PM2 processes and restart with PYTHONPATH set (see PM2 Startup section)
 
-**Common issues solved:**
-- VMAF calculation disabled by default (causes rank decline)
-- video2x Python implementation too slow (causes validator timeouts)
-- Vast.ai port conflicts (8080, 11111, 18384 occupied)
-- Score decay mechanics (0.8 factor, need frequent validator pings)
+### 3. Port Already in Use
 
----
+**Cause:** Stale axon binding after restart
 
-**Ready to mine?** Agent will walk you through each step. Have your TAO wallet and GPU ready.
+**Fix:**
+```bash
+pm2 kill  # Nuclear option
+# Wait 10 seconds
+# Restart all processes with PYTHONPATH
+```
+
+### 4. Validators Not Connecting (401 Unauthorized)
+
+**Cause:** Caddy reverse proxy blocking with HTTP Basic Auth
+
+**Fix:** Edit Caddyfile to remove auth (see Port Configuration section above)
+
+### 5. "UnknownSynapseError" in Logs
+
+**Normal!** Validators probe all UIDs with various synapse types. Ignore unless frequent.
+
+## Expected Performance
+
+**Upscaler (video2x + NVENC):**
+- SD→HD: 20-35s
+- HD→4K: 30-50s
+
+**Compressor:**
+- HEVC: 15-30s
+- AV1: 25-45s (with preset 12)
+
+Both should complete within 60s validator deadline.
+
+## Costs
+
+**Vast.ai RTX 4090:** ~$0.30-0.50/hour (~$220-360/month)  
+**Registration:** 0.19τ per hotkey (0.38τ total)  
+**SN85 emissions:** Variable (depends on competition/performance)
+
+## Maintenance
+
+### Daily Checks
+```bash
+ssh -p <PORT> root@<VAST_IP> "pm2 list && uptime"
+```
+
+### Weekly
+- Check wallet balance growth
+- Review PM2 restart counts (high = instability)
+- Update vidaio-subnet repo if new commits
+
+### If Deregistered
+- Check balance (need 0.19τ to re-register)
+- Review logs for errors before last known task
+- Re-register: `btcli subnet register --netuid 85 --wallet.name moltypython --wallet.hotkey <HOTKEY>`
+
+## References
+
+- **VidAIo Subnet:** https://github.com/Cazure8/vidaio-subnet
+- **Bittensor Docs:** https://docs.bittensor.com
+- **Vast.ai:** https://vast.ai
+- **VibeMiner (Ridges collab):** https://github.com/maxquick/VibeMiner
+
+## Version History
+
+- **2.1.0** (Mar 15, 2026): Added compression optimizations, network timeout fix, verified 3+ day stable deployment
+- **2.0.0** (Mar 7, 2026): NVENC optimizations, dynamic upscaling, Caddy auth fix
+- **1.0.0** (Feb 13, 2026): Initial deployment
