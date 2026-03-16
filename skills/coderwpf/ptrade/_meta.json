@@ -3,11 +3,16 @@
   "slug": "ptrade",
   "displayName": "Ptrade",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773364831441,
-    "commit": "https://github.com/openclaw/skills/commit/b6f2e86c29aa081fd7a9ffafbab8f588207b1a14"
+    "version": "1.0.2",
+    "publishedAt": 1773643547303,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773364831441,
+      "commit": "https://github.com/openclaw/skills/commit/b6f2e86c29aa081fd7a9ffafbab8f588207b1a14"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1773230761591,

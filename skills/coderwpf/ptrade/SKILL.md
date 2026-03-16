@@ -1,53 +1,53 @@
 ---
 name: ptrade
-description: Ptrade Hundsun Quantitative Trading Platform — Strategies run on broker servers with low-latency execution, supporting A-shares, futures, margin trading, and other China securities markets.
-version: 1.1.0
+description: Ptrade 恒生量化交易平台 - 策略运行在券商服务器上，低延迟执行，支持A股、期货、融资融券等中国证券市场。
+version: 1.2.0
 homepage: https://ptradeapi.com
 metadata: {"clawdbot":{"emoji":"🏦","requires":{"bins":["python3"]}}}
 ---
 
-# Ptrade (Hundsun Quantitative Trading Platform)
+# Ptrade（恒生量化交易平台）
 
-[Ptrade](https://ptradeapi.com) is a professional quantitative trading platform developed by Hundsun Electronics. Strategies run on **broker servers** (intranet) for low-latency execution. It uses an event-driven Python strategy framework.
+[Ptrade](https://ptradeapi.com) 是恒生电子开发的专业量化交易平台。策略运行在**券商服务器**（内网）上，低延迟执行。采用事件驱动的Python策略框架。
 
-> ⚠️ **Requires broker Ptrade access authorization**. Strategies run on the broker's cloud — no external network access. Cannot install pip packages; only built-in third-party libraries are available.
+> ⚠️ **需要券商开通Ptrade权限**。策略运行在券商云端——无法访问外网。不能pip安装，仅可使用内置第三方库。
 
-## Supported Markets & Business Types
+## 支持的市场和业务类型
 
-**Backtesting support:**
-1. Regular stock trading (unit: shares)
-2. Convertible bond trading (unit: lots, T+0)
-3. Margin trading collateral buy/sell (unit: shares)
-4. Futures speculative trading (unit: contracts, T+0)
-5. LOF fund trading (unit: shares)
-6. ETF fund trading (unit: shares)
+**回测支持：**
+1. 普通股票交易（单位：股）
+2. 可转债交易（单位：张，T+0）
+3. 融资融券担保品买卖（单位：股）
+4. 期货投机交易（单位：手，T+0）
+5. LOF基金交易（单位：份）
+6. ETF基金交易（单位：份）
 
-**Live trading support:**
-1. Regular stock trading (unit: shares)
-2. Convertible bond trading (T+0)
-3. Margin trading (unit: shares)
-4. ETF creation/redemption, arbitrage (unit: shares)
-5. Treasury reverse repo (unit: shares)
-6. Futures speculative trading (unit: contracts, T+0)
-7. ETF fund trading (unit: shares)
+**实盘交易支持：**
+1. 普通股票交易（单位：股）
+2. 可转债交易（T+0）
+3. 融资融券交易（单位：股）
+4. ETF申赎、套利（单位：份）
+5. 国债逆回购（单位：份）
+6. 期货投机交易（单位：手，T+0）
+7. ETF基金交易（单位：份）
 
-**Level2 10-level market data supported by default**. Some brokers provide free L2 tick-by-tick data.
+**默认支持Level2十档行情**。部分券商提供免费L2逐笔数据。
 
-### Price Precision Rules
+### 价格精度规则
 
-| Asset Type | Minimum Tick | Decimal Places |
+| 资产类型 | 最小变动单位 | 小数位数 |
 |---|---|---|
-| Stocks | 0.01 | 2 |
-| Convertible Bonds | 0.001 | 3 |
+| 股票 | 0.01 | 2 |
+| 可转债 | 0.001 | 3 |
 | LOF / ETF | 0.001 | 3 |
-| Treasury Reverse Repo | 0.005 | 3 |
-| Stock Index Futures | 0.2 | 1 |
-| Treasury Bond Futures | 0.005 | 3 |
-| ETF Options | 0.0001 | 4 |
+| 国债逆回购 | 0.005 | 3 |
+| 股指期货 | 0.2 | 1 |
+| 国债期货 | 0.005 | 3 |
+| ETF期权 | 0.0001 | 4 |
 
-> ⚠️ When placing orders with `limit_price`, the price must conform to the correct decimal precision, otherwise the order will be rejected.
+> ⚠️ 使用 `limit_price` 下单时，价格必须符合正确的小数精度，否则订单将被拒绝。
 
-## Stock Code Format
+## 股票代码格式
 
 - Shanghai: `600570.SS`
 - Shenzhen: `000001.SZ`
@@ -55,7 +55,7 @@ metadata: {"clawdbot":{"emoji":"🏦","requires":{"bins":["python3"]}}}
 
 ---
 
-## Strategy Lifecycle (Event-Driven)
+## 策略生命周期（事件驱动）
 
 ```python
 def initialize(context):
@@ -112,27 +112,27 @@ def on_trade_response(context, trade_list):
         log.info(f'{direction} {t["stock_code"]}: {t["business_amount"]}@{t["business_price"]}')
 ```
 
-### Strategy Execution Frequency
+### 策略执行频率
 
-| Mode | Frequency | Execution Time |
+| 模式 | 频率 | 执行时间 |
 |---|---|---|
-| **Daily** | Once per day | Backtest: 15:00, Live: 14:50 (configurable) |
-| **Minute** | Once per minute | At each minute bar close |
-| **Tick** | Every 3 seconds | 9:30–14:59, via `tick_data` or `run_interval` |
+| **日线** | 每日一次 | 回测: 15:00, 实盘: 14:50（可配置） |
+| **分钟** | 每分钟一次 | 每根分钟K线收盘时 |
+| **Tick** | 每3秒 | 9:30–14:59，通过 `tick_data` 或 `run_interval` |
 
-### Time Reference
+### 时间参考
 
-| Phase | Time | Available Functions |
+| 阶段 | 时间 | 可用函数 |
 |---|---|---|
-| **Pre-market** | Before 9:30 | `before_trading_start`, `run_daily(time='09:15')` |
-| **Market hours** | 9:30–15:00 | `handle_data`, `run_daily`, `run_interval`, `tick_data` |
-| **Post-market** | 15:30 | `after_trading_end`, `run_daily(time='15:10')` |
+| **盘前** | 9:30之前 | `before_trading_start`, `run_daily(time='09:15')` |
+| **盘中** | 9:30–15:00 | `handle_data`, `run_daily`, `run_interval`, `tick_data` |
+| **盘后** | 15:30 | `after_trading_end`, `run_daily(time='15:10')` |
 
 ---
 
-## Initialization Setup Functions (Use Only in initialize)
+## 初始化设置函数（仅在initialize中使用）
 
-### Stock Pool & Benchmark
+### 股票池与基准
 
 ```python
 def initialize(context):
@@ -140,18 +140,18 @@ def initialize(context):
     set_benchmark('000300.SS')                  # Backtest benchmark index
 ```
 
-### Commission & Slippage (Backtest Only)
+### 手续费与滑点（仅回测）
 
 ```python
 def initialize(context):
-    # Set commission: buy 0.03%, sell 0.13% (incl. stamp tax), based on trade value, min 5 CNY
+    # 设置手续费: buy 0.03%, sell 0.13% (incl. stamp tax), based on trade value, min 5 CNY
     set_commission(PerTrade(buy_cost=0.0003, sell_cost=0.0013, unit='perValue', min_cost=5))
-    set_slippage(FixedSlippage(0.02))           # Fixed slippage of 0.02 CNY
+    set_slippage(FixedSlippage(0.02))           # 固定滑点 of 0.02 CNY
     set_volume_ratio(0.025)                     # Max fill ratio of daily volume
     set_limit_mode(0)                           # 0=limit by volume ratio, 1=limit by fixed quantity
 ```
 
-### Scheduled Tasks
+### 定时任务
 
 ```python
 def initialize(context):
@@ -163,7 +163,7 @@ def initialize(context):
     run_interval(context, my_tick_handler, seconds=10)
 ```
 
-### Strategy Parameters (Configurable from UI)
+### 策略参数（可从UI配置）
 
 ```python
 def initialize(context):
@@ -178,9 +178,9 @@ def initialize(context):
 
 ---
 
-## Data Functions
+## 数据函数
 
-### get_history — Get Recent N Bars
+### get_history — 获取最近N根K线
 
 ```python
 get_history(count, frequency='1d', field='close', security_list=None, fq=None, include=False, fill='nan', is_dict=False)
@@ -195,7 +195,7 @@ df = get_history(20, '1d', ['open', 'high', 'low', 'close', 'volume'], '600570.S
 # Available fields: open, high, low, close, volume, money, price, is_open, preclose, high_limit, low_limit, unlimited (daily only)
 ```
 
-### get_price — Query by Date Range
+### get_price — 按日期范围查询
 
 ```python
 get_price(security, start_date=None, end_date=None, frequency='1d', fields=None, fq=None, count=None, is_dict=False)
@@ -218,11 +218,11 @@ df = get_price('600570.SS', start_date='2024-06-01 09:30', end_date='2024-06-01 
 
 > ⚠️ `get_history` and `get_price` cannot be called concurrently from different threads (e.g., when `run_daily` and `handle_data` execute simultaneously).
 
-### get_snapshot — Real-time Market Snapshot (Live Only)
+### get_snapshot — 实时行情快照（仅实盘）
 
 ```python
 snapshot = get_snapshot('600570.SS')
-# Returns a dict with fields:
+# 收益率 a dict with fields:
 # last_px (latest price), open_px (open price), high_px (high price), low_px (low price), preclose_px (previous close)
 # up_px (upper limit price), down_px (lower limit price), business_amount (total volume), business_balance (total turnover)
 # bid_grp (bid levels: {1:[price,volume,count], 2:...}), offer_grp (ask levels)
@@ -236,11 +236,11 @@ snapshots = get_snapshot(['600570.SS', '000001.SZ'])
 price = snapshots['600570.SS']['last_px']
 ```
 
-### get_gear_price — Order Book Depth (Live Only)
+### get_gear_price — 盘口深度（仅实盘）
 
 ```python
 gear = get_gear_price('600570.SS')
-# Returns: {'bid_grp': {1: [price, volume, count], 2: ...}, 'offer_grp': {1: [price, volume, count], 2: ...}}
+# 收益率: {'bid_grp': {1: [price, volume, count], 2: ...}, 'offer_grp': {1: [price, volume, count], 2: ...}}
 bid1_price, bid1_vol, bid1_count = gear['bid_grp'][1]   # Best bid
 ask1_price, ask1_vol, ask1_count = gear['offer_grp'][1] # Best ask
 
@@ -248,7 +248,7 @@ ask1_price, ask1_vol, ask1_count = gear['offer_grp'][1] # Best ask
 gears = get_gear_price(['600570.SS', '000001.SZ'])
 ```
 
-### Level2 Data (Requires L2 Access)
+### Level2数据（需L2权限）
 
 ```python
 # Tick-by-tick order data
@@ -273,9 +273,9 @@ transaction = get_individual_transaction(
 
 ---
 
-## Stock & Reference Data
+## 股票与参考数据
 
-### Basic Information
+### 基本信息
 
 ```python
 name = get_stock_name('600570.SS')               # Get stock name
@@ -285,12 +285,12 @@ exrights = get_stock_exrights('600570.SS')        # Get ex-rights/ex-dividend in
 blocks = get_stock_blocks('600570.SS')            # Get sector/block membership
 
 stocks = get_index_stocks('000300.SS')            # Get index constituents
-stocks = get_industry_stocks('银行')              # Get industry constituents
+stocks = get_industry_stocks('银行')              # 获取行业成分股
 stocks = get_Ashares()                            # Get all A-share list
 etfs = get_etf_list()                             # Get ETF list
 ```
 
-### Convertible Bond Data
+### 可转债数据
 
 ```python
 cb_codes = get_cb_list()                          # Get convertible bond code list
@@ -300,7 +300,7 @@ cb_info = get_cb_info()                           # Get convertible bond info Da
 #         maturity_date (maturity date), convert_rate (conversion ratio), convert_price (conversion price), convert_value (conversion value)
 ```
 
-### Financial Data
+### 财务数据
 
 ```python
 get_fundamentals(security, table, fields=None, date=None, start_year=None, end_year=None,
@@ -325,51 +325,51 @@ df = get_fundamentals('600570.SS', 'income_statement', fields=['revenue', 'net_p
 
 > ⚠️ Rate limit: Max 100 calls per second, max 500 records per call. Add `sleep` for batch queries.
 
-### Trading Calendar
+### 交易日历
 
 ```python
 today = get_trading_day()                         # Get current trading day
-all_days = get_all_trades_days()                  # Get all trading days list
+all_days = get_all_trades_days()                  # 获取全部交易日 list
 days = get_trade_days('2024-01-01', '2024-06-30') # Get trading days in range
 ```
 
 ---
 
-## Trading Functions
+## 交易函数
 
-### order — Buy/Sell by Quantity
+### order — 按数量买卖
 
 ```python
 order(security, amount, limit_price=None)
 # amount: positive=buy, negative=sell
-# Returns: order_id (str) or None
+# 收益率: order_id (str) or None
 
-order('600570.SS', 100)                           # Buy 100 shares at latest price
-order('600570.SS', 100, limit_price=39.0)         # Buy 100 shares at limit price 39.0
+order('600570.SS', 100)                           # 买入100股 at latest price
+order('600570.SS', 100, limit_price=39.0)         # 买入100股 at limit price 39.0
 order('600570.SS', -500)                          # Sell 500 shares
 order('131810.SZ', -10)                           # Treasury reverse repo 1000 CNY (10 lots)
 ```
 
-### order_target — Adjust to Target Quantity
+### order_target — 调仓到目标数量
 
 ```python
 order_target('600570.SS', 1000)                   # Adjust position to 1000 shares
 order_target('600570.SS', 0)                      # Close position
 ```
 
-### order_value — Buy by Value
+### order_value — 按金额买入
 
 ```python
 order_value('600570.SS', 100000)                  # Buy 100,000 CNY worth of stock
 ```
 
-### order_target_value — Adjust to Target Value
+### order_target_value — 调仓到目标金额
 
 ```python
 order_target_value('600570.SS', 200000)           # Adjust position value to 200,000 CNY
 ```
 
-### order_market — Market Order Types (Live Only)
+### order_market — 市价单类型（仅实盘）
 
 ```python
 order_market(security, amount, market_type, limit_price=None)
@@ -387,34 +387,34 @@ order_market('000001.SZ', 100, 4)                       # Shenzhen: best 5 level
 
 > ⚠️ Shanghai stocks require `limit_price` when using `order_market`. Convertible bonds are not supported.
 
-### order_tick — Tick-Triggered Order (Use Only in tick_data)
+### order_tick — Tick触发下单（仅在tick_data中使用）
 
 ```python
 def tick_data(context, data):
     order_tick('600570.SS', 100, limit_price=39.0)
 ```
 
-### cancel_order — Cancel Order
+### cancel_order — 撤单
 
 ```python
-cancel_order(order_id)          # Cancel order
+cancel_order(order_id)          # 撤单
 cancel_order_ex(order_id)       # Extended cancel order
 ```
 
-### IPO Subscription
+### 新股申购
 
 ```python
 ipo_stocks_order()              # One-click IPO stock/bond subscription
 ```
 
-### After-Hours Fixed Price Order
+### 盘后固定价格委托
 
 ```python
 after_trading_order('600570.SS', 100)             # After-hours fixed price order
 after_trading_cancel_order(order_id)              # After-hours cancel order
 ```
 
-### ETF Operations
+### ETF操作
 
 ```python
 # ETF constituent basket order
@@ -430,18 +430,18 @@ etf_purchase_redemption('510050.SS', -900000)     # Negative=redemption
 
 ---
 
-## Query Functions
+## 查询函数
 
-### Position Query
+### 持仓查询
 
 ```python
 pos = get_position('600570.SS')
 # Position object: amount (holding quantity), cost_basis (cost price), last_sale_price (latest price), sid (security code), ...
 
-positions = get_positions(['600570.SS', '000001.SZ'])  # Query positions for multiple stocks
+positions = get_positions(['600570.SS', '000001.SZ'])  # 查询持仓 for multiple stocks
 ```
 
-### Order Query
+### 委托查询
 
 ```python
 open_orders = get_open_orders()                   # Query unfilled orders
@@ -451,23 +451,23 @@ all_orders = get_all_orders()                     # Query all orders today (incl
 trades = get_trades()                             # Query today's trades
 ```
 
-### Account Information (via context)
+### 账户信息（通过context）
 
 ```python
-context.portfolio.cash                            # Available cash
-context.portfolio.total_value                     # Total assets (cash + position value)
-context.portfolio.positions_value                 # Position market value
+context.portfolio.cash                            # 可用资金
+context.portfolio.total_value                     # 总资产 (cash + position value)
+context.portfolio.positions_value                 # 持仓市值
 context.portfolio.positions                       # Position dict (Position objects)
 context.capital_base                              # Initial capital
 context.previous_date                             # Previous trading day
-context.blotter.current_dt                        # Current datetime
+context.blotter.current_dt                        # 当前日期time
 ```
 
 ---
 
-## Margin Trading
+## 融资融券
 
-### Trading Operations
+### 交易操作
 
 ```python
 margin_trade('600570.SS', 1000, limit_price=39.0) # Collateral buy/sell
@@ -479,7 +479,7 @@ marginsec_close('600570.SS', 1000, limit_price=39.0)   # Buy to return borrowed 
 marginsec_direct_refund('600570.SS', 1000)              # Direct securities return
 ```
 
-### Query Operations
+### 查询操作
 
 ```python
 cash_stocks = get_margincash_stocks()             # Query margin-eligible stocks (cash borrowing)
@@ -495,9 +495,9 @@ max_cover = get_marginsec_close_amount('600570.SS') # Query max buy-to-cover qua
 
 ---
 
-## Futures Trading
+## 期货交易
 
-### Trading Operations
+### 交易操作
 
 ```python
 buy_open('IF2401.CFX', 1, limit_price=3500.0)     # Long open (buy to open)
@@ -506,7 +506,7 @@ sell_open('IF2401.CFX', 1, limit_price=3550.0)    # Short open (sell to open)
 buy_close('IF2401.CFX', 1, limit_price=3500.0)    # Short close (buy to close)
 ```
 
-### Query & Settings (Backtest)
+### 查询与设置（回测）
 
 ```python
 margin_rate = get_margin_rate('IF2401.CFX')       # Query margin rate
@@ -517,7 +517,7 @@ set_margin_rate('IF2401.CFX', 0.15)               # Set margin rate (backtest on
 
 ---
 
-## Built-in Technical Indicators
+## 内置技术指标
 
 ```python
 macd = get_MACD('600570.SS', N1=12, N2=26, M=9)  # MACD indicator
@@ -528,7 +528,7 @@ cci = get_CCI('600570.SS', N=14)                  # CCI indicator
 
 ---
 
-## Utility Functions
+## 工具函数
 
 ```python
 log.info('message')                               # Logging (also log.warn, log.error)
@@ -537,7 +537,7 @@ check_limit('600570.SS')                          # Check limit up/down status
 freq = get_frequency()                            # Get current strategy execution frequency
 ```
 
-### Notification Functions
+### 通知函数
 
 ```python
 send_email(context, subject='Signal', content='Buy 600570', to_address='you@email.com')
@@ -546,7 +546,7 @@ send_qywx(context, msg='Buy signal triggered')   # WeCom (Enterprise WeChat) not
 
 ---
 
-## Global Objects & Context
+## 全局对象与上下文
 
 ```python
 # g — Global object (persisted across bars, auto-serialized)
@@ -556,18 +556,18 @@ g.stock_list = ['600570.SS', '000001.SZ']
 g.__my_class_instance = SomeClass()
 
 # context — Strategy context
-context.portfolio.cash              # Available cash
-context.portfolio.total_value       # Total assets
-context.portfolio.positions_value   # Position market value
+context.portfolio.cash              # 可用资金
+context.portfolio.total_value       # 总资产
+context.portfolio.positions_value   # 持仓市值
 context.portfolio.positions         # Position dict (Position objects)
 context.capital_base                # Initial capital
 context.previous_date               # Previous trading day
-context.blotter.current_dt          # Current datetime (datetime.datetime)
+context.blotter.current_dt          # 当前日期time (datetime.datetime)
 ```
 
 ---
 
-## Persistence Mechanism
+## 持久化机制
 
 Ptrade automatically serializes and saves the `g` object using pickle after `before_trading_start`, `handle_data`, and `after_trading_end` execute. On restart, `initialize` runs first, then persisted data is restored.
 
@@ -598,9 +598,9 @@ def handle_data(context, data):
 
 ---
 
-## Strategy Examples
+## 策略示例
 
-### Example 1: Call Auction Limit-Up Chasing
+### 示例1：集合竞价追涨停
 
 ```python
 def initialize(context):
@@ -623,7 +623,7 @@ def handle_data(context, data):
     pass
 ```
 
-### Example 2: Tick-Level Moving Average Strategy
+### 示例2：Tick级别均线策略
 
 ```python
 def initialize(context):
@@ -660,7 +660,7 @@ def handle_data(context, data):
     pass
 ```
 
-### Example 3: Dual Moving Average Strategy
+### 示例3：双均线策略
 
 ```python
 def initialize(context):
@@ -687,7 +687,7 @@ def handle_data(context, data):
         log.info(f'Sell {security}')
 ```
 
-### Example 4: After-Hours Reverse Repo + IPO Subscription
+### 示例4：盘后逆回购 + 新股申购
 
 ```python
 def initialize(context):
@@ -713,23 +713,23 @@ def handle_data(context, data):
 
 ---
 
-## Order Status Codes
+## 订单状态码
 
-| Status Code | Description |
+| 状态码 | 描述 |
 |---|---|
-| 0 | Not submitted |
-| 1 | Pending submission |
-| 2 | Submitted |
-| 5 | Partially filled |
-| 6 | Fully filled (backtest) |
-| 7 | Partially cancelled |
-| 8 | Fully filled (live) |
-| 9 | Rejected |
-| a | Cancelled |
+| 0 | 未报 |
+| 1 | 待报 |
+| 2 | 已报 |
+| 5 | 部分成交 |
+| 6 | 全部成交（回测） |
+| 7 | 部分撤单 |
+| 8 | 全部成交（实盘） |
+| 9 | 废单 |
+| a | 已撤 |
 
 ---
 
-## Usage Tips
+## 使用技巧
 
 - Strategies run on **broker intranet servers** — no external network access, cannot `pip install`.
 - Use `g` (global object) to persist variables across functions. Variables prefixed with `__` will not be persisted.
@@ -746,9 +746,9 @@ def handle_data(context, data):
 
 ---
 
-## Advanced Examples
+## 进阶示例
 
-### Tick-Level Volume-Price Strategy — Large Order Tracking
+### Tick级量价策略 — 大单跟踪
 
 ```python
 def initialize(context):
@@ -768,7 +768,7 @@ def tick_data(context, data):
     tick = data[stock]['tick']
     trans = data[stock].get('transcation', None)  # Tick-by-tick trades (requires L2 access)
 
-    # Get current price and price change
+    # 获取当前价格 and price change
     last_price = tick['last_px']
     pre_close = tick['preclose_px']
     change_pct = (last_price - pre_close) / pre_close * 100
@@ -812,7 +812,7 @@ def after_trading_end(context, data):
     log.info('Signal counts reset')
 ```
 
-### ETF Arbitrage Strategy — Premium/Discount Monitoring & Trading
+### ETF套利策略 — 溢价/折价监控与交易
 
 ```python
 def initialize(context):
@@ -865,7 +865,7 @@ def handle_data(context, data):
     pass
 ```
 
-### Convertible Bond T+0 Intraday Trading Strategy
+### 可转债T+0日内交易策略
 
 ```python
 def initialize(context):
@@ -929,7 +929,7 @@ def handle_data(context, data):
     pass
 ```
 
-### Scheduled Task Comprehensive Strategy — Pre-Market Selection + Intraday Trading + Post-Market Summary
+### 定时任务综合策略 — 盘前选股 + 盘中交易 + 盘后总结
 
 ```python
 import pickle
@@ -949,7 +949,7 @@ def initialize(context):
 
 def morning_select(context):
     """Pre-market stock selection: screen stocks based on previous day's data"""
-    # Get CSI 300 constituents
+    # 获取沪深300成分股
     hs300 = get_index_stocks('000300.SS')
 
     candidates = []
@@ -1069,7 +1069,7 @@ def handle_data(context, data):
     pass
 ```
 
-### Multi-Strategy Parallel — MACD + KDJ Dual Signal Confirmation
+### 多策略并行 — MACD + KDJ双信号确认
 
 ```python
 def initialize(context):
@@ -1087,7 +1087,7 @@ def handle_data(context, data):
     high = df['high'].values
     low = df['low'].values
 
-    # Calculate MACD indicator
+    # 计算MACD指标
     macd = get_MACD(stock, N1=12, N2=26, M=9)
     dif = macd['DIF']
     dea = macd['DEA']
@@ -1137,6 +1137,6 @@ def handle_data(context, data):
 
 ## 社区与支持
 
-由 **大佬量化 (Boss Quant)** 维护 — 量化交易教学与策略研发团队。
+由 **大佬量化 (BossQuant)** 维护 — 量化交易教学与策略研发团队。
 
-微信客服: **bossquant1** · [Bilibili](https://space.bilibili.com/48693330) · 搜索 **大佬量化** on 微信公众号 / Bilibili / 抖音
+微信客服: **bossquant1** · [Bilibili](https://space.bilibili.com/48693330) · 搜索 **大佬量化** — 微信公众号 / Bilibili / 抖音
