@@ -3,9 +3,15 @@
   "slug": "nini-code-sync",
   "displayName": "Code Sync",
   "latest": {
-    "version": "0.1.2",
-    "publishedAt": 1772767059362,
-    "commit": "https://github.com/openclaw/skills/commit/59aceb3dad99d4fcca8da76ba0b4a439445e4a02"
+    "version": "0.2.1",
+    "publishedAt": 1773656241761,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.1.2",
+      "publishedAt": 1772767059362,
+      "commit": "https://github.com/openclaw/skills/commit/59aceb3dad99d4fcca8da76ba0b4a439445e4a02"
+    }
+  ]
 }
