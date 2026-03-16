@@ -1,11 +1,24 @@
 ---
 name: local-voice-reply
-description: Generate local OPUS/Ogg voice replies (default Juno voice) for Feishu and Discord using a local FastAPI TTS server. Requires ffmpeg on PATH plus local Python deps (torch/torchaudio/chatterbox-tts/fastapi/uvicorn). Activate when /voice_mode_on or when user asks for voice reply/audio message.
+description: Local OPUS/Ogg voice-reply pipeline for Feishu/Discord with structured voice customization. Default voice is Juno (`voice/juno_ref.wav`), with support for registered custom voices via API. Includes FastAPI server + scripts for stable generation/sending. Requires ffmpeg on PATH and Python deps (torch/torchaudio/chatterbox-tts/fastapi/uvicorn). Activate for /voice_mode_on or any user request for voice/audio reply.
 ---
 
 # Local Voice Reply
 
-Use this skill to turn text into a cloned-voice audio reply and deliver it reliably to Feishu or Discord.
+Use this skill to turn text into a cloned/custom-voice audio reply and deliver it reliably to Feishu or Discord.
+
+## Structured skill definition
+
+- Purpose: local low-latency voice replies in Opus/Ogg.
+- Channels: Feishu + Discord.
+- Default voice: `juno` (reference file: `voice/juno_ref.wav`).
+- Custom voice modes:
+  1) File-based: replace/update `voice/juno_ref.wav`.
+  2) Registry-based: upload/register voices via `POST /voice/register`, then call by `voice_name`.
+- Output: `.opus` (Ogg container) under `.openclaw/media/outbound/voice-server-v3/` (or `TARVIS_VOICE_OUTPUT_DIR`).
+- Control scripts:
+  - `scripts/send_voice_reply.ps1` (server API path)
+  - `scripts/generate_cuda_voice.ps1` (stable local CUDA generation path)
 
 Server implementation is kept with the skill (not workspace root):
 - `server/voice_server_v3.py` (FastAPI routes)
@@ -52,6 +65,20 @@ Voice assets are also colocated with the skill:
    - `asVoice=true`
    - For Feishu: `channel=feishu`
    - For Discord: `channel=discord`
+
+## Voice customization guide
+
+### A) Replace default Juno reference
+
+1. Replace `voice/juno_ref.wav` with your target reference voice sample.
+2. Keep sample clean (single speaker, low noise, clear pronunciation).
+3. Restart server and test with `voice_name=juno`.
+
+### B) Register additional named voices
+
+1. Call `POST /voice/register` with a reference sample and target `voice_name`.
+2. Confirm registration under `server/voices/`.
+3. Generate with that `voice_name` in `/speak` or `/speak_stream`.
 
 ## Defaults
 

@@ -1,13 +1,18 @@
 {
   "owner": "tenured-master-chef-607",
   "slug": "local-voice-reply",
-  "displayName": "Local Voice Reply",
+  "displayName": "local-voice-reply",
   "latest": {
-    "version": "3.3.1",
-    "publishedAt": 1773419791514,
-    "commit": "https://github.com/openclaw/skills/commit/75486e8c20c2ea9fde68cf84b6dd73102ec3716e"
+    "version": "3.3.3",
+    "publishedAt": 1773605442016,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.3.1",
+      "publishedAt": 1773419791514,
+      "commit": "https://github.com/openclaw/skills/commit/75486e8c20c2ea9fde68cf84b6dd73102ec3716e"
+    },
     {
       "version": "1.0.1",
       "publishedAt": 1772994265078,
