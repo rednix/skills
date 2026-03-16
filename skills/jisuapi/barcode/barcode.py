@@ -70,7 +70,7 @@ def main():
     if len(sys.argv) < 2:
         print(
             "Usage:\n"
-            "  barcode2.py '{\"barcode\":\"06917878036526\"}'  # 按条形码查询商品",
+            "  barcode.py '{\"barcode\":\"06917878036526\"}'  # 按条形码查询商品",
             file=sys.stderr,
         )
         sys.exit(1)
