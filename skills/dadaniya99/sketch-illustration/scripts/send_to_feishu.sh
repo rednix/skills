@@ -1,6 +1,8 @@
 #!/bin/bash
-# Upload an image and send it to Feishu DM
+# Stable Feishu image send wrapper
 # Usage: bash send_to_feishu.sh <image_path> <open_id>
+
+set -euo pipefail
 
 IMAGE_PATH="$1"
 OPEN_ID="${2:-ou_22f2eefd5abe63e0cd67f4882cec06d4}"
@@ -10,36 +12,33 @@ if [ -z "$IMAGE_PATH" ]; then
   exit 1
 fi
 
-APP_ID="cli_a9f5877b3378dbd8"
-APP_SECRET=$(cat ~/.openclaw/openclaw.json | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['channels']['feishu']['appSecret'])")
+APP_ID=$(python3 - <<'PY'
+import json, pathlib
+cfg=json.loads(pathlib.Path('/root/.openclaw/openclaw.json').read_text())
+fei=cfg['channels']['feishu']
+print(fei.get('appId') or fei.get('accounts',{}).get('default',{}).get('appId'))
+PY
+)
 
-# Get token
-TOKEN=$(curl -s -X POST "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal" \
-  -H "Content-Type: application/json" \
-  -d "{\"app_id\":\"$APP_ID\",\"app_secret\":\"$APP_SECRET\"}" | python3 -c "import json,sys; print(json.load(sys.stdin)['tenant_access_token'])")
+APP_SECRET=$(python3 - <<'PY'
+import json, pathlib
+cfg=json.loads(pathlib.Path('/root/.openclaw/openclaw.json').read_text())
+fei=cfg['channels']['feishu']
+print(fei.get('appSecret') or fei.get('accounts',{}).get('default',{}).get('appSecret'))
+PY
+)
 
-# Upload image
-IMG_KEY=$(curl -s -X POST "https://open.feishu.cn/open-apis/im/v1/images" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "image_type=message" \
-  -F "image=@$IMAGE_PATH" | python3 -c "import json,sys; r=json.load(sys.stdin); print(r.get('data',{}).get('image_key','ERROR: '+str(r)))")
+DOMAIN=$(python3 - <<'PY'
+import json, pathlib
+cfg=json.loads(pathlib.Path('/root/.openclaw/openclaw.json').read_text())
+fei=cfg['channels']['feishu']
+print(fei.get('domain') or fei.get('accounts',{}).get('default',{}).get('domain') or 'feishu')
+PY
+)
 
-echo "Uploaded image_key: $IMG_KEY"
-
-if [[ "$IMG_KEY" == ERROR* ]]; then
-  echo "Upload failed!"
-  exit 1
-fi
-
-# Send message
-RESULT=$(curl -s -X POST "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id" \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d "{\"receive_id\":\"$OPEN_ID\",\"msg_type\":\"image\",\"content\":\"{\\\"image_key\\\":\\\"$IMG_KEY\\\"}\"}")
-
-CODE=$(echo $RESULT | python3 -c "import json,sys; print(json.load(sys.stdin).get('code','?'))")
-if [ "$CODE" = "0" ]; then
-  echo "✅ Image sent successfully!"
-else
-  echo "❌ Send failed: $RESULT"
-  exit 1
-fi
+python3 /root/.openclaw/workspace/skills/feishu-send-file/scripts/send_image.py \
+  "$IMAGE_PATH" \
+  "$OPEN_ID" \
+  "$APP_ID" \
+  "$APP_SECRET" \
+  "$DOMAIN"

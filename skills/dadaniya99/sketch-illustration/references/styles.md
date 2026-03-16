@@ -87,6 +87,34 @@ No flat vector poster style, no 3D, no photorealistic, no complex background, no
 
 ---
 
+## 风格 D：Doodle Infographic 白纸手绘知识图风
+
+**适用场景**：概念对比图、方法论海报、拖延机制图、知识卡片、课堂板书感信息图、公众号配图
+**参考**：白纸手绘知识图、doodle infographic、拟人蜗牛/脑子、手账/课堂笔记海报
+**特征**：白纸背景、铅笔/马克笔线条、便签框/箭头/胶带、小模块很多但不乱、可爱拟人角色、高信息密度、少长段文字
+
+### 风格块
+```
+Hand-drawn doodle infographic on white paper, pencil sketch outlines, marker highlights, sticky notes, arrows, boxed modules, tape decoration, cute anthropomorphic mascot characters, playful but smart, high-information-density but clean composition, classroom board / notebook poster feeling, Chinese labels, educational editorial illustration, not childish, not photorealistic.
+```
+
+### 负面约束
+```
+No photorealistic, no glossy 3D, no flat corporate vector poster, no dark background, no dense unreadable paragraphs, no messy watermark, no random English text.
+```
+
+### 推荐结构
+- **对比图**：左右两栏（人类 vs AI / 旧方案 vs 新方案）
+- **机制图**：中心主题 + 多个原因/环节模块 + 箭头回路
+- **知识海报**：标题 + 4~8 个信息卡片 + 1~2 个拟人角色
+- **流程图**：从左到右或从上到下，关键步骤用短句+图标
+
+### 常用角色灵感
+- 蜗牛：拖延、慢、磨蹭
+- 拟人大脑：心理机制、防御、自我解释
+- 小龙虾：AI 代理、认真臭脸、会先分析后动手
+- 小人/学生：用户、执行者、学习者
+
 ## 风格选择指南
 
 | 需求 | 推荐风格 |
@@ -100,3 +128,6 @@ No flat vector poster style, no 3D, no photorealistic, no complex background, no
 | NotebookLM PPT、复古感封面 | Flat Vector C |
 | 科普内容、课程封面、海报 | Flat Vector C |
 | 几何简化、填色书线稿风 | Flat Vector C |
+| 白纸手绘知识图、方法论、概念对比 | Doodle D |
+| 拖延机制、知识卡片、课堂板书感 | Doodle D |
+| 拟人蜗牛/脑子/龙虾的高信息密度图 | Doodle D |
