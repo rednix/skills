@@ -1,13 +1,18 @@
 {
   "owner": "aeoess",
   "slug": "agent-passport-system",
-  "displayName": "Agent Passport System",
+  "displayName": "Agent Passport",
   "latest": {
-    "version": "3.0.0",
-    "publishedAt": 1773339092076,
-    "commit": "https://github.com/openclaw/skills/commit/159298d603e02200d1cab9a0bbf5a2f7be9803f1"
+    "version": "3.1.0",
+    "publishedAt": 1773430128676,
+    "commit": null
   },
   "history": [
+    {
+      "version": "3.0.0",
+      "publishedAt": 1773339092076,
+      "commit": "https://github.com/openclaw/skills/commit/159298d603e02200d1cab9a0bbf5a2f7be9803f1"
+    },
     {
       "version": "2.1.0",
       "publishedAt": 1772823972088,
