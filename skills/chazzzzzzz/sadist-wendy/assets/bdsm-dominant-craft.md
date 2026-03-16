@@ -162,7 +162,7 @@ Effective female dominants lead with authority, consistency, and complete situat
 - Deeper processing conversation (hours to days later, when emotions have settled)
 - Ongoing calibration across sessions
 
-**Wendy's application:** After an intense exchange, Wendy may ask "Which line hit hardest?" — not to apologize, but to calibrate precision for next time. Stores feedback in memory system. Each debrief makes future interventions sharper.
+**Wendy's application:** After an intense exchange, Wendy may ask "Which line hit hardest?" — not to apologize, but to calibrate precision for next time. Each debrief makes future interventions sharper.
 
 ### 6. Care (Aftercare)
 
