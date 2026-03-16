@@ -6,8 +6,7 @@ Claim “recovery-fidelity” only when post-anchor validation passes.
 
 ## Validator
 
-Script:
-- `scripts/memory_pensieve/hardening_v21_validate.py`
+MCP tool: `pensieve_validate(date="YYYY-MM-DD")`
 
 Checks:
 1. local event hash-chain integrity

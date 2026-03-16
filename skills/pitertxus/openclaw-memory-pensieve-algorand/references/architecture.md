@@ -27,7 +27,7 @@ Important: promoted layers are abstractions and do not replace raw events.
 
 ## Anchor model (v2)
 
-`anchor_daily_algorand.py` encrypts and writes daily payload to Algorand note(s):
+`pensieve_anchor` encrypts and writes daily payload to Algorand note(s):
 
 - encryption: AES-GCM
 - note prefix: `NXP2`

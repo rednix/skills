@@ -1,59 +1,115 @@
 # Ops runbook
 
-Use interpreter:
-
-```bash
-PY=<workspace>/.venv-algo/bin/python
-```
-
-Preflight first:
-
-```bash
-python3 scripts/preflight_requirements.py
-```
+All operations are performed via MCP tools exposed by `server.py`.
+No scripts, no venv, no shell commands needed for daily use.
 
 ## Daily sequence
 
-```bash
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/auto_capture_daily.py
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/dream_cycle_daily.py
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/anchor_daily_algorand.py
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/read_anchor_latest.py
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/hardening_v21_validate.py
+### 1. Capture events (throughout the day)
+
+```
+pensieve_capture(content="...", source="manual", importance=0.7, tags=["..."])
 ```
 
-## Expected outputs
+Safe to call multiple times — deduplicates by content hash.
 
-- `anchor_daily_algorand.py`:
-  - `status=anchored` or `status=noop_already_anchored`
-  - `events`, `semantic`, `procedural`, `self_model`
-  - `txid` or `txids[]`
-  - `multi_tx` true/false
+### 2. Dream cycle (end of day)
 
-- `read_anchor_latest.py`:
-  - latest anchor metadata + counts
+```
+pensieve_dream_cycle()
+```
 
-- `hardening_v21_validate.py`:
-  - `ok=true/false`
-  - parity: `local_events` vs `onchain_events`
-  - `issues[]` and `warnings[]`
+Scans last 24 h of events and promotes recurring patterns into semantic,
+procedural, and self_model layers.
+
+### 3. Anchor to Algorand
+
+```
+pensieve_anchor()
+```
+
+Encrypts and commits today's memory to the blockchain. Idempotent — safe
+to call more than once; skips if the same ledger tip is already anchored.
+
+### 4. Validate
+
+```
+pensieve_validate()
+```
+
+Runs v2.1 hardening: chain integrity, decrypt, chunk hash verification,
+parity checks. Trust recovery claims only when `ok=true`.
+
+---
+
+## Status check (any time)
+
+```
+pensieve_status()
+```
+
+Returns layer counts, chain tip, last anchor date, and today's cost estimate.
+
+---
 
 ## Recovery
 
-```bash
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/recover_from_blockchain.py YYYY-MM-DD --restore
+```
+pensieve_recover(date="YYYY-MM-DD")
 ```
 
-Writes recovered files in:
+Inspect recovered data without writing files.
+
+```
+pensieve_recover(date="YYYY-MM-DD", restore=True)
+```
+
+Reconstruct memory from the blockchain and write files to `memory/recovered/`:
+
 - `memory/recovered/events_recovered_YYYY-MM-DD.jsonl`
 - `memory/recovered/semantic_recovered_YYYY-MM-DD.jsonl`
 - `memory/recovered/procedural_recovered_YYYY-MM-DD.jsonl`
 - `memory/recovered/self_model_recovered_YYYY-MM-DD.jsonl`
 
-## Emergency backfill
+Prefers fetching note data from the blockchain via txid; falls back to the
+locally cached `note_b64` if the indexer is unreachable.
 
-```bash
-$PY /home/molty/.openclaw/workspace/scripts/memory_pensieve/capture_from_logs.py YYYY-MM-DD
+---
+
+## Expected tool outputs
+
+### `pensieve_anchor`
+
+```json
+{"ok": true, "status": "anchored", "txid": "...", "multi_tx": false, "cost_algo_estimate": 0.001}
+```
+or
+```json
+{"ok": true, "status": "noop_already_anchored", "date": "YYYY-MM-DD"}
+```
+or (large payload)
+```json
+{"ok": true, "status": "anchored", "txids": ["..."], "multi_tx": true, "total_parts": 3}
 ```
 
-Use only when raw events were not captured in normal flow.
+### `pensieve_validate`
+
+```json
+{"ok": true, "local_events": 12, "onchain_events": 12, "issues": [], "warnings": [], "recovery_verdict": "PASS"}
+```
+
+### `pensieve_recover`
+
+```json
+{"ok": true, "date": "YYYY-MM-DD", "verified": true, "events": 12, "semantic": 4, "procedural": 1, "self_model": 0}
+```
+
+---
+
+## Common failure signatures
+
+- `events count mismatch local=X onchain=Y` — anchor may be incomplete; re-run `pensieve_anchor`
+- `entry_hash set mismatch local vs onchain` — local file modified after anchor; investigate before recovery
+- `content_hash mismatch` — data may be corrupted; do not trust recovery from this anchor
+- `missing parts` — multi-TX anchor is incomplete; re-anchor if local data is intact
+- `no anchored rows for date` — `pensieve_anchor` was never run for that date
