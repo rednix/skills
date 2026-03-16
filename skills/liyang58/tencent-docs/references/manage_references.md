@@ -191,7 +191,7 @@
 
 ### manage.import_file
 
-**功能**：将本地文件导入到腾讯云文档，返回导入任务 ID。需配合 `manage.import_progress` 轮询查询导入进度，直到任务完成。
+**功能**：将本地文件导入到腾讯云文档。调用后返回task_id，必须配合 `manage.import_progress` 轮询查询导入进度（建议间隔3-5秒），直到progress=100表示导入完成。
 
 **使用场景**：
 - 将本地 docx/xlsx/pptx 等文件导入为腾讯云文档在线文档
@@ -203,10 +203,10 @@
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|-----|------|
-| `file_name` | string | ✅ | 文件名称（含后缀），如 `report.docx` |
-| `file_size` | integer | ✅ | 文件大小（字节数） |
-| `file_md5` | string | ✅ | 文件的 MD5 哈希值 |
-| `file_base64` | string | ✅ | 文件内容经 Base64 编码后的字符串 |
+| `file_name` | string | ✅ | 文件名称（含后缀），如 `report.docx`。支持的文件后缀有xls,xlsx,csv,doc,docx,txt,text,ppt,pptx,pdf,xmind |
+| `file_size` | integer | ✅ | 文件大小，单位为字节(bytes)，如 `36752` |
+| `file_md5` | string | ✅ | 文件的MD5哈希值，hex编码的32位小写字符串，如 `d41d8cd98f00b204e9800998ecf8427e` |
+| `file_base64` | string | ✅ | 文件完整内容经标准Base64编码(StdEncoding)后的字符串，注意不是URL-safe编码 |
 
 **返回字段**：
 
@@ -240,7 +240,7 @@
 
 ### manage.import_progress
 
-**功能**：根据导入任务 `task_id` 查询导入进度。
+**功能**：根据导入任务 `task_id` 查询导入进度。每隔3-5秒轮询一次，当progress=100时表示导入完成，此时返回file_id和file_url。
 
 **使用场景**：
 - 调用 `manage.import_file` 后轮询查询导入状态
@@ -298,7 +298,7 @@
 
 ### manage.export_file
 
-**功能**：根据云文档 ID 发起导出任务，返回导出任务 ID。需配合 `manage.export_progress` 轮询查询导出进度，导出完成后获取文件下载链接。
+**功能**：根据云文档 ID 发起导出任务，返回导出任务 ID。需配合 `manage.export_progress` 轮询查询导出进度（建议间隔3-5秒），导出完成后获取file_url下载链接（带签名的临时URL，有效期约30分钟）。
 
 **使用场景**：
 - 将云端在线文档导出为本地 docx/xlsx/pptx 文件
@@ -337,7 +337,7 @@
 
 ### manage.export_progress
 
-**功能**：根据导出任务 `task_id` 查询导出进度，导出完成后返回文件下载链接。
+**功能**：根据导出任务 `task_id` 查询导出进度。每隔3-5秒轮询一次，当progress=100时表示导出完成，此时返回file_url（带签名的临时下载链接，有效期约30分钟）。
 
 **使用场景**：
 - 调用 `manage.export_file` 后轮询查询导出状态
@@ -353,10 +353,10 @@
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `progress` | integer | 导出进度百分比（0-100） |
+| `progress` | integer | 导出进度百分比（0-100），100表示导出完成 |
 | `status` | string | 任务状态 |
 | `file_name` | string | 导出的文件名 |
-| `file_url` | string | 文件下载链接（导出完成后返回，有效期有限） |
+| `file_url` | string | 文件下载链接（导出完成后返回，带签名的临时URL，有效期约30分钟） |
 | `error` | string | 错误信息（失败时返回） |
 
 **调用示例**：

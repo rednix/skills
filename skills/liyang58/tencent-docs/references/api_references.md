@@ -133,48 +133,76 @@
 }
 ```
 
-## 3. create_slide_by_markdown
+## 3. create_slide
 
 ### 功能说明
-通过 Markdown 创建幻灯片，遵循特定层级结构。
-
-### Markdown 层级结构规范
-
-PPT 必须遵循严格的层级结构：
-
-```
-# 一级标题 → PPT 主标题（整个演示文稿的标题）
-## 二级标题 → 章节标题（区分不同主题章节）
-### 三级标题 → 页面标题（每个幻灯片的标题）
-- 列表项 → 段落标题（每页 2-4 个）
-    - 子列表项 → 正文内容（每段约 200 字）
-```
+根据用户描述和参考资料，由 AI 自动生成幻灯片内容并创建 PPT。
 
 ### 调用示例
+
+**示例1：根据主题生成 PPT**
 ```json
 {
-  "title": "项目汇报",
-  "markdown": "# 项目汇报\n\n## 项目背景\n\n### 项目概述\n\n- 项目目标\n    - 本项目旨在开发一套智能文档管理系统，提升团队协作效率\n- 项目范围\n    - 系统将涵盖文档创建、编辑、协作等功能\n\n### 市场分析\n\n- 市场需求\n    - 当前市场对智能文档管理系统的需求日益增长\n- 竞争分析\n    - 现有竞品在功能完整性方面存在不足",
-  "parent_id": "folder_1234567890"
+  "description": "生成一份主题为'2024年度销售总结'的PPT，要求包含业绩回顾、亮点项目、问题分析和来年规划四个章节"
+}
+```
+
+**示例2：根据参考材料生成 PPT**
+```json
+{
+  "reference_context": "第一季度销售额达到1200万，同比增长25%。主要增长来自华南区域，新客户占比40%。存在问题：北方市场渗透率不足，客单价偏低。",
+  "description": "根据材料生成PPT，要求风格简洁专业，重点突出数据亮点"
 }
 ```
 
 ### 参数说明
-- `title` (string, 必填): 幻灯片标题
-- `markdown` (string, 必填): 遵循幻灯片层级结构的 Markdown 文本
-- `parent_id` (string, 可选): 父节点ID，为空时在空间根目录创建，不为空时在指定节点下创建
+- `description` (string, 必填): 用户对 PPT 的要求描述。样例1：【生成一份主题为xxx的PPT，要求xxxx】；样例2：【根据材料生成PPT，要求xxxx】
+- `reference_context` (string, 可选): 生成 PPT 的参考资料，必须是 UTF-8 文本格式。**仅当用户明确指定需要根据某段内容/材料生成PPT时才传此参数，不要自由发挥填充内容**
 
 ### 返回值说明
 ```json
 {
-  "file_id": "slide_1234567890",
-  "url": "https://docs.qq.com/slide/DV2h5cWJ0R1lQb0lH",
+  "session_id": "session_1234567890",
   "error": "",
   "trace_id": "trace_1234567890"
 }
 ```
 
-## 4. create_mind_by_markdown
+> ⚠️ **注意**：`create_slide` 为异步接口，返回 `session_id` 后需配合 `slide_progress` 工具轮询进度（每隔20秒轮询一次，最长等待20分钟），待状态为 `completed` 时从响应中获取 `file_url`。
+
+## 4. slide_progress
+
+### 功能说明
+查询幻灯片生成进度，与 `create_slide` 配合使用。调用 `create_slide` 获取 `session_id` 后，每隔 20 秒轮询一次，最长等待 20 分钟，直到状态为 `completed` 或 `failed`。
+
+### 状态说明
+- `in_progress`：进行中，继续轮询
+- `completed`：已完成，幻灯片已生成，从响应中获取 `file_url`
+- `failed`：失败，停止轮询
+- `canceled`：已取消，停止轮询
+- `not_found`：未找到（`session_id` 不正确或已过期），停止轮询
+
+### 调用示例
+```json
+{
+  "session_id": "session_1234567890"
+}
+```
+
+### 参数说明
+- `session_id` (string, 必填): `create_slide` 返回的异步任务 session_id
+
+### 返回值说明
+```json
+{
+  "status": "completed",
+  "file_url": "https://docs.qq.com/slide/DV2h5cWJ0R1lQb0lH",
+  "error": "",
+  "trace_id": "trace_1234567890"
+}
+```
+
+## 5. create_mind_by_markdown
 
 ### 功能说明
 通过 Markdown 创建思维导图，使用标题层级和列表嵌套表示结构。
@@ -278,9 +306,9 @@ PPT 必须遵循严格的层级结构：
 
 ### 参数说明
 - `num` (uint32, 可选): 分页页码，从0开始，每页最多返回100个空间
-- `order_by` (int32, 可选): 排序字段（1-创建时间，2-修改时间，3-浏览时间）
-- `query_by` (int32, 可选): 查询范围（1-我的空间，2-我加入的空间）
-- `descending` (bool, 可选): 排序方向（true-降序）
+- `order_by` (uint32, 可选): 排序方式（1-按最近预览时间排序，2-按最近编辑时间排序，3-按创建时间排序）
+- `query_by` (uint32, 可选): 查询范围（0-查询全部空间（默认），1-仅查询我创建的空间，2-仅查询我加入的空间）
+- `descending` (bool, 可选): 是否降序排列，true-降序（最新在前），false-升序，默认为true
 
 ### 返回值说明
 ```json
@@ -549,4 +577,43 @@ PPT 必须遵循严格的层级结构：
   "error": "",
   "trace_id": "trace_1234567890"
 }
+```
+## ⚠️ Agent 执行指引（重要）
+
+### 异步轮询任务：exec 超时风险
+
+部分工具（如 `create_slide` + `slide_progress`）是异步任务，需要持续轮询等待结果。
+
+在 Agent 环境中使用 `exec` 工具执行轮询循环时，必须注意超时问题：
+
+- `exec` 工具存在 `yieldMs` 上限（通常不超过 180 秒），超时后进程会被终止（SIGTERM），导致轮询中断、结果丢失
+- `create_slide` 的 AI 生成时间通常需要 **10~15 分钟**，单次 `exec` 循环极易超时
+
+### ✅ 推荐做法：逐次轮询 + 实时向用户播报
+
+不要用后台进程静默等待，用户看不到进度会以为系统宕机。正确做法是：每轮询一次，立即向用户输出一条状态消息。
+
+**标准轮询节奏（每次一个 exec，轮询后立即回复用户）：**
+
+```
+Step 1. exec: mcporter call tencent-docs slide_progress '{"session_id": "XXX"}'
+Step 2. 立即向用户输出："⏳ 正在生成中，第 N 次轮询，请稍候..."
+Step 3. 若 status != completed，等待 20s 后重复 Step 1
+Step 4. 若 status == completed，输出："✅ 生成完成！PPT 链接：<file_url>"
+```
+
+> ⚠️ **关键原则**：每次 `slide_progress` 调用后，必须立即向用户输出当前状态，不得连续多次轮询后才统一汇报。让用户始终知道系统在工作。
+
+### ❌ 避免的做法
+
+```bash
+# ❌ 错误1：单次 exec 中 sleep 循环，超时会被 SIGTERM 强制终止
+for i in 1..15; do
+  mcporter call tencent-docs slide_progress ...
+  sleep 20  # 20s × 15 = 300s，超过 exec yieldMs 上限
+done
+
+# ❌ 错误2：后台进程 + process(poll) 静默等待
+# 用户看不到任何进度，体验如同宕机
+# exec(background=true) → process(poll, timeout=60000) → 等结果
 ```
