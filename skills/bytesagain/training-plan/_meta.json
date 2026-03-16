@@ -3,11 +3,16 @@
   "slug": "training-plan",
   "displayName": "Training Plan",
   "latest": {
-    "version": "1.0.1",
-    "publishedAt": 1773539323272,
-    "commit": "https://github.com/openclaw/skills/commit/7f551561f1ecaae999b8ab716292bbaba42e1084"
+    "version": "1.0.6",
+    "publishedAt": 1773674082048,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.1",
+      "publishedAt": 1773539323272,
+      "commit": "https://github.com/openclaw/skills/commit/7f551561f1ecaae999b8ab716292bbaba42e1084"
+    },
     {
       "version": "2.3.0",
       "publishedAt": 1773446969207,

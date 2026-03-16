@@ -1,12 +1,16 @@
 ---
+version: "2.0.0"
 name: training-plan
 description: "培训计划设计工具。培训方案设计、课程体系、效果评估、培训材料、日程安排、证书模板。Training plan designer with curriculum, evaluation, materials, scheduling, certificates. 培训、课程设计、企业培训、员工发展。Use when designing training programs. Triggers on: training plan."
+author: BytesAgain
 ---
 # training-plan
 
 培训计划设计工具。培训方案设计、课程体系、效果评估、培训材料、日程安排、证书模板。Training plan designer with curriculum, evaluation, materials, scheduling, certificates. 培训、课程设计、企业培训、员工发展。Use when designing training programs.
 
 ## 速查表
+
+See commands above.
 
 ## 命令列表
 
@@ -19,9 +23,7 @@ description: "培训计划设计工具。培训方案设计、课程体系、效
 | `schedule` | schedule |
 | `certificate` | certificate |
 
-
 > 💡 小技巧：先用 `help` 查看所有命令，再选择最适合的
-
 
 ## 专业建议
 
@@ -36,7 +38,6 @@ description: "培训计划设计工具。培训方案设计、课程体系、效
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
-
 
 ## Examples
 
