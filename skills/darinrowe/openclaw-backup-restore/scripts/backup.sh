@@ -184,8 +184,16 @@ else
     git remote set-url origin "$REPO_URL" || true
 fi
 
-SKILL_DIR="${HOME}/.openclaw/workspace/skills/openclaw-backup-restore"
-if [ ! -f "${BACKUP_DIR}/.gitignore" ] && [ -f "${SKILL_DIR}/.gitignore" ]; then
+SKILL_DIR_SHARED="${HOME}/.openclaw/skills/openclaw-backup-restore"
+SKILL_DIR_WORKSPACE="${HOME}/.openclaw/workspace/skills/openclaw-backup-restore"
+SKILL_DIR=""
+if [ -f "${SKILL_DIR_SHARED}/.gitignore" ]; then
+    SKILL_DIR="$SKILL_DIR_SHARED"
+elif [ -f "${SKILL_DIR_WORKSPACE}/.gitignore" ]; then
+    SKILL_DIR="$SKILL_DIR_WORKSPACE"
+fi
+
+if [ ! -f "${BACKUP_DIR}/.gitignore" ] && [ -n "$SKILL_DIR" ] && [ -f "${SKILL_DIR}/.gitignore" ]; then
     echo "Copying .gitignore from skill directory..."
     cp "${SKILL_DIR}/.gitignore" "${BACKUP_DIR}/.gitignore"
 fi
