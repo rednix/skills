@@ -1,6 +1,8 @@
 ---
+version: "2.0.0"
 name: proofreader
 description: "校对/错别字检查、语法纠错、文风统一、一致性检查、可读性评分、校对报告。Proofreading with typo detection, grammar correction, style consistency, readability scoring, and full reports. Use when you need proofreader capabilities. Triggers on: proofreader."
+author: BytesAgain
 ---
 # proofreader
 
@@ -25,7 +27,6 @@ A: 主要输出Markdown格式，方便复制和编辑。
 | `readability` | readability |
 | `report` | report |
 
-
 ## 专业建议
 
 - 分层校对**：先查错别字，再查语法，最后查风格——分开检查更不容易遗漏
@@ -39,3 +40,17 @@ A: 主要输出Markdown格式，方便复制和编辑。
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
+
+## Examples
+
+```bash
+# Show help
+proofreader help
+
+# Run
+proofreader run
+```
+
+## Commands
+
+Run `proofreader help` to see all available commands.

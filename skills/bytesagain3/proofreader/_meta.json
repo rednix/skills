@@ -3,11 +3,16 @@
   "slug": "proofreader",
   "displayName": "Proofreader",
   "latest": {
-    "version": "2.2.0",
-    "publishedAt": 1773444848806,
-    "commit": "https://github.com/openclaw/skills/commit/02e0a7b429b4fd72edfc594447b19b79afde4cef"
+    "version": "1.0.6",
+    "publishedAt": 1773666849148,
+    "commit": null
   },
   "history": [
+    {
+      "version": "2.2.0",
+      "publishedAt": 1773444848806,
+      "commit": "https://github.com/openclaw/skills/commit/02e0a7b429b4fd72edfc594447b19b79afde4cef"
+    },
     {
       "version": "1.0.0",
       "publishedAt": 1773245878752,
