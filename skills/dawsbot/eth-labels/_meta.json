@@ -1,0 +1,11 @@
+{
+  "owner": "dawsbot",
+  "slug": "eth-labels",
+  "displayName": "Eth Labels",
+  "latest": {
+    "version": "1.0.1",
+    "publishedAt": 1773642447146,
+    "commit": null
+  },
+  "history": []
+}
