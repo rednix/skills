@@ -3,9 +3,15 @@
   "slug": "youtube-playlist-yutu",
   "displayName": "YouTube Playlist",
   "latest": {
-    "version": "0.10.6-3",
-    "publishedAt": 1773335136799,
-    "commit": "https://github.com/openclaw/skills/commit/f45b3b5415223d191a4cbdd01880f18b6e8c9946"
+    "version": "0.10.7-dev",
+    "publishedAt": 1773497165367,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.10.6-3",
+      "publishedAt": 1773335136799,
+      "commit": "https://github.com/openclaw/skills/commit/f45b3b5415223d191a4cbdd01880f18b6e8c9946"
+    }
+  ]
 }
