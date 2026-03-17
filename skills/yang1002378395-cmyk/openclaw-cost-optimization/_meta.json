@@ -3,9 +3,15 @@
   "slug": "openclaw-cost-optimization",
   "displayName": "Openclaw Cost Optimization",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1773492552017,
-    "commit": "https://github.com/openclaw/skills/commit/576eab5a35a7a19d099c47981c94bc30b19ffd29"
+    "version": "1.0.2",
+    "publishedAt": 1773524596431,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1773492552017,
+      "commit": "https://github.com/openclaw/skills/commit/576eab5a35a7a19d099c47981c94bc30b19ffd29"
+    }
+  ]
 }
