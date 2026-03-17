@@ -3,11 +3,16 @@
   "slug": "ai-agent-builder",
   "displayName": "Ai Agent Builder",
   "latest": {
-    "version": "1.0.43",
-    "publishedAt": 1773631895553,
-    "commit": "https://github.com/openclaw/skills/commit/9a670ecd9c935654ccdb87084225d2a680ac2bfa"
+    "version": "1.0.52",
+    "publishedAt": 1773632955754,
+    "commit": null
   },
   "history": [
+    {
+      "version": "1.0.43",
+      "publishedAt": 1773631895553,
+      "commit": "https://github.com/openclaw/skills/commit/9a670ecd9c935654ccdb87084225d2a680ac2bfa"
+    },
     {
       "version": "1.0.42",
       "publishedAt": 1773631769625,
