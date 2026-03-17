@@ -3,9 +3,15 @@
   "slug": "enterprisecontact",
   "displayName": "企业联系方式查询 - Enterprise Contact Information Query",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773378573738,
-    "commit": "https://github.com/openclaw/skills/commit/108c6c8cfb19f6d0eb95092442b925d4a5342f5a"
+    "version": "1.0.1",
+    "publishedAt": 1773632131189,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773378573738,
+      "commit": "https://github.com/openclaw/skills/commit/108c6c8cfb19f6d0eb95092442b925d4a5342f5a"
+    }
+  ]
 }

@@ -22,17 +22,17 @@ $env:JISU_API_KEY="your_appkey_here"
 
 ## 脚本路径
 
-脚本文件：`skill/enterprisecontact/enterprisecontact.py`
+脚本文件：`skills/enterprisecontact/enterprisecontact.py`
 
 ## 使用方式
 
 ### 企业联系方式查询（query）
 
 ```bash
-python3 skill/enterprisecontact/enterprisecontact.py query '{"company":"北京抖音信息服务有限公司"}'
-python3 skill/enterprisecontact/enterprisecontact.py query '{"creditno":"91110000xxxx"}'
-python3 skill/enterprisecontact/enterprisecontact.py query '{"regno":"110000xxxx"}'
-python3 skill/enterprisecontact/enterprisecontact.py query '{"orgno":"xxxx"}'
+python3 skills/enterprisecontact/enterprisecontact.py query '{"company":"北京抖音信息服务有限公司"}'
+python3 skills/enterprisecontact/enterprisecontact.py query '{"creditno":"91110000xxxx"}'
+python3 skills/enterprisecontact/enterprisecontact.py query '{"regno":"110000xxxx"}'
+python3 skills/enterprisecontact/enterprisecontact.py query '{"orgno":"xxxx"}'
 ```
 
 | 参数     | 类型   | 必填 | 说明 |
