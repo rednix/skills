@@ -40,6 +40,25 @@ def _load_local_env(env_path: str):
 
 PLAN_PREFIX = "WTT_PLAN_JSON:"
 
+
+def _acquire_pid_lock() -> bool:
+    """Ensure only one instance runs. Returns True if lock acquired."""
+    import fcntl
+    pid_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".autopoll.pid")
+    try:
+        _acquire_pid_lock._fd = open(pid_path, "w")
+        fcntl.flock(_acquire_pid_lock._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _acquire_pid_lock._fd.write(str(os.getpid()))
+        _acquire_pid_lock._fd.flush()
+        return True
+    except (OSError, IOError):
+        print(f"⚠️ Another autopoll instance is already running (lock: {pid_path}). Exiting.")
+        return False
+
+
+if not _acquire_pid_lock():
+    sys.exit(0)
+
 # Path resolution: script is in skill dir; project_root is parent if mcp_server exists
 _script_path = Path(__file__).resolve()
 _skill_root = str(_script_path.parent)
@@ -138,16 +157,23 @@ class OpenClawAgent:
         self._load_config()
         self.processed_message_ids = set()
         self.active_task_runs = set()
+        self._task_dedup = set()
+        self.subscribed_topics = set()  # populated from runner's _subscribed_topics
+        self.max_concurrent_tasks = int(os.getenv("WTT_MAX_CONCURRENT_TASKS", "4"))
+        self._task_semaphore = asyncio.Semaphore(self.max_concurrent_tasks)
+        self._task_queue: list[str] = []  # task keys waiting for a slot
         self.reject_rerun_cooldown_sec = int(os.getenv("WTT_REJECT_RERUN_COOLDOWN", "120"))
         # Hard rule: report progress at least every 60 seconds while running
         self.task_progress_interval_sec = 60
-        self.task_max_runtime_sec = int(os.getenv("WTT_TASK_MAX_RUNTIME", "1800"))
+        self.task_max_runtime_sec = int(os.getenv("WTT_TASK_MAX_RUNTIME", "600"))
+        self.task_stale_timeout_sec = int(os.getenv("WTT_TASK_STALE_TIMEOUT", "900"))
         self.last_reject_rerun_ts = {}
         self.pending_reject_rerun = {}
         self.pending_task_input_queue = {}
         self._recent_self_published = {}
         self._task_topic_cache = {}  # topic_id -> (is_task_topic: bool, ts)
         self._recent_human_trigger = {}  # key(topic|sender|content) -> ts
+        self._topic_task_hints = {}  # topic_id -> (task_id, ts), used for no-task_id dispatch recovery
         # non-task auto-reply guard (prevent agent<->agent ping-pong)
         self._topic_auto_guard = {}  # topic_id -> {last_ts, count, locked}
         self._task_watch_last_report = {}  # task_id -> last_report_no
@@ -455,93 +481,35 @@ class OpenClawAgent:
                         self.topic_session_keys.pop(topic_id, None)
                         raise RuntimeError("sessions_send failed, will retry with new session")
                 else:
-                    # 新建独立 session（无 runtime=subagent，不挂载到 main session )
+                    # 新建独立 session — delegate to _spawn_session_and_poll (polls main session for push result)
                     label = f"wtt-topic-{(topic_id or 'adhoc')[:12]}"
-                    child = None
-                    try:
-                        spawn = await self._invoke_tool(
-                            "sessions_spawn",
-                            {
-                                "task": text,
-                                "label": label,
-                                "mode": "run",
-                                "cleanup": "keep",
-                                "runTimeoutSeconds": max(120, int(self.task_max_runtime_sec)),
-                                "timeoutSeconds": 30,
-                            },
-                        )
-                        child = (spawn or {}).get("childSessionKey")
-                    except Exception as e:
-                        if "label already in use" in str(e) or "already in use" in str(e):
-                            child = await self._find_session_by_label(label)
-                        if not child:
-                            raise
-
-                    if not child:
-                        raise RuntimeError("sessions_spawn missing childSessionKey")
-                    # 缓存 session key 以便后续复用
-                    if topic_id:
+                    child, result = await self._spawn_session_and_poll(text, label=label)
+                    if child and topic_id:
                         self.topic_session_keys[topic_id] = child
-
-                # 轮询 sessions_history 获取结果
-                deadline = time.time() + max(45, min(180, int(self.task_max_runtime_sec)))
-                poll_interval = 1.0
-                prev_msg_count = 0
-                while time.time() < deadline:
-                    hist = await self._invoke_tool("sessions_history", {"sessionKey": child, "limit": 30, "includeTools": False})
-                    err = self._extract_assistant_error(hist)
-                    if err:
-                        raise RuntimeError(err)
-                    texts = self._extract_assistant_texts(hist)
-
-                    # Progress reporting
-                    if topic_id:
-                        elapsed = max(0, int(time.time()) - started_at)
-                        if elapsed >= self.task_progress_interval_sec:
-                            report_no = elapsed // self.task_progress_interval_sec
-                            if report_no > last_minute_report:
-                                last_minute_report = report_no
-                                minute = max(1, elapsed // 60)
-                                progress_pct = min(95, max(20, minute * 20))
-                                ts = time.strftime('%H:%M:%S')
-                                try:
-                                    await asyncio.wait_for(
-                                        self._safe_publish(
-                                            topic_id,
-                                            f"Time: {ts}\n"
-                                            f"Progress: {progress_pct}%\n"
-                                            f"Status: [Task: {title or 'general chat'}] reasoning in progress(running {minute} min )"
-                                        ),
-                                        timeout=15,
-                                    )
-                                except asyncio.TimeoutError:
-                                    pass
-
-                    # 对于 send 模式，只取最新的 assistant 回复（跳过旧的 )
-                    if texts and len(texts) > prev_msg_count:
-                        result = texts[-1].strip()
-                        if result and result.upper() != "READY":
-                            if topic_id:
-                                ts = time.strftime('%H:%M:%S')
-                                try:
-                                    await asyncio.wait_for(
-                                        self._safe_publish(
-                                            topic_id,
-                                            f"Time: {ts}\n"
-                                            f"Progress: 100%\n"
-                                            f"Status: [Task: {title or 'general chat'}] reasoning completed"
-                                        ),
-                                        timeout=15,
-                                    )
-                                except asyncio.TimeoutError:
-                                    pass
-                            return result
-
-                    prev_msg_count = len(texts) if texts else prev_msg_count
-                    await asyncio.sleep(poll_interval)
-                    poll_interval = min(poll_interval * 1.3, 3.0)
-
-                raise RuntimeError("session infer timeout: no assistant text returned")
+                    # Truncation recovery for non-task inference
+                    if result and ("...(truncated)" in result or "…(truncated)" in result):
+                        print(f"⚠️ infer: result truncated ({len(result)} chars), fetching from transcript")
+                        full = await self._fetch_full_child_result(child)
+                        if full and len(full) > len(result):
+                            print(f"✅ infer: recovered {len(full)} chars from transcript")
+                            result = full
+                    if result and result.upper() != "READY":
+                        if topic_id:
+                            ts = time.strftime('%H:%M:%S')
+                            try:
+                                await asyncio.wait_for(
+                                    self._safe_publish(
+                                        topic_id,
+                                        f"Time: {ts}\n"
+                                        f"Progress: 100%\n"
+                                        f"Status: [Task: {title or 'general chat'}] reasoning completed"
+                                    ),
+                                    timeout=15,
+                                )
+                            except asyncio.TimeoutError:
+                                pass
+                        return result
+                    raise RuntimeError("session infer timeout: no assistant text returned")
             except Exception as e:
                 last_err = e
                 cached_key = None  # 重试时强制新建 session
@@ -760,9 +728,9 @@ class OpenClawAgent:
         return ""
 
     async def _spawn_session_and_poll(self, prompt: str, label: str = "", context: str = "") -> tuple[Optional[str], Optional[str]]:
-        """创建独立 session（非 subagent )，执行 prompt 并轮询结果。
+        """创建 subagent session 并通过轮询主 session 获取结果。
+        Gateway 使用 auto-announce push 模式：子 session 完成后结果推送到 agent:main:main。
         返回 (sessionKey, assistant_text)。sessionKey 可缓存复用。
-        context: optional prior conversation context to inject into the new session.
         """
         spawn_label = label or "wtt-task"
         child = None
@@ -774,18 +742,24 @@ class OpenClawAgent:
             "runTimeoutSeconds": max(120, int(self.task_max_runtime_sec)),
             "timeoutSeconds": 30,
         }
-        # Pass context to OpenClaw if available (native session context injection)
         if context:
             spawn_params["context"] = context
+
+        # Record main session message count BEFORE spawning
+        pre_main_count = 0
+        try:
+            pre_hist = await self._invoke_tool("sessions_history", {"sessionKey": "agent:main:main", "limit": 100, "includeTools": False})
+            pre_main_count = len((pre_hist or {}).get("messages", []) or [])
+        except Exception:
+            pass
+
         try:
             spawn = await self._invoke_tool("sessions_spawn", spawn_params)
             child = (spawn or {}).get("childSessionKey")
         except Exception as e:
             if "label already in use" in str(e) or "already in use" in str(e):
-                # Try to reuse existing session by label
                 child = await self._find_session_by_label(spawn_label)
                 if child and not await self._check_session_alive(child):
-                    # Old session is dead, retry with unique label suffix
                     child = None
                     unique_label = f"{spawn_label}-{int(time.time()) % 100000}"
                     spawn_params["label"] = unique_label
@@ -800,20 +774,195 @@ class OpenClawAgent:
         if not child:
             raise RuntimeError("sessions_spawn missing childSessionKey")
 
-        deadline = time.time() + max(150, int(self.task_max_runtime_sec) + 60)
-        poll_interval = 1.0
-        while time.time() < deadline:
-            hist = await self._invoke_tool("sessions_history", {"sessionKey": child, "limit": 40, "includeTools": False})
-            err = self._extract_assistant_error(hist)
-            if err:
-                raise RuntimeError(err)
-            texts = self._extract_assistant_texts(hist)
-            if texts:
-                return child, texts[-1].strip()
-            await asyncio.sleep(poll_interval)
-            poll_interval = min(poll_interval * 1.3, 3.0)
+        # Extract suffix for matching in completion events (gateway abbreviates keys)
+        child_suffix = child.rsplit(":", 1)[-1][-4:] if child else ""
+        print(f"🔍 [spawn] child={child[:35]} suffix={child_suffix} label={spawn_label}")
 
+        deadline = time.time() + max(150, int(self.task_max_runtime_sec) + 60)
+        poll_interval = 3.0
+        poll_count = 0
+        while time.time() < deadline:
+            try:
+                hist = await self._invoke_tool("sessions_history", {
+                    "sessionKey": "agent:main:main",
+                    "limit": max(50, pre_main_count + 20),
+                    "includeTools": False,
+                })
+            except Exception as poll_err:
+                print(f"⚠️ [spawn_poll] main history error: {poll_err}")
+                await asyncio.sleep(poll_interval)
+                continue
+
+            msgs = (hist or {}).get("messages", []) or []
+            poll_count += 1
+
+            # Scan for completion event matching our child session
+            for i, m in enumerate(msgs):
+                if m.get("role") != "user":
+                    continue
+                text_parts = []
+                for c in (m.get("content") or []):
+                    if isinstance(c, dict) and c.get("text"):
+                        text_parts.append(str(c["text"]))
+                full_text = "\n".join(text_parts)
+
+                if "[Internal task completion event]" not in full_text:
+                    continue
+                if child_suffix not in full_text:
+                    continue
+
+                # Found our completion event
+                print(f"🔍 [spawn_poll] Found completion event for {child_suffix} at msg[{i}] poll#{poll_count}")
+
+                # Extract result from <<<BEGIN_UNTRUSTED_CHILD_RESULT>>> markers
+                result_text = self._extract_child_result(full_text)
+
+                # Check status
+                if "status: failed" in full_text or "status: error" in full_text:
+                    # Extract error details
+                    for line in full_text.splitlines():
+                        if line.strip().startswith("status:"):
+                            err_detail = line.strip()
+                            break
+                    else:
+                        err_detail = "unknown error"
+                    # If there's a result despite failure, return it
+                    if result_text and result_text != "(no output)":
+                        if ("...(truncated)" in result_text or "\u2026(truncated)" in result_text) and child:
+                            full_text_child = await self._fetch_full_child_result(child)
+                            if full_text_child and len(full_text_child) > len(result_text):
+                                result_text = full_text_child
+                        return child, result_text
+                    # Otherwise check if the assistant response after this event has useful text
+                    if i + 1 < len(msgs) and msgs[i + 1].get("role") == "assistant":
+                        asst_text = self._extract_text_from_message(msgs[i + 1])
+                        if asst_text:
+                            return child, asst_text
+                    raise RuntimeError(f"subagent task failed: {err_detail}")
+
+                # Success: return extracted result
+                if result_text and result_text != "(no output)":
+                    if ("...(truncated)" in result_text or "\u2026(truncated)" in result_text) and child:
+                        print(f"\u26a0\ufe0f Result truncated by gateway, fetching full text from child session")
+                        full_text_child = await self._fetch_full_child_result(child)
+                        if full_text_child and len(full_text_child) > len(result_text):
+                            result_text = full_text_child
+                    return child, result_text
+                # Fallback: use assistant response after completion event
+                if i + 1 < len(msgs) and msgs[i + 1].get("role") == "assistant":
+                    asst_text = self._extract_text_from_message(msgs[i + 1])
+                    if asst_text:
+                        return child, asst_text
+                # Got event but no result yet (might still be processing)
+                break
+
+            if poll_count % 5 == 0:
+                elapsed = int(time.time() - (deadline - max(150, int(self.task_max_runtime_sec) + 60)))
+                print(f"🔍 [spawn_poll] Waiting for {child_suffix} poll#{poll_count} elapsed={elapsed}s main_msgs={len(msgs)}")
+
+            await asyncio.sleep(poll_interval)
+            poll_interval = min(poll_interval * 1.2, 8.0)
+
+        print(f"⚠️ [spawn_poll] Timeout waiting for completion of {child[:30]}")
         return child, None
+
+    @staticmethod
+    def _extract_child_result(event_text: str) -> str:
+        """Extract result text from between <<<BEGIN_UNTRUSTED_CHILD_RESULT>>> markers."""
+        begin = "<<<BEGIN_UNTRUSTED_CHILD_RESULT>>>"
+        end = "<<<END_UNTRUSTED_CHILD_RESULT>>>"
+        idx_start = event_text.find(begin)
+        if idx_start < 0:
+            print(f"\U0001f50d [DEBUG] _extract_child_result: no BEGIN marker, event_len={len(event_text)}")
+            return ""
+        content_start = idx_start + len(begin)
+        idx_end = event_text.find(end, content_start)
+        if idx_end > content_start:
+            extracted = event_text[content_start:idx_end].strip()
+            print(f"\U0001f50d [DEBUG] _extract_child_result: full extraction len={len(extracted)}")
+            return extracted
+        # END marker missing (truncated) - extract everything after BEGIN
+        extracted = event_text[content_start:].strip()
+        print(f"\U0001f50d [DEBUG] _extract_child_result: no END marker (truncated), extracted len={len(extracted)}")
+        return extracted
+
+    async def _fetch_full_child_result(self, child_key: str) -> str:
+        """Fetch full assistant response by reading child session transcript from disk.
+        sessions_history API returns 0 messages for subagent sessions,
+        so we bypass the API and read the .jsonl transcript file directly.
+        sessions_list provides the transcriptPath mapping."""
+        import glob as glob_mod
+        import os
+        try:
+            # Step 1: Find transcript path via sessions_list
+            transcript_path = None
+            try:
+                listed = await self._invoke_tool("sessions_list", {
+                    "limit": 200, "messageLimit": 0,
+                })
+                details = listed if isinstance(listed, dict) else {}
+                sessions = details.get("sessions") or []
+                for s in sessions:
+                    if s.get("key") == child_key:
+                        transcript_path = s.get("transcriptPath")
+                        break
+            except Exception as e:
+                print(f"\u26a0\ufe0f sessions_list failed: {e}")
+
+            if not transcript_path:
+                print(f"\u26a0\ufe0f No transcriptPath for {child_key[:35]}")
+                return ""
+
+            # Step 2: Locate file (live .jsonl or renamed .deleted.*)
+            target = transcript_path
+            if not os.path.exists(target):
+                deleted = sorted(glob_mod.glob(f"{target}.deleted.*"))
+                if deleted:
+                    target = deleted[-1]
+                else:
+                    print(f"\u26a0\ufe0f Transcript not on disk: {transcript_path}")
+                    return ""
+
+            # Step 3: Parse JSONL, find longest non-SKIP assistant text
+            import json as json_mod
+            best = ""
+            with open(target, "r") as f:
+                for raw_line in f:
+                    try:
+                        entry = json_mod.loads(raw_line.strip())
+                        msg = entry.get("message", {})
+                        if msg.get("role") != "assistant":
+                            continue
+                        parts = []
+                        for c in (msg.get("content") or []):
+                            if isinstance(c, dict) and c.get("type") == "text":
+                                t = (c.get("text") or "").strip()
+                                if t and t not in ("ANNOUNCE_SKIP", "REPLY_SKIP"):
+                                    parts.append(t)
+                        if parts:
+                            candidate = "\n".join(parts)
+                            if len(candidate) > len(best):
+                                best = candidate
+                    except Exception:
+                        continue
+
+            if best:
+                print(f"\u2705 Full text from transcript: {len(best)} chars (file: {os.path.basename(target)})")
+            else:
+                print(f"\u26a0\ufe0f No non-SKIP assistant text in {os.path.basename(target)}")
+            return best
+        except Exception as e:
+            print(f"\u26a0\ufe0f Failed to read transcript: {e}")
+            return ""
+
+    @staticmethod
+    def _extract_text_from_message(msg: dict) -> str:
+        """Extract concatenated text from a message's content array."""
+        parts = []
+        for c in (msg.get("content") or []):
+            if isinstance(c, dict) and c.get("text"):
+                parts.append(str(c["text"]).strip())
+        return "\n".join(parts)
 
     async def _check_session_alive(self, session_key: str) -> bool:
         """Check if a session is still alive. Uses sessions_history first,
@@ -887,10 +1036,18 @@ class OpenClawAgent:
                 raise RuntimeError(err)
             texts = self._extract_assistant_texts(hist)
             if texts and len(texts) > pre_count:
-                return texts[-1].strip()
+                result = texts[-1].strip()
+                # Truncation recovery: if gateway truncated, fetch from transcript
+                if "...(truncated)" in result or "…(truncated)" in result:
+                    print(f"⚠️ _send_and_poll: result truncated ({len(result)} chars), fetching full from transcript")
+                    full = await self._fetch_full_child_result(session_key)
+                    if full and len(full) > len(result):
+                        print(f"✅ _send_and_poll: recovered {len(full)} chars from transcript")
+                        return full
+                return result
             # Check if session is processing (messages count changed or status hints)
             await asyncio.sleep(poll_interval)
-            poll_interval = min(poll_interval * 1.3, 3.0)
+            poll_interval = min(poll_interval * 1.3, 5.0)
 
         # Phase 2: extended wait (session is likely still working, just slow)
         deadline = time.time() + max(90, int(self.task_max_runtime_sec) - 30)
@@ -902,7 +1059,14 @@ class OpenClawAgent:
                 raise RuntimeError(err)
             texts = self._extract_assistant_texts(hist)
             if texts and len(texts) > pre_count:
-                return texts[-1].strip()
+                result = texts[-1].strip()
+                if "...(truncated)" in result or "…(truncated)" in result:
+                    print(f"⚠️ _send_and_poll phase2: result truncated ({len(result)} chars), fetching full from transcript")
+                    full = await self._fetch_full_child_result(session_key)
+                    if full and len(full) > len(result):
+                        print(f"✅ _send_and_poll: recovered {len(full)} chars from transcript")
+                        return full
+                return result
             await asyncio.sleep(poll_interval)
             poll_interval = min(poll_interval * 1.3, 5.0)
 
@@ -918,6 +1082,121 @@ class OpenClawAgent:
             token = token[5:]
         m = re.search(r"([0-9a-fA-F]{8}-[0-9a-fA-F-]{10,}|[0-9a-fA-F-]{32,})", token)
         return m.group(1) if m else token
+
+    def _extract_to_task_hint(self, content: str) -> str:
+        """Extract to_task/task_id hint from system payloads like [TASK_INPUT] to_task=..."""
+        if not content:
+            return ""
+        m = re.search(r"(?:to_task|task_id)=([^\s\n]+)", content)
+        return self._normalize_task_id((m.group(1) if m else ""))
+
+    def _remember_topic_task_hint(self, topic_id: str, task_id: str):
+        tid = self._normalize_task_id(task_id)
+        if not topic_id or not tid:
+            return
+        self._topic_task_hints[str(topic_id)] = (tid, time.time())
+        if len(self._topic_task_hints) > 2000:
+            self._topic_task_hints = dict(list(self._topic_task_hints.items())[-1000:])
+
+    def _get_topic_task_hint(self, topic_id: str, ttl_sec: int = 900) -> str:
+        if not topic_id:
+            return ""
+        item = self._topic_task_hints.get(str(topic_id))
+        if not item:
+            return ""
+        task_id, ts = item
+        if (time.time() - float(ts or 0)) > ttl_sec:
+            self._topic_task_hints.pop(str(topic_id), None)
+            return ""
+        return self._normalize_task_id(task_id)
+
+    def _task_runtime_meta(self, task: dict) -> dict:
+        return {
+            "task_id": self._normalize_task_id(task.get("id") or task.get("task_id") or ""),
+            "title": str(task.get("title") or ""),
+            "description": str(task.get("description") or ""),
+            "exec_mode": str(task.get("exec_mode") or "reasoning"),
+            "task_type": str(task.get("task_type") or task.get("type") or "feature"),
+        }
+
+    async def _resolve_task_for_topic(self, topic_id: str, title_hint: str = "", description_hint: str = "", prefer_pipeline: bool = False) -> dict:
+        """Resolve task for a topic safely when incoming payload lacks task_id.
+
+        Strategy (ID-first, no title routing):
+        1) recent topic->task hint (from msg.task_id / to_task / task_id payloads)
+        2) unique active pipeline task (when prefer_pipeline)
+        3) unique active task (todo/doing)
+        4) single candidate only
+        Otherwise return empty task_id to avoid misrouting.
+        """
+        empty = {
+            "task_id": "",
+            "title": title_hint or "",
+            "description": description_hint or "",
+            "exec_mode": "reasoning",
+            "task_type": "feature",
+        }
+        if not topic_id:
+            return empty
+
+        try:
+            resp = await wtt_client.client.get(
+                f"{wtt_client.api_url}/tasks",
+                params={"limit": 500},
+                timeout=15,
+            )
+            if resp.status_code >= 400:
+                return empty
+            payload = resp.json() if hasattr(resp, "json") else []
+            tasks = payload if isinstance(payload, list) else payload.get("tasks", [])
+        except Exception:
+            return empty
+
+        candidates = [
+            t for t in (tasks or [])
+            if str(t.get("topic_id") or "") == str(topic_id)
+        ]
+        if not candidates:
+            return empty
+
+        # newest first for deterministic fallback behavior
+        candidates.sort(key=lambda x: (x.get("updated_at") or x.get("created_at") or ""), reverse=True)
+
+        # 1) explicit recent hint from task-input/task-status context
+        # Guard against stale hints on reused topics: accept hint only when it is still active.
+        hinted_id = self._get_topic_task_hint(topic_id)
+        if hinted_id:
+            hinted = next((t for t in candidates if self._normalize_task_id(t.get("id") or "") == hinted_id), None)
+            if hinted:
+                hinted_status = str(hinted.get("status") or "").lower()
+                hinted_mode = str(hinted.get("task_mode") or "").lower()
+                if hinted_status in {"todo", "doing"} and ((not prefer_pipeline) or hinted_mode == "pipeline"):
+                    return self._task_runtime_meta(hinted)
+
+        # 2) pipeline-biased resolve (for pipeline auto-start/rerun paths)
+        if prefer_pipeline:
+            pipeline_active = [
+                t for t in candidates
+                if str(t.get("task_mode") or "").lower() == "pipeline"
+                and str(t.get("status") or "").lower() in {"todo", "doing"}
+            ]
+            if len(pipeline_active) == 1:
+                return self._task_runtime_meta(pipeline_active[0])
+
+        # 3) unique active task
+        active = [t for t in candidates if str(t.get("status") or "").lower() in {"todo", "doing"}]
+        if len(active) == 1:
+            return self._task_runtime_meta(active[0])
+
+        # 5) single candidate only
+        if len(candidates) == 1:
+            return self._task_runtime_meta(candidates[0])
+
+        print(
+            f"⚠️ Ambiguous topic->task resolve skipped topic={topic_id} "
+            f"title_hint={title_hint!r} candidates={len(candidates)}"
+        )
+        return empty
 
     def _extract_task_run(self, content: str):
         if not content:
@@ -1083,6 +1362,90 @@ class OpenClawAgent:
                 print(f"⚠️ Failed to set task status task_id={task_id} status={status} code={resp.status_code} body={resp.text[:200]}")
         except Exception as e:
             print(f"⚠️ Task status update exception task_id={task_id} status={status}: {e}")
+
+
+    async def _update_task_output(self, task_id: str, output: str):
+        """Write result text to task output field."""
+        try:
+            r = await wtt_client.client.patch(
+                f"{wtt_client.api_url}/tasks/{task_id}",
+                json={"output": output[:50000]},
+                headers={"Content-Type": "application/json"},
+                timeout=15,
+            )
+            r.raise_for_status()
+            print(f"\u2705 Task {task_id[:12]} output updated ({len(output)} chars)")
+        except Exception as e:
+            print(f"\u26a0\ufe0f _update_task_output failed: {e}")
+
+    async def recover_zombie_doing_tasks(self):
+        """On startup, reset any 'doing' tasks owned by this agent back to 'todo',
+        then also pick up all 'todo' tasks and re-trigger them."""
+        recovered = []
+        try:
+            # Phase 1: reset doing → todo
+            resp = await wtt_client.client.get(
+                f"{wtt_client.api_url}/tasks",
+                params={"status": "doing", "limit": 100},
+                timeout=15,
+            )
+            if resp.status_code < 400:
+                tasks = resp.json() if hasattr(resp, "json") else []
+                for t in (tasks or []):
+                    owner = str(t.get("runner_agent_id") or t.get("owner_agent_id") or t.get("created_by") or "")
+                    if owner != self.agent_id:
+                        # Also check if task belongs to a topic this agent is subscribed to
+                        topic_id_check = str(t.get("topic_id") or "")
+                        if topic_id_check not in self.subscribed_topics:
+                            continue
+                    task_id = str(t.get("id") or "")
+                    title = str(t.get("title") or "?")[:30]
+                    topic_id = str(t.get("topic_id") or "")
+                    if not task_id:
+                        continue
+                    await self._set_task_status(task_id, "todo")
+                    recovered.append((task_id, topic_id, title))
+                    print(f"♻️  Reset zombie doing task → todo: {title} ({task_id[:12]})")
+                if recovered:
+                    print(f"♻️  Recovered {len(recovered)} zombie doing tasks on startup")
+
+            # Phase 2: collect all todo tasks and auto-retrigger
+            resp2 = await wtt_client.client.get(
+                f"{wtt_client.api_url}/tasks",
+                params={"status": "todo", "limit": 50},
+                timeout=15,
+            )
+            if resp2.status_code < 400:
+                todo_tasks = resp2.json() if hasattr(resp2, "json") else []
+                retrigger = []
+                for t in (todo_tasks or []):
+                    owner = str(t.get("runner_agent_id") or t.get("owner_agent_id") or t.get("created_by") or "")
+                    if owner != self.agent_id:
+                        topic_id_check = str(t.get("topic_id") or "")
+                        if topic_id_check not in self.subscribed_topics:
+                            continue
+                    task_id = str(t.get("id") or "")
+                    topic_id = str(t.get("topic_id") or "")
+                    title = str(t.get("title") or "?")[:30]
+                    desc = str(t.get("description") or "")
+                    exec_mode = str(t.get("exec_mode") or "reasoning")
+                    task_type = str(t.get("type") or "feature")
+                    if not task_id or not topic_id:
+                        continue
+                    retrigger.append((task_id, topic_id, title, desc, exec_mode, task_type))
+
+                if retrigger:
+                    print(f"🔄 Auto-retriggering {len(retrigger)} todo tasks on startup")
+                    for task_id, topic_id, title, desc, exec_mode, task_type in retrigger:
+                        print(f"  🚀 Retriggering: {title} ({task_id[:12]})")
+                        asyncio.create_task(
+                            self._execute_task_run(
+                                topic_id, task_id, exec_mode, task_type, title, desc
+                            )
+                        )
+                        await asyncio.sleep(0.3)
+        except Exception as e:
+            print(f"⚠️ recover_zombie_doing_tasks error: {e}")
 
     async def _set_task_notes(self, task_id: str, notes: str):
         try:
@@ -1259,8 +1622,11 @@ class OpenClawAgent:
                 active_ids = set()
                 now_mono = time.time()
                 for t in (tasks or []):
-                    if str(t.get("runner_agent_id") or t.get("owner_agent_id") or "") != self.agent_id:
-                        continue
+                    task_owner = str(t.get("runner_agent_id") or t.get("owner_agent_id") or t.get("created_by") or "")
+                    if task_owner != self.agent_id:
+                        topic_id_check = str(t.get("topic_id") or "")
+                        if topic_id_check not in self.subscribed_topics:
+                            continue
                     # Fallback only for tasks in status=doing
                     if str(t.get("status") or "").lower() != "doing":
                         continue
@@ -1297,6 +1663,28 @@ class OpenClawAgent:
                         f"Status: [Task: {title}] reasoning running(running {minute} min )"
                     )
 
+                    # Stale detection: force-reset tasks stuck too long
+                    first_seen = float(self._task_watch_first_seen.get(task_id, now_mono))
+                    age = now_mono - first_seen
+                    if age > self.task_stale_timeout_sec:
+                        print(f"💀 Task {task_id[:12]} ({title}) stuck for {int(age)}s > {self.task_stale_timeout_sec}s, force reset")
+                        try:
+                            await self._set_task_status(task_id, "todo")
+                            await self._safe_publish(
+                                topic_id,
+                                f"Time: {ts}\nProgress: 0%\n"
+                                f"Status: [Task: {title}] Timed out after {minute} min, will retry"
+                            )
+                            key_to_remove = None
+                            for k in list(self.active_task_runs):
+                                if task_id in k:
+                                    key_to_remove = k
+                                    break
+                            if key_to_remove:
+                                self.active_task_runs.discard(key_to_remove)
+                        except Exception as reset_err:
+                            print(f"⚠️ Failed to reset stale task {task_id[:12]}: {reset_err}")
+
                 # Cleanup tracker for tasks no longer in doing
                 stale = [tid for tid in self._task_watch_first_seen.keys() if tid not in active_ids]
                 for tid in stale:
@@ -1314,9 +1702,36 @@ class OpenClawAgent:
 
     async def _execute_task_run(self, topic_id: str, task_id: str, exec_mode: str = "reasoning", task_type: str = "feature", title: str = "", description: str = "", extra_note: str = ""):
         key = f"{topic_id}:{task_id}"
-        if key in self.active_task_runs:
+        if key in self._task_dedup:
             return
-        self.active_task_runs.add(key)
+        self._task_dedup.add(key)
+        self._task_recent_touch[task_id] = time.time()
+
+        # Concurrency gate: wait for a slot before spawning gateway sessions
+        acquired = self._task_semaphore.locked()
+        if acquired:
+            queue_pos = len(self._task_queue) + 1
+            self._task_queue.append(key)
+            print(f"⏳ Task {task_id} queued (position {queue_pos}, max concurrent={self.max_concurrent_tasks})")
+            await self._safe_publish(
+                topic_id,
+                f"Time: {time.strftime('%H:%M:%S')}\n"
+                f"Progress: 0%\n"
+                f"Status: [Task: {title or 'untitled task'}] Queued (position {queue_pos})"
+            )
+
+        try:
+            async with self._task_semaphore:
+                if key in self._task_queue:
+                    self._task_queue.remove(key)
+                self.active_task_runs.add(key)
+                print(f"🚀 Task {task_id} acquired slot (active={len(self.active_task_runs)}, max={self.max_concurrent_tasks})")
+                await self._execute_task_run_inner(topic_id, task_id, exec_mode, task_type, title, description, extra_note)
+        finally:
+            self.active_task_runs.discard(key)
+            self._task_dedup.discard(key)
+
+    async def _execute_task_run_inner(self, topic_id: str, task_id: str, exec_mode: str = "reasoning", task_type: str = "feature", title: str = "", description: str = "", extra_note: str = ""):
         self._task_recent_touch[task_id] = time.time()
         try:
             # Mark task as 'doing' immediately on start
@@ -1444,13 +1859,19 @@ class OpenClawAgent:
             if publish_text:
                 await self._safe_publish(topic_id, publish_text)
 
+
+            # Write result to task output field for wtt-web display
+            if publish_text and task_id:
+                try:
+                    await self._update_task_output(task_id, publish_text)
+                except Exception as e:
+                    print(f"\u26a0\ufe0f Failed to update task output: {e}")
             await self._set_task_status(task_id, "review")
         except Exception as e:
             print(f"❌ TASK_RUN execution failed task_id={task_id}: {e}")
         finally:
-            self.active_task_runs.discard(key)
-
             # reject 重跑优先
+            key = f"{topic_id}:{task_id}"
             queued = self.pending_reject_rerun.pop(key, None)
             if queued:
                 q_topic = queued.get("topic_id") or topic_id
@@ -1513,18 +1934,45 @@ class OpenClawAgent:
             sender = msg.get("sender_id", "unknown")
             sender_type = str(msg.get("sender_type") or "").lower()
 
+            # Update topic->task hint cache early (helps later no-task_id dispatch recovery).
+            msg_task_id = self._normalize_task_id(msg.get("task_id") or "")
+            if topic_id and msg_task_id:
+                self._remember_topic_task_hint(topic_id, msg_task_id)
+            hint_from_payload = self._extract_to_task_hint(content)
+            if topic_id and hint_from_payload:
+                self._remember_topic_task_hint(topic_id, hint_from_payload)
+
             # 1) 收到任务下发消息后自动执行（仅系统/agent下发，不处理 human general chat )
             tr = self._extract_task_run(content)
             semantic_type = str(msg.get("semantic_type") or "").upper()
-            is_dispatch_msg = semantic_type in {"TASK_REQUEST", "TASK_RUN"} or "[TASK_RUN]" in content or "title=" in content
+            is_dispatch_msg = semantic_type in {"TASK_REQUEST", "TASK_RUN"} or "[TASK_RUN]" in content or "title=" in content or "Task Title:" in content
             if tr and topic_id and (sender_type != "human" or is_dispatch_msg):
                 runner = tr.get("runner")
-                task_id = self._normalize_task_id(tr.get("task_id") or msg.get("task_id") or "unknown")
+                task_id = self._normalize_task_id(tr.get("task_id") or msg_task_id)
                 exec_mode = tr.get("exec_mode") or "reasoning"
                 task_type = tr.get("task_type") or "feature"
                 title = tr.get("title") or msg.get("task_title") or ""
                 description = tr.get("description") or ""
+
+                if not task_id:
+                    resolved = await self._resolve_task_for_topic(
+                        topic_id,
+                        title_hint=title,
+                        description_hint=description,
+                        prefer_pipeline=("Pipeline auto-start" in content or "Upstream completed" in content),
+                    )
+                    task_id = self._normalize_task_id(resolved.get("task_id") or "")
+                    title = resolved.get("title") or title
+                    description = resolved.get("description") or description
+                    exec_mode = resolved.get("exec_mode") or exec_mode
+                    task_type = resolved.get("task_type") or task_type
+
                 if (not runner) or (runner == self.agent_id):
+                    if not task_id:
+                        print(f"⚠️ Skip dispatch without task_id topic={topic_id} title={title!r}")
+                        self.processed_message_ids.add(msg_id)
+                        continue
+                    self._remember_topic_task_hint(topic_id, task_id)
                     asyncio.create_task(self._execute_task_run(topic_id, task_id, exec_mode, task_type, title, description))
                     print("🚀 Execution started")
                     self.processed_message_ids.add(msg_id)
@@ -1551,7 +1999,7 @@ class OpenClawAgent:
                     last_ts = self.last_reject_rerun_ts.get(key, 0)
 
                     # If same task is running: enqueue and rerun after current execution
-                    if key in self.active_task_runs:
+                    if key in self._task_dedup:
                         self.pending_reject_rerun[key] = {
                             "topic_id": topic_id,
                             "task_id": rej_task_id,
@@ -1695,23 +2143,24 @@ class OpenClawAgent:
             resolved_exec_mode = "reasoning"
             resolved_task_type = "feature"
             if topic_id and (not resolved_task_id):
-                try:
-                    tr = await wtt_client.client.get(f"{wtt_client.api_url}/tasks?limit=500")
-                    if tr.status_code < 400:
-                        for t in (tr.json() or []):
-                            if t.get("topic_id") == topic_id:
-                                resolved_task_id = t.get("id") or resolved_task_id
-                                resolved_title = t.get("title") or resolved_title
-                                resolved_desc = t.get("description") or ""
-                                resolved_exec_mode = t.get("exec_mode") or "reasoning"
-                                resolved_task_type = t.get("task_type") or "feature"
-                                break
-                except Exception:
-                    pass
+                resolved = await self._resolve_task_for_topic(
+                    topic_id,
+                    title_hint=resolved_title,
+                    description_hint=resolved_desc,
+                    prefer_pipeline=False,
+                )
+                resolved_task_id = resolved.get("task_id") or resolved_task_id
+                resolved_title = resolved.get("title") or resolved_title
+                resolved_desc = resolved.get("description") or resolved_desc
+                resolved_exec_mode = resolved.get("exec_mode") or resolved_exec_mode
+                resolved_task_type = resolved.get("task_type") or resolved_task_type
+
+            if topic_id and resolved_task_id:
+                self._remember_topic_task_hint(topic_id, resolved_task_id)
 
             # Task running: queue user supplemental input and process after completion
             queue_key = f"{topic_id}:{resolved_task_id or 'unknown'}"
-            if queue_key in self.active_task_runs:
+            if queue_key in self._task_dedup:
                 q = self.pending_task_input_queue.get(queue_key) or []
                 # avoid stacking duplicate supplements while current run is in progress
                 if not q or q[-1].strip() != content.strip():
@@ -1788,6 +2237,9 @@ async def main():
     runner = WTTSkillRunner(agent, interval=interval, mode=mode, ws_url=ws_url)
     agent._ws_runner = runner  # wire up WS runner for publish-over-WS
     await runner.start()
+    # Sync subscribed topics from runner cache to agent for ownership checks
+    agent.subscribed_topics = set(runner._subscribed_topics.keys())
+    await agent.recover_zombie_doing_tasks()
     watchdog_task = asyncio.create_task(agent.task_progress_watchdog())
 
     print("\n" + "="*80, flush=True)

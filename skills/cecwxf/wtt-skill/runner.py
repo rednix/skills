@@ -256,6 +256,10 @@ class WTTSkillRunner:
             print(f"[WS DEBUG] Handling new_message", flush=True)
             asyncio.create_task(self._handle_ws_message(data))
 
+        # Task status change — trigger execution of new todo tasks
+        if msg_type == "task_status":
+            asyncio.create_task(self._handle_task_status_event(data))
+
     async def _refresh_subscribed_topics(self):
         """Fetch and cache subscribed topics (for task detection)."""
         try:
@@ -276,6 +280,62 @@ class WTTSkillRunner:
                 break
             except Exception:
                 break
+
+    async def _handle_task_status_event(self, data: dict):
+        """Handle task_status WS events — auto-execute new todo tasks on subscribed topics."""
+        try:
+            # Payload can be flat (task_id, status, topic_id) or nested under "task"
+            task = data.get("task") or data.get("data") or {}
+            status = str(task.get("status") or data.get("status") or "").lower()
+            if status != "todo":
+                return
+            task_id = str(task.get("id") or task.get("task_id") or data.get("task_id") or "")
+            topic_id = str(task.get("topic_id") or data.get("topic_id") or "")
+            title = str(task.get("title") or data.get("title") or "")
+            description = str(task.get("description") or data.get("description") or "")
+            exec_mode = str(task.get("exec_mode") or data.get("exec_mode") or "reasoning")
+            task_type = str(task.get("type") or task.get("task_type") or data.get("task_type") or "feature")
+            if not task_id or not topic_id:
+                return
+
+            # Canonicalize with task table to avoid WS payload/task_id mismatch misrouting.
+            if hasattr(self.agent, '_get_task'):
+                canonical = await self.agent._get_task(task_id)
+                if canonical:
+                    canonical_topic = str(canonical.get("topic_id") or topic_id)
+                    canonical_title = str(canonical.get("title") or "")
+
+                    def _norm(s: str) -> str:
+                        return re.sub(r"\s+", "", (s or "").strip().lower())
+
+                    if topic_id and canonical_topic and canonical_topic != topic_id:
+                        print(f"⚠️ [WS] Skip todo task due topic mismatch event_topic={topic_id} db_topic={canonical_topic} task={task_id[:12]}")
+                        return
+                    if title and canonical_title and _norm(title) != _norm(canonical_title):
+                        print(f"⚠️ [WS] Skip todo task due title mismatch event={title[:24]!r} db={canonical_title[:24]!r} task={task_id[:12]}")
+                        return
+
+                    topic_id = canonical_topic or topic_id
+                    title = canonical_title or title
+                    description = str(canonical.get("description") or description)
+                    exec_mode = str(canonical.get("exec_mode") or exec_mode)
+                    task_type = str(canonical.get("task_type") or canonical.get("type") or task_type)
+
+            # Only handle tasks on topics we're subscribed to
+            if topic_id not in self._subscribed_topics:
+                return
+
+            if hasattr(self.agent, '_remember_topic_task_hint'):
+                self.agent._remember_topic_task_hint(topic_id, task_id)
+
+            print(f"📋 [WS] New todo task: {title[:30]} ({task_id[:12]})")
+            if hasattr(self.agent, '_execute_task_run'):
+                import asyncio
+                asyncio.create_task(
+                    self.agent._execute_task_run(topic_id, task_id, exec_mode, task_type, title, description)
+                )
+        except Exception as e:
+            print(f"⚠️ _handle_task_status_event error: {e}")
 
     async def _handle_ws_message(self, data: dict):
         """Handle pushed WebSocket messages"""
