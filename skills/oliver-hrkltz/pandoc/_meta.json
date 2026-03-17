@@ -1,0 +1,11 @@
+{
+  "owner": "oliver-hrkltz",
+  "slug": "pandoc",
+  "displayName": "Pandoc",
+  "latest": {
+    "version": "1.0.2",
+    "publishedAt": 1773593647433,
+    "commit": null
+  },
+  "history": []
+}
