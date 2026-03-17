@@ -1,0 +1,82 @@
+{
+  "name": "powpow-integration",
+  "slug": "powpow-integration",
+  "version": "1.1.0",
+  "description": "Integration with POWPOW platform for digital human management and communication",
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@openclaw/core": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "powpow",
+    "digital-human",
+    "ai",
+    "chat"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/durenzidu/openclaw-powpow-integration-skill"
+  },
+  "bugs": {
+    "url": "https://github.com/durenzidu/openclaw-powpow-integration-skill/issues"
+  },
+  "homepage": "https://github.com/durenzidu/openclaw-powpow-integration-skill#readme",
+  "config": {
+    "powpowBaseUrl": {
+      "type": "string",
+      "required": false,
+      "description": "POWPOW API base URL (default: official PowPow API)",
+      "default": "https://global.powpow.online"
+    },
+    "powpowApiKey": {
+      "type": "string",
+      "required": false,
+      "description": "POWPOW API Key (optional)"
+    },
+    "defaultLocation": {
+      "type": "object",
+      "required": false,
+      "description": "Default location for digital humans",
+      "properties": {
+        "lat": {
+          "type": "number",
+          "description": "Latitude"
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude"
+        },
+        "name": {
+          "type": "string",
+          "description": "Location name"
+        }
+      },
+      "default": {
+        "lat": 39.9042,
+        "lng": 116.4074,
+        "name": "Beijing"
+      }
+    }
+  }
+}
