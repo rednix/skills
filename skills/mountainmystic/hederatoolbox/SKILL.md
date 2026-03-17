@@ -1,7 +1,7 @@
 ---
 name: hederatoolbox
 description: Query live Hedera blockchain data — token prices, whale movements, HCS topics, governance proposals, identity/KYC screening, and smart contract analysis. Pay-per-call via HBAR micropayments. No signup required.
-version: 1.0.2
+version: 1.0.3
 homepage: https://hederatoolbox.com
 metadata:
   clawdbot:
@@ -47,17 +47,17 @@ Send more at any time — balance tops up within 10 seconds.
 
 **Your private key is never requested, stored, or transmitted.** This skill only uses your public Hedera account ID (`0.0.XXXXXX`). No wallet signing is required at any point.
 
-**How payment verification works:** The platform runs a deposit watcher that polls the Hedera Mirror Node every 10 seconds for incoming transfers to the platform wallet (`0.0.10309126`). Hedera transactions cryptographically record the sender account ID on-chain — no memo or transaction hash is required from you. When a transfer is detected from your account, your balance is credited automatically. You can verify any deposit on Hashscan: https://hashscan.io/mainnet/account/0.0.10309126. The watcher source code is open at https://github.com/mountainmystic/hederatoolbox/blob/master/src/watcher.js.
+**How payment verification works:** The platform runs a deposit watcher that polls the Hedera Mirror Node every 10 seconds for incoming transfers to the platform wallet (`0.0.10309126`). Hedera transactions cryptographically record the sender account ID on-chain — no memo or transaction hash is required from you. When a transfer is detected from your account, your balance is credited automatically. You can verify any deposit on Hashscan: https://hashscan.io/mainnet/account/0.0.10309126. The watcher source code is at https://github.com/mountainmystic/hederatoolbox/blob/master/src/watcher.js.
 
-**"Permanent key" clarification:** Your Hedera account ID functions as a persistent identifier for your platform balance — not a cryptographic credential. Authentication is proven by on-chain payment history: only the account that sent HBAR can accumulate and spend that balance. No impersonation is possible because the platform only credits the account the Mirror Node records as the sender.
+**"Permanent key" clarification:** Your Hedera account ID is a persistent billing identifier — not a cryptographic credential. The platform tracks which account sent HBAR using on-chain transaction records from the Mirror Node. Only the account that deposited HBAR can spend that balance.
+
+**On-chain writes:** Tools like `hcs_write_record` write HCS messages signed by the platform operator key (server-side, using the platform's own Hedera account). Your account ID is included in the message payload as the originator field — it is metadata, not a transaction signer. The transaction itself is signed by and appears on-chain as originating from the platform account (`0.0.10309126`), not yours. This is standard for metered API services on Hedera.
 
 **Payment model:** You send HBAR using your own wallet (HashPack, Blade, CLI, etc.) before using the skill. The skill itself never initiates transfers or requests funds. All charges are deducted from your pre-funded balance only — the platform cannot pull additional funds from your wallet.
 
-**On-chain writes:** Tools like `hcs_write_record` write to HCS using the platform operator key (server-side). Your account ID appears as the originator in the record metadata. No transaction signing is required from you.
-
 **Data sent off-platform:** Tool calls (account IDs, contract addresses, token IDs, query parameters) are sent to `api.hederatoolbox.com`. See the Privacy Policy at https://hederatoolbox.com/privacy.html for retention and sharing details.
 
-**Start small:** Test with 2–5 HBAR before committing more. Source code: https://github.com/mountainmystic/hederatoolbox
+**Start small:** Test with 2–5 HBAR before committing more. Full source: https://github.com/mountainmystic/hederatoolbox
 
 ## Tool Pricing (HBAR)
 
