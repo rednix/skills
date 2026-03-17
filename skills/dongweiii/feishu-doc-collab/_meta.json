@@ -1,11 +1,17 @@
 {
   "owner": "dongweiii",
   "slug": "feishu-doc-collab",
-  "displayName": "Feishu Doc Collaboration",
+  "displayName": "Feishu Doc Collab",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773499904519,
-    "commit": "https://github.com/openclaw/skills/commit/fd8c2ad491f961033cff2f59cb400cb2dafd5907"
+    "version": "1.2.0",
+    "publishedAt": 1773715254817,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773499904519,
+      "commit": "https://github.com/openclaw/skills/commit/fd8c2ad491f961033cff2f59cb400cb2dafd5907"
+    }
+  ]
 }

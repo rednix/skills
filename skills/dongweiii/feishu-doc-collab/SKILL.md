@@ -33,10 +33,20 @@ isolated agent sessions. Combined with a structured in-document chat protocol, i
 ## Prerequisites
 
 1. **OpenClaw with Feishu channel configured** (app ID, app secret, event subscriptions)
-2. **Feishu app event subscriptions enabled:**
+2. **openclaw-lark extension installed** (v2026.3+) or built-in feishu extension
+3. **Feishu app event subscriptions enabled:**
    - `drive.file.edit_v1` — document edit events
    - `drive.file.bitable_record_changed_v1` — (optional) bitable record changes
-3. **Hooks enabled** in `openclaw.json`:
+   - `drive.file.read_v1` — (optional, auto-ignored to suppress warnings)
+4. **Required Feishu app permissions** (enable in Open Platform console + user OAuth):
+   - `space:document:retrieve` — read documents
+   - `docx:document:readonly` — read docx content (app-level)
+   - `base:table:read` — read bitable table structure
+   - `base:record:read` — read bitable records
+   - `base:record:update` — update bitable records (for task board)
+   - `base:field:read` — read bitable field definitions
+   - `drive:drive:readonly` — read drive file info
+5. **Hooks enabled** in `openclaw.json`:
    ```json
    {
      "hooks": {
@@ -66,10 +76,12 @@ echo "Your hooks token: $TOKEN"
 bash ./skills/feishu-doc-collab/scripts/patch-monitor.sh
 ```
 
-This patches `monitor.ts` in the Feishu extension to:
-- Detect `drive.file.edit_v1` events
-- Trigger an isolated agent session via `/hooks/agent`
-- The agent reads the doc, checks for new messages, and responds
+This patches the Feishu extension's `monitor.js` (or `monitor.ts` for older installs) to:
+- Detect `drive.file.edit_v1` and `bitable_record_changed_v1` events
+- Apply 30-second debounce per file to prevent event storms
+- Skip bot's own edits (anti-loop)
+- Trigger an isolated agent session via `/hooks/agent` with `deliver: false`
+- Silently ignore `drive.file.read_v1` events (suppress warnings)
 
 ### Step 3: Configure your agent identity
 
@@ -113,7 +125,9 @@ Patched monitor.ts receives event
         ↓
 Checks: is this the bot's own edit? → Yes: skip (anti-loop)
         ↓ No
-POST /hooks/agent with isolated session instructions
+Debounce: same file triggered within 30s? → Yes: skip
+        ↓ No
+POST /hooks/agent with deliver:false (isolated session)
         ↓
 Agent reads DOC_PROTOCOL.md for message format
         ↓
@@ -174,7 +188,7 @@ For structured task management alongside document collaboration:
 
 ## Re-applying After Updates
 
-**⚠️ OpenClaw updates overwrite `monitor.ts`.** After any update:
+**⚠️ OpenClaw or extension updates may overwrite `monitor.js`.** After any update:
 
 ```bash
 bash ./skills/feishu-doc-collab/scripts/patch-monitor.sh
@@ -182,6 +196,9 @@ openclaw gateway restart
 ```
 
 The patch script is idempotent — safe to run multiple times.
+
+**Note:** For the `openclaw-lark` extension (compiled `.js`), no jiti cache clearing is needed.
+For older built-in `.ts` installs, also run: `rm -f /tmp/jiti/src-monitor.*.cjs`
 
 ## Configuration Reference
 
@@ -200,12 +217,49 @@ The patch reads from `~/.openclaw/openclaw.json`:
 - `hooks.token` — authentication for /hooks/agent endpoint
 - `gateway.port` — gateway port (default: 18789)
 
+## Known Issues & Solutions
+
+### Event Storm (事件风暴)
+
+**Problem:** Feishu sends multiple `drive.file.edit_v1` and `bitable_record_changed_v1` events
+for a single logical edit. Bitable edits are especially bad — changing one record field can trigger
+10-20+ events in rapid succession. Without debounce, each event spawns a separate isolated agent
+session (using the full model), causing massive token waste.
+
+**Real-world impact:** A single bitable task edit triggered 15+ Hook sessions consuming 350k+ tokens,
+all running in parallel and all reaching the same conclusion: "nothing to do".
+
+**Solution:** 30-second debounce per fileToken (implemented in patch-monitor.sh v2):
+- A `Map<string, number>` tracks the last trigger timestamp per file/table
+- If the same file was triggered within 30 seconds, the event is silently skipped
+- For bitable events, the debounce key includes both fileToken and tableId
+- The debounce is applied **before** the `/hooks/agent` call, so no session is created
+
+**Bot self-edit loop:** When the agent updates a bitable record (e.g., changing status to "处理完"),
+that edit triggers MORE events. The bot self-edit check (comparing `operator_id` to `botOpenId`)
+catches most of these, but the debounce provides a critical safety net for cases where the
+operator ID doesn't match (e.g., API calls vs. bot identity).
+
+**Important:** Already-running sessions cannot be stopped by debounce. If an event storm has
+already started, the sessions will run to completion. Debounce only prevents NEW triggers.
+
+### Re-patching After Updates
+
+OpenClaw or extension updates may overwrite `monitor.js`. After any update:
+```bash
+bash ./skills/feishu-doc-collab/scripts/patch-monitor.sh
+openclaw gateway restart
+```
+The patch script is idempotent — checks for both `/hooks/agent` and `_editDebounce` markers.
+
 ## Limitations
 
-- Requires patching OpenClaw source files (fragile across updates)
+- Requires patching OpenClaw extension files (fragile across updates)
 - Feishu app needs `drive.file.edit_v1` event subscription approval
+- Multiple OAuth scopes must be authorized (use batch auth for convenience)
 - Document must use the structured protocol format for reliable routing
 - Works best with docx type; other file types (sheets, slides) are not supported
+- Isolated hook sessions reuse cached OAuth tokens from the main interactive session
 
 ## Credits
 
