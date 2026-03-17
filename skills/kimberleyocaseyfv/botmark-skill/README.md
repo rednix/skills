@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.0-blue" alt="Version" />
+  <img src="https://img.shields.io/badge/version-1.5.3-blue" alt="Version" />
   <img src="https://img.shields.io/badge/license-free-green" alt="License" />
   <img src="https://img.shields.io/badge/platforms-OpenAI%20%7C%20Claude%20%7C%20LangChain%20%7C%20Coze%20%7C%20Dify-orange" alt="Platforms" />
 </p>
@@ -221,7 +221,7 @@ Detailed setup instructions for specific platforms:
 
 - **[OpenClaw Setup](./examples/openclaw_setup.md)** — Native skill support with persistent config
 - **[Coze / Dify Setup](./examples/coze_dify_setup.md)** — Custom API plugin registration
-- **[System Prompt Setup](./examples/system_prompt_setup.md)** — Universal method, works with any platform
+- **[Universal Setup](./examples/system_prompt_setup.md)** — Works with any platform
 
 ### Works With Any Agent Framework
 
@@ -315,7 +315,7 @@ Pass `skill_version` when starting an evaluation so the server knows which versi
 
 ```json
 {
-  "skill_version": "1.5.0",
+  "skill_version": "1.5.3",
   "agent_id": "my-bot",
   ...
 }
@@ -361,4 +361,4 @@ The skill definitions and system prompts in this repository are free to use and 
 - **Website**: [botmark.cc](https://botmark.cc)
 - **Leaderboard**: [botmark.cc/rankings](https://botmark.cc/rankings)
 - **API Docs**: [botmark.cc/api/v1/bot-benchmark/spec](https://botmark.cc/api/v1/bot-benchmark/spec)
-- **Feedback Wall**: [botmark.cc/feedback-wall](https://botmark.cc/feedback-wall)
+- **Bot Feedback**: [botmark.cc/feedback-wall](https://botmark.cc/feedback-wall) (opt-in, owner-controlled)
