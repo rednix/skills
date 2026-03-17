@@ -12,20 +12,22 @@ Persistent memory engine for AI agents. Knowledge survives across sessions — r
 
 **Source:** [github.com/Fozikio/cortex-engine](https://github.com/Fozikio/cortex-engine) (MIT) | [npm](https://www.npmjs.com/package/cortex-engine)
 
-## Setup
+## Prerequisites
+
+This skill requires [cortex-engine](https://github.com/Fozikio/cortex-engine) running as an MCP server. Install it separately before using this skill:
 
 ```bash
-# Install with pinned version — verify source at the links above before running
 npm install cortex-engine@0.5.1
-
-# Initialize a new agent workspace
-npx cortex-engine@0.5.1 fozikio init my-agent
-
-# Start the MCP server
-npx cortex-engine@0.5.1
+# Integrity: sha512-8oIL8KenrdTdACAMSM/iqyrxx04yFE/3IfHx1dTF2439ljXhSCvULcNF5V10tH8UK7P/zuwmx3RuNynvjGi4kg==
 ```
 
-Runs locally with SQLite + Ollama. No cloud accounts needed.
+Then initialize and start:
+```bash
+npx cortex-engine@0.5.1 fozikio init my-agent
+npx cortex-engine@0.5.1  # starts MCP server
+```
+
+Runs locally with SQLite + Ollama. No cloud accounts needed. The skill instructions below are read-only — they teach your agent how to use cortex tools, they don't execute anything.
 
 ## Core Loop
 
