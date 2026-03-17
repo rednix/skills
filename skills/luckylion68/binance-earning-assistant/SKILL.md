@@ -1,12 +1,27 @@
 ---
 name: binance-earning-assistant
-description: 币安撸毛助手 - 展示币安最新撸毛活动信息，包括理财产品、活动奖励、空投预告等。
+description: 币安撸毛助手 - 展示币安最新撸毛活动信息，包括理财产品、活动奖励、空投预告等。Use when user asks for "今日撸毛", "币安活动", "赚钱活动", "撸毛信息", "Binance earning", "airdrop info", or any query about Binance promotional events, rewards, or earning opportunities.
 metadata:
-  version: 1.0.5
+  version: 2.0.0
   author: 0x_WanG
   license: MIT
+  openclaw:
+    emoji: "💰"
+    always: false
 dependencies:
   - requests
+triggers:
+  - "今日撸毛"
+  - "今日撸毛信息"
+  - "币安活动"
+  - "币安撸毛"
+  - "赚钱活动"
+  - "撸毛信息"
+  - "Binance earning"
+  - "airdrop info"
+  - "binance rewards"
+  - "币安理财"
+  - "币安空投"
 persistence:
   - 创建 ~/.openclaw/workspace/.binance_earning 目录
   - 存储导出文件 (exports/*.md)
@@ -18,28 +33,30 @@ persistence:
 
 ## 功能特性
 
-- ✅ **分类展示** - 理财产品、活动奖励、空投预告
-- ✅ **详细信息** - 奖池、截止时间、参与方式、链接
-- ✅ **导出功能** - 支持导出 Markdown 格式
+- ✅ **实时获取** - 从币安 API 实时获取最新活动
+- ✅ **智能过滤** - 自动过滤非华语区活动
+- ✅ **分类展示** - 理财、活动奖励、广场任务
+- ✅ **详细信息** - 代币、奖池、截止日期、发布时间
+- ✅ **Alpha 空投** - 实时获取 alpha123.uk 空投数据
 
 ## 使用方法
 
 ### 查看活动信息
 
 ```bash
-python3 binance_earning_v7.py
+python3 summary_table.py
 ```
 
 ## 输出格式
 
-每个活动包含以下信息：
+活动列表包含以下信息：
 
-- 🔗 **链接** - 币安公告链接
-- 💰 **奖池** - 奖励金额或 APR
-- 📅 **截止时间** - 活动截止日期
-- 🎯 **门槛** - 参与门槛
-- 📝 **参与方式** - 参与步骤
-- ⚠️ **风险** - 风险提示
+- **序号** - 活动编号
+- **代币** - 活动相关代币
+- **奖池/APR** - 奖励金额或年化收益率
+- **活动名称** - 活动中文名称
+- **发布** - 发布日期
+- **截止** - 截止日期
 
 ## 活动分类
 
@@ -90,6 +107,24 @@ python3 binance_earning_v7.py
 3. 理财非存款，产品有风险
 
 ## 更新日志
+
+### v1.0.7 (2026-03-16)
+
+- ✅ 新增：实时 API 获取活动列表（币安官方 API）
+- ✅ 新增：活动名称中文化映射
+- ✅ 新增：表格形式首次回复（简洁展示）
+- ✅ 新增：详情查询功能（回复序号查看）
+- ✅ 新增：自动计算剩余天数
+- ✅ 新增：紧急提醒（今天/明天截止高亮）
+- ✅ 新增：触发词自动响应（"今日撸毛"等）
+- ✅ 优化：过期活动自动过滤
+- ✅ 优化：按剩余天数排序
+- ✅ 修复：截止日期核实问题
+
+### v1.0.6 (2026-03-15)
+
+- ✅ 新增：触发词支持
+- ✅ 新增：OpenClaw 自动响应配置
 
 ### v1.0.5 (2026-03-14)
 

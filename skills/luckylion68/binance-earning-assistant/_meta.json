@@ -3,9 +3,15 @@
   "slug": "binance-earning-assistant",
   "displayName": "币安撸毛助手 By：0x_WanG",
   "latest": {
-    "version": "1.0.5",
-    "publishedAt": 1773498397023,
-    "commit": "https://github.com/openclaw/skills/commit/e2ee9622f3995c393ba1f70d5aab0374e7cd94e2"
+    "version": "1.0.8",
+    "publishedAt": 1773713257399,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.5",
+      "publishedAt": 1773498397023,
+      "commit": "https://github.com/openclaw/skills/commit/e2ee9622f3995c393ba1f70d5aab0374e7cd94e2"
+    }
+  ]
 }
