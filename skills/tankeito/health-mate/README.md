@@ -6,7 +6,9 @@
 > 
 > **本技能为 OpenClaw 原生设计的专属健康插件**
 
-[![Version](https://img.shields.io/badge/version-1.1.4-blue.svg)](https://github.com/tankeito/openclaw-skill-health-report/releases)
+> **⚠️ 重要提示**：本项目已从 `openclaw-skill-health-report` 更名为 `Health-Mate`，仓库地址已变更为：https://github.com/tankeito/Health-Mate
+
+[![Version](https://img.shields.io/badge/version-1.1.10-blue.svg)](https://github.com/tankeito/Health-Mate/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -32,10 +34,10 @@
 cd ~/.openclaw/workspace/skills
 
 # 克隆插件
-git clone git@github.com:tankeito/openclaw-skill-health-report.git health_report
+git clone git@github.com:tankeito/Health-Mate.git health-mate
 
 # 安装依赖
-pip install -r health_report/requirements.txt
+pip install -r health-mate/requirements.txt
 ```
 
 ### 步骤 2：初始化配置
@@ -261,6 +263,23 @@ https://your-domain.com/health_report_YYYY-MM-DD.pdf
 
 ---
 
+## 💡 强烈建议：AI 记忆落盘铁律配置
+
+为了确保后端 Python 引擎能够 100% 精准解析健康数据，强烈建议安装此技能的用户，将以下规则补充到您的 AI 助理的 System Prompt 或 soul.md 中，强制规范大模型的本地文件写入格式：
+
+```markdown
+## 💾 记忆落盘铁律 (Memory Write Protocol)
+当把用户的健康记录写入 MEMORY_DIR 的 Markdown 文件时，**必须强制执行格式翻译**，绝对禁止原样照抄！落盘格式必须 100% 满足以下规则：
+
+1. **强制预估时间**：所有 `###` 级餐次或时段标题后，必须带有具体或预估时间。格式：`### 早餐（约 08:30）`。
+2. **饮食强制热量估算**：食物必须用无序列表 `- ` 记录，且**必须包含 ` → ` 符号和估算热量**。格式：`- 中式快餐 1 份 → 约 600kcal`。
+3. **饮水强制双行**：饮水记录块**只能包含两行**核心数据。格式：第一行 `- 饮水量：XXXml`，第二行 `- 累计：XXXml/2000ml`（分母为目标值）。
+4. **运动强制明细**：非步数运动标题必须带类型（如 `### 下午骑行（约 17:17）`），内容包含距离、时间或消耗。步数格式严格为 `- 总步数：XXXX 步`。
+5. **占位符**：当日全无数据的独立模块，保留 `##` 标题并在下方写 `（待记录）`。
+```
+
+---
+
 ## ⚙️ 配置说明
 
 ### 环境变量（必填/可选）
@@ -271,9 +290,9 @@ https://your-domain.com/health_report_YYYY-MM-DD.pdf
 | `TAVILY_API_KEY` | ❌ 否 | Tavily 搜索 API 密钥（用于 AI 搜索菜谱） | `tvly-dev-xxx` |
 | `DINGTALK_WEBHOOK` | ❌ 否 | 钉钉机器人 Webhook（可选，不配置则不推送） | `https://oapi.dingtalk.com/robot/send?access_token=xxx` |
 | `FEISHU_WEBHOOK` | ❌ 否 | 飞书机器人 Webhook（可选，不配置则不推送） | `https://open.feishu.cn/open-apis/bot/v2/hook/xxx` |
-| `TELEGRAM_BOT_TOKEN` | ❌ 否 | Telegram Bot Token（可选，不配置则不推送） | `8667974729:AAFIc3RyuADM-B-J_KYZEVX5hoYsNrd5SQE` |
-| `TELEGRAM_CHAT_ID` | ❌ 否 | Telegram Chat ID（可选，不配置则不推送） | `5868448763` |
-| `REPORT_WEB_DIR` | ❌ 否 | PDF 报表存放的本地目录（不配置则保存在 reports 目录） | `/opt/1panel/www/sites/agent.btc354.com/index` |
+| `TELEGRAM_BOT_TOKEN` | ❌ 否 | Telegram Bot Token（可选，不配置则不推送） | `YOUR_BOT_TOKEN_HERE` |
+| `TELEGRAM_CHAT_ID` | ❌ 否 | Telegram Chat ID（可选，不配置则不推送） | `YOUR_CHAT_ID_HERE` |
+| `REPORT_WEB_DIR` | ❌ 否 | PDF 报表存放的本地目录（不配置则保存在 reports 目录） | `/var/www/html/report` |
 | `REPORT_BASE_URL` | ❌ 否 | PDF 报告对外下载域名（如不推送可留空） | `` |
 
 **说明**：
@@ -332,7 +351,7 @@ https://your-domain.com/health_report_YYYY-MM-DD.pdf
 crontab -e
 
 # 添加每日 22:00 推送（可自定义时间）
-0 22 * * * bash /root/.openclaw/workspace/skills/health_report/scripts/daily_health_report_pro.sh
+0 22 * * * bash /root/.openclaw/workspace/skills/health-mate/scripts/daily_health_report_pro.sh
 ```
 
 **时间格式说明**：`分 时 日 月 周 命令`
@@ -408,6 +427,12 @@ health_report/
 
 | 版本 | 日期 | 更新内容 |
 |------|------|---------|
+| **v1.1.10** | 2026-03-16 | 🧠 AI 核心链路升级：在文档中引入《记忆落盘铁律 (Memory Write Protocol)》，指导用户规范大模型 Markdown 输出格式，从源头消除乱序与数据丢失 Bug |
+| **v1.1.9** | 2026-03-15 | 🚀 全局可视化重构：引入 matplotlib 绘制营养环形图、饮水堆叠柱状图及运动双轨进度条；全局统一 SaaS 级无边框排版；增强正则引擎容错率；脱敏文档配置示例 |
+| **v1.1.8** | 2026-03-15 | 🎨 视觉与体验重构：引入 matplotlib 生成中文化营养环形图；全局表格统一升级为无边框 SaaS 扁平化布局；PDF 文件名支持精确到秒的时间戳 |
+| **v1.1.7** | 2026-03-15 | ✅ 强化字体加载：增加 assets 目录自动创建与字体文件缺失时的自动下载机制 |
+| **v1.1.6** | 2026-03-15 | ✅ 字体自动下载 + 无公网域名支持：自动检测/下载字体、无 REPORT_BASE_URL 时仅提供本地路径 |
+| **v1.1.5** | 2026-03-15 | ✅ 项目重构：移除硬编码用户信息、动态 PDF 页脚、GitHub 地址更新为 Health-Mate |
 | **v1.1.4** | 2026-03-14 | ✅ ClawHub 可信度修复：添加 homepage/repository/source 字段，解决"unknown/none"警告 |
 | **v1.1.3** | 2026-03-14 | ✅ ClawHub 元数据一致性修复：明确 MEMORY_DIR 必填、install 声明、文档一致性 |
 | **v1.1.2** | 2026-03-14 | ✅ ClawHub 隐私合规：明确 MEMORY_DIR 必填、推送渠道可选、隐私警告强化 |
@@ -429,7 +454,7 @@ health_report/
 
 ## 📞 获取帮助
 
-- **GitHub Issues**: https://github.com/tankeito/openclaw-skill-health-report/issues
+- **GitHub Issues**: https://github.com/tankeito/Health-Mate/issues
 - **作者邮箱**: tqd354@gmail.com
 
 ---

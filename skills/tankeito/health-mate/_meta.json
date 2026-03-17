@@ -1,11 +1,17 @@
 {
   "owner": "tankeito",
   "slug": "health-mate",
-  "displayName": "Health-Mate",
+  "displayName": "Health Mate",
   "latest": {
-    "version": "1.1.4",
-    "publishedAt": 1773491957239,
-    "commit": "https://github.com/openclaw/skills/commit/3f553d94f74311f22af694b5fa5932bb165af649"
+    "version": "1.1.10",
+    "publishedAt": 1773636623917,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.4",
+      "publishedAt": 1773491957239,
+      "commit": "https://github.com/openclaw/skills/commit/3f553d94f74311f22af694b5fa5932bb165af649"
+    }
+  ]
 }
