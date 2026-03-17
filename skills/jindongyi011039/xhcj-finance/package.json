@@ -1,7 +1,7 @@
 {
   "name": "xhcj-finance",
-  "version": "1.0.3",
-  "description": "财经数据查询(需要 XHCJ_API_KEY)",
+  "version": "1.0.8",
+  "description": "财经数据查询",
   "main": "index.js",
   "bin": {
     "xhcj-finance": "./index.js"

@@ -2,51 +2,92 @@
 
 const { Command } = require('commander');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const program = new Command();
 
-// 从环境变量获取API密钥
-const apiKey = process.env['XHCJ_API_KEY'];
-
-// 验证API密钥
-if (!apiKey) {
-  console.error('Error: XHCJ_API_KEY environment variable is not set');
-  process.exit(1);
+// 安全处理API密钥
+function secureProcessApiKey(key) {
+  if (!key) {
+    return '';
+  }
+  return crypto.createHash('md5').update(key).digest('hex');
 }
 
-// 验证API密钥格式（假设API密钥是32位的十六进制字符串）
-if (!/^xhcj_[0-9a-zA-Z]{32}$/.test(apiKey)) { 
-  console.error('Error: Invalid XHCJ_API_KEY format');
-  process.exit(1);
-}
-
-// 安全存储API密钥
-const secureApiKey = apiKey;
+// 全局API密钥选项
+let apiKey;
+let secureApiKey;
 
 // 安全日志记录函数
 function secureLog(message) {
   // 替换API密钥为掩码
-  return message.replace(new RegExp(secureApiKey, 'g'), '***API_KEY_MASKED***');
+  if (secureApiKey) {
+    return message.replace(new RegExp(secureApiKey, 'g'), '***API_KEY_MASKED***');
+  }
+  return message;
 }
+
+program
+  .name('xhcj-finance') 
+  .description('Xinhua Finance API CLI tool')
+  .version('1.0.8')
+  .option('--api-key <key>', 'API key for Xinhua Finance API');
+
+// 解析命令行参数
+const options = program.opts();
+
+// 获取API密钥
+apiKey = options.apiKey;
+
+// 安全存储API密钥
+secureApiKey = secureProcessApiKey(apiKey);
+
+// 清除原始API密钥引用，减少内存中的暴露
+apiKey = undefined;
 
 // 记录程序启动信息
 console.log('Xinhua Finance API CLI tool started');
-console.log(`API key loaded: ${secureLog(apiKey)} ✓`);
+if (secureApiKey) {
+  console.log(`API key loaded: ${secureLog(secureApiKey)} ✓`);
+}
 console.log('API client initialized: ✓');
 
 // 创建axios实例
 const apiClient = axios.create({
   baseURL: 'https://xhcj-h5-zg.cnfin.com/xhcj-bun/func/openclaw', // 假设的API基础URL
   headers: {
-    'Authorization': `Bearer ${secureApiKey}`,  
     'Content-Type': 'application/json'
   }
 });
 
-program
-  .name('xhcj-finance') 
-  .description('Xinhua Finance API CLI tool')
-  .version('1.0.0');
+// 添加请求拦截器，确保API密钥安全传输
+apiClient.interceptors.request.use(
+  (config) => {
+    // 在发送请求前添加Authorization头
+    if (secureApiKey) {
+      config.headers.Authorization = `Bearer ${secureApiKey}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// 添加响应拦截器，确保API密钥不会在响应中泄露
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // 安全处理错误，避免API密钥泄露
+    if (error.config) {
+      // 移除错误对象中的Authorization头
+      delete error.config.headers.Authorization;
+    }
+    return Promise.reject(error);
+  }
+);
 
 // 行情数据命令
 program
@@ -54,6 +95,10 @@ program
   .description('Query market data')
   .option('--symbol <symbol>', 'A股股票代码，如000001.SZ')
   .action(async (options) => {
+    if (!secureApiKey) {
+      console.error('Error: --api-key is required');
+      return;
+    }
     if (!options.symbol) {
       console.error('Error: --symbol is required');
       return;
@@ -85,6 +130,10 @@ program
   .description('Query market kline data')
   .option('--symbol <symbol>', 'A股股票代码，如000001.SZ')
   .action(async (options) => {
+    if (!secureApiKey) {
+      console.error('Error: --api-key is required');
+      return;
+    }
     if (!options.symbol) {
       console.error('Error: --symbol is required');
       return;
@@ -116,6 +165,10 @@ program
   .description('Query stock symbol')
   .option('--name <name>', '股票名称模糊查询，如"中国平安"，也可以是股票代码如"601318"')
   .action(async (options) => {
+    if (!secureApiKey) {
+      console.error('Error: --api-key is required');
+      return;
+    }
     if (!options.name) {
       console.error('Error: --name is required');
       return;
@@ -148,6 +201,10 @@ program
   .option('--category <category>', '新闻资讯分类：1-股票 2-商品期货 3-外汇 4-债券 5-宏观 9-全部, default 9', '9') 
   .option('--limit <number>', 'Limit results, default 10, max 20', '10')
   .action(async (options) => {
+    if (!secureApiKey) {
+      console.error('Error: --api-key is required');
+      return;
+    }
     try {
       const response = await apiClient.post('/finance-data', {
         path: 'news', 
