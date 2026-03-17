@@ -3,9 +3,15 @@
   "slug": "webcam-monitor",
   "displayName": "Webcam Motion Monitor",
   "latest": {
-    "version": "1.0.0",
-    "publishedAt": 1773754922656,
-    "commit": "https://github.com/openclaw/skills/commit/cc74a641509d2834da786644321fd67048d0e762"
+    "version": "1.0.3",
+    "publishedAt": 1773757400098,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.0.0",
+      "publishedAt": 1773754922656,
+      "commit": "https://github.com/openclaw/skills/commit/cc74a641509d2834da786644321fd67048d0e762"
+    }
+  ]
 }

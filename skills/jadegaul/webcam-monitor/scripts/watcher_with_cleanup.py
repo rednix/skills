@@ -25,25 +25,39 @@ def log(message):
     with open(LOG_FILE, "a") as f:
         f.write(log_entry + "\n")
 
-def cleanup_old_snapshots():
-    """Delete snapshots older than MAX_AGE_HOURS"""
+def cleanup_old_files():
+    """Delete snapshots and queue files older than MAX_AGE_HOURS"""
     cutoff_time = datetime.now() - timedelta(hours=MAX_AGE_HOURS)
-    deleted_count = 0
+    deleted_snapshots = 0
+    deleted_queue = 0
     
+    # Clean up old snapshots
     for image_file in SNAPSHOT_DIR.glob("*.jpg"):
         try:
             mtime = datetime.fromtimestamp(image_file.stat().st_mtime)
             if mtime < cutoff_time:
                 image_file.unlink()
-                deleted_count += 1
+                deleted_snapshots += 1
         except Exception as e:
             log(f"  Error deleting {image_file.name}: {e}")
     
-    if deleted_count > 0:
-        remaining = len(list(SNAPSHOT_DIR.glob("*.jpg")))
-        log(f"🧹 Auto-cleanup: {deleted_count} old snapshot(s) deleted, {remaining} remaining")
+    # Clean up old queue files
+    for queue_file in QUEUE_DIR.glob("*.txt"):
+        try:
+            mtime = datetime.fromtimestamp(queue_file.stat().st_mtime)
+            if mtime < cutoff_time:
+                queue_file.unlink()
+                deleted_queue += 1
+        except Exception as e:
+            log(f"  Error deleting queue file {queue_file.name}: {e}")
     
-    return deleted_count
+    if deleted_snapshots > 0 or deleted_queue > 0:
+        remaining_snapshots = len(list(SNAPSHOT_DIR.glob("*.jpg")))
+        remaining_queue = len(list(QUEUE_DIR.glob("*.txt")))
+        log(f"🧹 Auto-cleanup: {deleted_snapshots} snapshot(s), {deleted_queue} queue file(s) deleted")
+        log(f"   Remaining: {remaining_snapshots} snapshots, {remaining_queue} queue files")
+    
+    return deleted_snapshots + deleted_queue
 
 def queue_for_analysis(image_path):
     """Queue image for analysis"""
@@ -54,13 +68,13 @@ def queue_for_analysis(image_path):
         f.write(str(image_path))
     
     log(f"   → Queued: {queue_file.name}")
-    log(f"   → Person: Jade (home office, star necklace)")
+    log(f"   → Person: Jade OR Sarah (home office/living room, cat tree)")
     return queue_file
 
 def watch_snapshots():
     """Watch for new snapshots with auto-cleanup"""
     log(f"👁️  Watching: {SNAPSHOT_DIR}")
-    log(f"🧹 Auto-cleanup: Deletes snapshots older than {MAX_AGE_HOURS} hour(s)")
+    log(f"🧹 Auto-cleanup: Deletes snapshots and queue files older than {MAX_AGE_HOURS} hour(s)")
     log("Press Ctrl+C to stop\n")
     
     known_files = set(f.name for f in SNAPSHOT_DIR.glob("*.jpg"))
@@ -88,7 +102,7 @@ def watch_snapshots():
             
             # Periodic cleanup
             if time.time() - last_cleanup > CLEANUP_INTERVAL:
-                cleanup_old_snapshots()
+                cleanup_old_files()
                 last_cleanup = time.time()
                 # Refresh known files after cleanup
                 known_files = set(f.name for f in SNAPSHOT_DIR.glob("*.jpg"))

@@ -31,6 +31,14 @@ usbipd attach --wsl --busid=1-4
 ls /dev/video*  # Should show /dev/video0
 ```
 
+**Note:** If `/dev/video*` does not appear, you may need to **restart WSL2**:
+```powershell
+# In Windows PowerShell:
+wsl --shutdown
+# Then re-attach the camera:
+usbipd attach --wsl --busid=1-4
+```
+
 ## Quick Start
 
 ### 1. Start Motion Detection
@@ -89,8 +97,19 @@ Edit `scripts/motion_detector_headless.py`:
 ```bash
 # Check USB passthrough
 ls /dev/video*
-# Re-attach from PowerShell:
-# usbipd attach --wsl --busid=1-4
+```
+
+**If no video devices appear, restart WSL2:**
+```powershell
+# In Windows PowerShell:
+wsl --shutdown
+# Then re-attach the camera:
+usbipd attach --wsl --busid=1-4
+```
+
+**Then verify in WSL2:**
+```bash
+ls /dev/video*  # Should now show /dev/video0
 ```
 
 ### Permission denied
