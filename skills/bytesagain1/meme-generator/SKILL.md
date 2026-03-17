@@ -1,7 +1,9 @@
 ---
+version: "2.0.0"
 name: Meme Generator
 description: "Meme Generator. Use when you need meme generator capabilities. Triggers on: meme generator."
   表情包文案生成。梗图创作、热门模板、反应表情、图片配文、病毒传播。Meme text generator with trending templates. 表情包、梗图、搞笑。
+author: BytesAgain
 ---
 # Meme Generator
 
@@ -25,13 +27,11 @@ description: "Meme Generator. Use when you need meme generator capabilities. Tri
 | `template` | template |
 | `viral` | viral |
 
-
 ---
 *Meme Generator by BytesAgain*
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
-
 
 ## Examples
 
@@ -43,13 +43,13 @@ meme-generator help
 meme-generator run
 ```
 
-## How It Works
-
-Reads input, processes with built-in logic, outputs results.
-
-## Tips
-
 - Run `meme-generator help` for commands
 - No API keys needed
-- Works offline
 
+## Commands
+
+Run `meme-generator help` to see all available commands.
+
+## Configuration
+
+Set `MEME_GENERATOR_DIR` to change data directory. Default: `~/.local/share/meme-generator/`

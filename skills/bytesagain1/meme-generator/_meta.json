@@ -3,9 +3,15 @@
   "slug": "meme-generator",
   "displayName": "Meme Generator",
   "latest": {
-    "version": "2.3.1",
-    "publishedAt": 1773536747225,
-    "commit": "https://github.com/openclaw/skills/commit/40a322d8b1fa0bf4749109a5cb34876072742087"
+    "version": "2.3.6",
+    "publishedAt": 1773666499195,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "2.3.1",
+      "publishedAt": 1773536747225,
+      "commit": "https://github.com/openclaw/skills/commit/40a322d8b1fa0bf4749109a5cb34876072742087"
+    }
+  ]
 }
