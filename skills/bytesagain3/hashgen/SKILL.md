@@ -1,7 +1,7 @@
 ---
 name: HashGen
 description: "Hash generator and file integrity verifier. Generate MD5, SHA1, SHA256, SHA512 hashes for text and files, verify file integrity against expected hashes, compare two files by hash, and view all hash algorithms at once. Essential security and verification tool."
-version: "1.0.0"
+version: "2.0.0"
 author: "BytesAgain"
 tags: ["hash","md5","sha256","checksum","security","verify","integrity","crypto"]
 categories: ["Security", "Developer Tools", "Utility"]
@@ -33,7 +33,5 @@ hashgen all "my secret"
 ---
 💬 Feedback & Feature Requests: https://bytesagain.com/feedback
 Powered by BytesAgain | bytesagain.com
-
-## Tips
 
 - Run `hashgen help` for all commands
