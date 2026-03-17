@@ -1,73 +1,103 @@
 ---
 name: giggle-generation-speech
-description: 当用户希望生成语音、配音或文字转音频时使用此技能。通过 Giggle.pro 文转音 API 将文本合成为 AI 语音。触发词：生成语音、文转音、文字转语音、配音、TTS、朗读这段文字、把这段文字读出来、合成语音、我需要一段配音。
+description: "Use when the user wants to generate speech, voiceover, or text-to-audio. Converts text to AI voice via Giggle.pro TTS API. Triggers: generate speech, text-to-speech, TTS, voiceover, read this text aloud, synthesize speech."
+version: "0.0.10"
+license: MIT
+requires:
+  bins: [python3]
+  env: [GIGGLE_API_KEY]
+  pip: [requests]
 metadata:
   {
     "openclaw":
       {
         "emoji": "🔊",
-        "requires": { "bins": ["python3"], "env": ["GIGGLE_API_KEY"] },
+        "requires": {
+          "bins": ["python3"],
+          "env": ["GIGGLE_API_KEY"],
+          "pip": ["requests"]
+        },
         "primaryEnv": "GIGGLE_API_KEY",
-      },
+        "runtimeBehaviors": {
+          "writes": ["~/.openclaw/skills/giggle-generation-speech/logs/"],
+          "cron": "Registers polling job (30s interval) when user initiates speech generation"
+        }
+      }
   }
 ---
 
-# 文转音（Text-to-Audio）
+[简体中文](./SKILL.zh-CN.md) | English
 
-通过 giggle.pro 平台将文本合成为 AI 语音/配音。支持多种音色、情绪和语速。
+# Text-to-Audio
 
-**API Key**：从环境变量 `GIGGLE_API_KEY` 或项目根目录 `.env` 文件中读取。
+Synthesizes text into AI voice/voiceover via giggle.pro. Supports multiple voice tones, emotions, and speaking rates.
 
-> **禁止内联 Python**：所有命令必须通过 `exec` 工具直接执行。**切勿**使用 heredoc 内联代码。
+## ⚠️ Review Before Installing
 
-## 执行流程（阶段 1 提交 + 阶段 2 Cron + 阶段 3 同步兜底）
+**Please review the following before installing.** This skill will:
 
-语音生成通常需要 10–30 秒。采用「快速提交 + Cron 轮询 + 同步兜底」三阶段架构。
+1. **Write** to `~/.openclaw/skills/giggle-generation-speech/logs/` – Task state files for Cron deduplication
+2. **Register Cron** (30s interval) – Async polling when user initiates speech generation; removed when complete
+3. **Forward raw stdout** – Script output (audio links, status) is passed to the user as-is
 
-> **重要**：**切勿**在 exec 的 `env` 参数中传递 `GIGGLE_API_KEY`。API Key 通过系统环境配置；脚本会自动读取。
+**Requirements**: `python3`, `GIGGLE_API_KEY` (system environment variable), pip packages: `requests`
 
 ---
 
-### 阶段 0：引导用户选择音色与情绪（必须）
+**API Key**: Set system environment variable `GIGGLE_API_KEY`. The script will prompt if not configured.
 
-**在提交任务前，必须先引导用户选择音色和情绪，不要使用默认值。**
+> **No inline Python**: All commands must be executed via the `exec` tool. **Never** use heredoc inline code.
 
-1. 执行 `--list-voices` 获取可用音色列表：
+> **No Retry on Error**: If script execution encounters an error, **do not retry**. Report the error to the user directly and stop.
+
+## Execution Flow (Phase 1 Submit + Phase 2 Cron + Phase 3 Sync Fallback)
+
+Speech generation typically takes 10–30 seconds. Uses "fast submit + Cron poll + sync fallback" three-phase architecture.
+
+> **Important**: **Never** pass `GIGGLE_API_KEY` in exec's `env` parameter. API Key is read from system environment variable.
+
+---
+
+### Phase 0: Guide User to Select Voice and Emotion (required)
+
+**Before submitting, you must guide the user to select voice and emotion. Do not use defaults.**
+
+1. Run `--list-voices` to get available voices:
 
 ```bash
 python3 scripts/text_to_audio_api.py --list-voices
 ```
 
-2. 将音色列表以易读的方式展示给用户（包含 voice_id、name、style、gender 等信息），引导用户选择一个音色
-3. 询问用户期望的情绪（如 joy、sad、neutral、angry、surprise 等），如用户无特殊要求可选 neutral
-4. 用户确认音色和情绪后，再进入阶段 1 提交任务
+2. Display the voice list to the user in a readable format (voice_id, name, style, gender, etc.) and guide them to pick one
+3. Ask the user's preferred emotion (e.g. joy, sad, neutral, angry, surprise). Use neutral if no preference
+4. Only after the user confirms voice and emotion, proceed to Phase 1 submit
 
 ---
 
-### 阶段 1：提交任务（exec 在 10 秒内完成）
+### Phase 1: Submit Task (exec completes in ~10 seconds)
 
-**先向用户发送消息**：「语音生成进行中，通常需要 10–30 秒，结果将自动发送。」
+**First send a message to the user**: "Speech generation in progress, usually takes 10–30 seconds. Results will be sent automatically."
 
 ```bash
-# 必须指定用户选择的音色和情绪
+# Must specify user-selected voice and emotion
 python3 scripts/text_to_audio_api.py \
-  --text "今天天气真好" \
+  --text "The weather is nice today" \
   --voice-id "Calm_Woman" \
   --emotion "joy" \
   --speed 1.2 \
   --no-wait --json
 
-# 查看可用音色列表
+# View available voices
 python3 scripts/text_to_audio_api.py --list-voices
 ```
 
-响应示例：
+Response example:
 
 ```json
 {"status": "started", "task_id": "xxx"}
 ```
 
-**立即将 task_id 存入记忆**（`addMemory`）：
+**Immediately store task_id in memory** (`addMemory`):
 
 ```
 giggle-generation-speech task_id: xxx (submitted: YYYY-MM-DD HH:mm)
@@ -75,101 +105,101 @@ giggle-generation-speech task_id: xxx (submitted: YYYY-MM-DD HH:mm)
 
 ---
 
-### 阶段 2：注册 Cron（30 秒间隔）
+### Phase 2: Register Cron (30 second interval)
 
-使用 `cron` 工具注册轮询任务。**必须严格遵循参数格式**：
+Use the `cron` tool to register the polling job. **Strictly follow the parameter format**:
 
 ```json
 {
   "action": "add",
   "job": {
-    "name": "giggle-generation-speech-<task_id 前 8 位>",
+    "name": "giggle-generation-speech-<first 8 chars of task_id>",
     "schedule": {
       "kind": "every",
       "everyMs": 30000
     },
     "payload": {
       "kind": "systemEvent",
-      "text": "语音任务轮询：执行 exec python3 scripts/text_to_audio_api.py --query --task-id <完整 task_id>，按 Cron 逻辑处理 stdout。若 stdout 为非 JSON 纯文本，发送给用户并移除 Cron。若 stdout 为 JSON，不发送消息，继续等待。若 stdout 为空，立即移除 Cron。"
+      "text": "Speech task poll: exec python3 scripts/text_to_audio_api.py --query --task-id <full task_id>, handle stdout per Cron logic. If stdout is non-JSON plain text, forward to user and remove Cron. If stdout is JSON, do not send message, keep waiting. If stdout is empty, remove Cron immediately."
     },
     "sessionTarget": "main"
   }
 }
 ```
 
-**Cron 触发处理**（根据 exec stdout 判断）：
+**Cron trigger handling** (based on exec stdout):
 
-| stdout 模式 | 动作 |
-|------------|------|
-| 非空纯文本（不以 `{` 开头） | **原样转发给用户**，**移除 Cron** |
-| stdout 为空 | 已推送，**立即移除 Cron，不发送消息** |
-| JSON（以 `{` 开头，含 `"status"` 字段） | 不发送消息，不移除 Cron，继续等待 |
+| stdout pattern | Action |
+|----------------|--------|
+| Non-empty plain text (not starting with `{`) | **Forward to user as-is**, **remove Cron** |
+| stdout empty | Already pushed, **remove Cron immediately, do not send message** |
+| JSON (starts with `{`, has `"status"` field) | Do not send message, do not remove Cron, keep waiting |
 
 ---
 
-### 阶段 3：同步等待（乐观路径，Cron 未触发时的兜底）
+### Phase 3: Sync Wait (optimistic path, fallback when Cron hasn't fired)
 
-**无论 Cron 是否注册成功，都必须执行此步骤。**
+**Execute this step whether or not Cron registration succeeded.**
 
 ```bash
 python3 scripts/text_to_audio_api.py --query --task-id <task_id> --poll --max-wait 120
 ```
 
-**处理逻辑**：
+**Handling logic**:
 
-- 返回纯文本（语音就绪/失败消息） → **原样转发给用户**，移除 Cron
-- stdout 为空 → Cron 已推送，移除 Cron，不发送消息
-- exec 超时 → Cron 继续轮询
+- Returns plain text (speech ready/failed message) → **Forward to user as-is**, remove Cron
+- stdout empty → Cron already pushed, remove Cron, do not send message
+- exec timeout → Cron continues polling
 
 ---
 
-## 查看声音列表
+## View Voice List
 
-当用户想查看可用音色时，执行：
+When the user wants to see available voices, run:
 
 ```bash
 python3 scripts/text_to_audio_api.py --list-voices
 ```
 
-脚本会调用 `GET /api/v1/project/preset_tones`，将返回的 `voice_id`、`name`、`style`、`gender`、`age`、`language` 等字段展示给用户，方便用户选择。
+The script calls `GET /api/v1/project/preset_tones` and displays voice_id, name, style, gender, age, language to the user.
 
 ---
 
-## 链接返回规范
+## Link Return Rule
 
-返回给用户的音频链接必须为**完整签名 URL**（含 Policy、Key-Pair-Id、Signature 等查询参数）。正确示例：`https://assets.giggle.pro/...?Policy=...&Key-Pair-Id=...&Signature=...`。错误：不要返回仅含基础路径的未签名 URL（无查询参数）。脚本已自动处理 `~` 编码为 `%7E`，转发时保持原样。
-
----
-
-## 新请求 vs 查询旧任务
-
-**当用户发起新的语音生成请求**时，**必须执行阶段 1 提交新任务**，不要复用记忆中的旧 task_id。
-
-**仅当用户明确询问之前任务的进度**时，才从记忆中查询旧 task_id。
+Audio links returned to the user must be **full signed URLs** (with Policy, Key-Pair-Id, Signature query params). Correct: `https://assets.giggle.pro/...?Policy=...&Key-Pair-Id=...&Signature=...`. Wrong: do not return unsigned URLs with only the base path (no query params). The script handles `~` encoding to `%7E`; keep as-is when forwarding.
 
 ---
 
-## 参数速查
+## New Request vs Query Old Task
 
-| 参数 | 必填 | 默认值 | 说明 |
-|-----|------|--------|------|
-| `--text` | 是 | - | 要合成的文本内容 |
-| `--voice-id` | 是 | - | 音色 ID，必须通过 `--list-voices` 获取并引导用户选择 |
-| `--emotion` | 是 | - | 情绪，如 joy、sad、neutral、angry、surprise 等，需引导用户选择 |
-| `--speed` | 否 | 1 | 语速倍率 |
-| `--list-voices` | - | - | 获取可用音色列表 |
-| `--query` | - | - | 查询任务状态 |
-| `--task-id` | 查询时必填 | - | 任务 ID |
-| `--poll` | 否 | - | 配合 `--query` 同步轮询等待 |
-| `--max-wait` | 否 | 120 | 最长等待秒数 |
+**When the user initiates a new speech generation request**, **must run Phase 1 to submit a new task**. Do not reuse old task_id from memory.
+
+**Only when the user explicitly asks about a previous task's progress** should you query the old task_id from memory.
 
 ---
 
-## 交互引导
+## Parameter Reference
 
-**每次生成语音前，必须完成以下交互**：
+| Parameter | Required | Default | Description |
+|-----------|----------|--------|-------------|
+| `--text` | yes | - | Text to synthesize |
+| `--voice-id` | yes | - | Voice ID; must get via `--list-voices` and guide user to choose |
+| `--emotion` | yes | - | Emotion: joy, sad, neutral, angry, surprise, etc. Guide user to choose |
+| `--speed` | no | 1 | Speaking rate multiplier |
+| `--list-voices` | - | - | Get available voice list |
+| `--query` | - | - | Query task status |
+| `--task-id` | required for query | - | Task ID |
+| `--poll` | no | - | Sync poll with `--query` |
+| `--max-wait` | no | 120 | Max wait seconds |
 
-1. 若用户未提供文本，询问：「您想把哪段文字转换成语音？」
-2. **必须引导用户选择音色**：执行 `--list-voices` 获取音色列表，展示给用户并让用户选择，**不要使用默认音色**
-3. **必须引导用户选择情绪**：询问用户期望的情绪风格（如 joy、sad、neutral、angry、surprise 等）
-4. 用户确认文本、音色、情绪后，再执行阶段 1 提交 → 阶段 2 注册 Cron → 阶段 3 同步等待
+---
+
+## Interaction Guide
+
+**Before each speech generation, complete this interaction**:
+
+1. If the user did not provide text, ask: "Which text would you like to convert to speech?"
+2. **Must guide user to select voice**: Run `--list-voices`, display list, have user choose. **Do not use default voice**
+3. **Must guide user to select emotion**: Ask the user's preferred emotion (joy, sad, neutral, angry, surprise, etc.)
+4. After user confirms text, voice, and emotion, run Phase 1 submit → Phase 2 register Cron → Phase 3 sync wait

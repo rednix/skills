@@ -3,9 +3,15 @@
   "slug": "giggle-generation-speech",
   "displayName": "Giggle Generation Speech",
   "latest": {
-    "version": "0.0.1",
-    "publishedAt": 1773300085606,
-    "commit": "https://github.com/openclaw/skills/commit/30dad4122710d78ae3281b1b84453e57073759e3"
+    "version": "0.0.10",
+    "publishedAt": 1773628567125,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "0.0.1",
+      "publishedAt": 1773300085606,
+      "commit": "https://github.com/openclaw/skills/commit/30dad4122710d78ae3281b1b84453e57073759e3"
+    }
+  ]
 }

@@ -18,13 +18,6 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 
-try:
-    from dotenv import load_dotenv
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
-
 class TaskStatus:
     COMPLETED = "completed"
     FAILED = "failed"
@@ -196,20 +189,12 @@ class TextToAudioAPI:
 
 
 def load_api_key() -> str:
-    """从 .env 或环境变量加载 API Key"""
-    if DOTENV_AVAILABLE:
-        for p in [
-            Path.cwd() / ".env",
-            Path(__file__).parent.parent / ".env",
-            Path(__file__).parent.parent.parent / ".env",
-        ]:
-            if p.exists():
-                load_dotenv(p)
-                break
-
+    """加载 API Key，从系统环境变量 GIGGLE_API_KEY 读取"""
     api_key = os.getenv("GIGGLE_API_KEY")
     if not api_key:
-        print("错误: 未设置 GIGGLE_API_KEY", file=sys.stderr)
+        print("错误: 未找到 GIGGLE_API_KEY，请设置系统环境变量：", file=sys.stderr)
+        print("  export GIGGLE_API_KEY=your_api_key", file=sys.stderr)
+        print("  API Key 可在 https://giggle.pro/ 账号设置中获取。", file=sys.stderr)
         sys.exit(1)
     return api_key
 
@@ -220,7 +205,7 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('--text', type=str, help='要合成的文本内容')
-    parser.add_argument('--voice-id', type=str, default='Calm_Woman', help='音色 ID')
+    parser.add_argument('--voice-id', type=str, required=False, help='音色 ID（使用 --list-voices 查看可用音色）')
     parser.add_argument('--emotion', type=str, help='情绪，如 joy、sad、neutral')
     parser.add_argument('--speed', type=float, default=1.0, help='语速倍率，默认 1')
     parser.add_argument('--list-voices', action='store_true', help='获取可用音色列表')
@@ -318,6 +303,10 @@ def main():
         # 3. 提交模式
         if not args.text:
             print("错误: 需要提供 --text 参数", file=sys.stderr)
+            sys.exit(1)
+
+        if not args.voice_id:
+            print("错误: 需要提供 --voice-id 参数，请先运行 --list-voices 查看可用音色", file=sys.stderr)
             sys.exit(1)
 
         result = client.submit(
