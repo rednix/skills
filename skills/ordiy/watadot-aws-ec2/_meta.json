@@ -1,0 +1,11 @@
+{
+  "owner": "ordiy",
+  "slug": "watadot-aws-ec2",
+  "displayName": "Watadot Aws Ec2",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773664202700,
+    "commit": null
+  },
+  "history": []
+}
