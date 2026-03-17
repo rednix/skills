@@ -1,0 +1,11 @@
+{
+  "owner": "cyecho-io",
+  "slug": "feishu-agent-add",
+  "displayName": "feishuAgentAdd",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773553168625,
+    "commit": null
+  },
+  "history": []
+}
