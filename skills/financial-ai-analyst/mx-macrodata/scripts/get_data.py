@@ -66,13 +66,17 @@ if not EM_API_KEY:
     )
 
 
-DEFAULT_MACRO_DATA_OUTPUT_DIR = Path("workspace")/"MX_MacroData"
+DEFAULT_OUTPUT_DIR = Path.cwd() / "miaoxiang" / "MX_MacroData"
 # MCP 服务器地址
 DEFAULT_URL = "https://ai-saas.eastmoney.com"
 DEFAULT_PAHT = "/proxy/b/mcp/tool/searchMacroData"
 
 def _flatten_value(v: Any) -> str:
-    """将单元格值转为字符串（嵌套结构转为 JSON 字符串）。"""
+    """
+    将任意单元格值转换为字符串。
+    对 dict/list 使用 JSON 序列化，None 转为空字符串。
+    用于统一 CSV 写入时的字段格式。
+    """
     if v is None:
         return ""
     if isinstance(v, (dict, list)):
@@ -82,8 +86,9 @@ def _flatten_value(v: Any) -> str:
 
 def _extract_frequency(entity_name: str) -> str:
     """
-    从entityName中提取频率信息并返回对应的英文翻译
-    例如："GDP（年）" -> "yearly", "宏观数据（周）" -> "weekly", "PMI（月）" -> "monthly"
+    从 entityName 中提取频率并映射为英文标识。
+    支持年/季/月/周/日等常见中文频率关键词。
+    未匹配时返回 unknown。
     """
     # 频率映射字典
     frequency_map = {
@@ -194,7 +199,11 @@ def _parse_macro_table(data_item: Dict[str, Any]) -> Tuple[List[Dict[str, Any]],
 
 
 def _build_headers() -> Dict[str, str]:
-    """构建请求头（与新的curl命令中的headers一致）。"""
+    """
+    构建宏观数据接口请求头。
+    包含 em_api_key 与 JSON 内容类型。
+    返回可直接用于 HTTP 请求的 headers 字典。
+    """
     headers = {
         "em_api_key":  EM_API_KEY,
         "Content-Type": "application/json",
@@ -202,7 +211,11 @@ def _build_headers() -> Dict[str, str]:
     return headers
 
 def _build_request_body(query: str) -> Dict[str, Any]:
-    """构建 POST 请求体（与新的searchMacroData接口一致）。"""
+    """
+    构建 searchMacroData 接口请求体。
+    自动生成 callId 与 userId，并携带查询文本。
+    返回可直接发送的 JSON 对象。
+    """
     call_id = f"call_{uuid.uuid4().hex[:8]}"
     user_id = f"user_{uuid.uuid4().hex[:8]}"
 
@@ -219,16 +232,15 @@ def _build_request_body(query: str) -> Dict[str, Any]:
 
 def _write_csv_file(rows: List[Dict[str, Any]], frequency: str, unique_suffix: str, output_dir: Path) -> Tuple[Path, int]:
     """
-    将指定频率的数据写入CSV文件。
-
-    Returns:
-        (csv_path, row_count)
+    将指定频率的数据写入单个 CSV 文件。
+    自动整理列顺序并优先展示关键字段与日期列。
+    返回 (csv_path, row_count)。
     """
     if not rows:
         return None, 0
 
     # 列名：统一取所有出现过的键
-    fieldnames_set: dict[str, None] = {}
+    fieldnames_set: Dict[str, None] = {}
     for row in rows:
         for k in row:
             fieldnames_set[k] = None
@@ -292,7 +304,7 @@ async def query_macro_data(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    result: dict[str, Any] = {
+    result: Dict[str, Any] = {
         "csv_paths": [],  # 改为列表，支持多个CSV文件
         "description_path": None,
         "row_counts": {},  # 频率 -> 行数
@@ -316,11 +328,6 @@ async def query_macro_data(
             resp.raise_for_status()
             data = resp.json().get("data")
 
-        # 保存原始返回数据用于调试
-        debug_file = output_dir / f"MX_MacroData_{unique_suffix}_raw.json"
-        with open(debug_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"原始数据已保存到: {debug_file}")
 
     except httpx.HTTPStatusError as e:
         result["error"] = f"HTTP错误: {e.response.status_code} - {e.response.text[:200]}"
@@ -467,6 +474,11 @@ async def query_macro_data(
 
 
 def run_cli() -> None:
+    """
+    命令行入口函数。
+    解析 --query 参数并调用异步查询流程。
+    根据执行结果打印文件路径或错误信息。
+    """
     import argparse
     import sys
     """命令行入口：从参数或 stdin 读取查询文本，执行并打印结果路径。"""
@@ -482,7 +494,7 @@ def run_cli() -> None:
         print("示例: 中国近五年GDP / top3 经济体的黄金储备 / 华东五市的房价走势")
         sys.exit(1)
     async def _main() -> None:
-        out_dir = Path(DEFAULT_MACRO_DATA_OUTPUT_DIR)
+        out_dir = Path(os.environ.get("MX_MacroData_OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
         r = await query_macro_data(args.query, output_dir=out_dir)
         if "error" in r:
             print(f"错误: {r['error']}", file=sys.stderr)
@@ -493,8 +505,10 @@ def run_cli() -> None:
         print(f"描述: {r['description_path']}")
         print(f"行数: {r['row_counts']}")
 
-    asyncio.run(_main())
-
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(_main())
+    loop.close()
 
 if __name__ == "__main__":
     run_cli()

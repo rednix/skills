@@ -1,6 +1,6 @@
-﻿---
+---
 name: MX_MacroData
-description: 通过自然语言查询宏观经济数据，结果转为 CSV 并生成描述文件。支持查询 GDP、CPI、货币供应量等宏观指标。需要配置EM_API_KEY环境变量。
+description: 基于东方财富专业数据库，支持自然语言查询全球宏观经济数据，涵盖国民经济核算、价格指数、货币金融、财政收支、对外贸易、就业民生、产业运行等多个领域，可满足各类宏观经济研究、市场分析、政策解读等多元化专业场景需求。返回结果包含数据说明及 csv 文件。
 metadata:
   {
     "openclaw": {
@@ -12,7 +12,7 @@ metadata:
         {
           "id": "pip-deps",
           "kind": "python",
-          "package": "httpx pandas",
+          "package": "httpx",
           "label": "Install Python dependencies"
         }
       ]
@@ -23,6 +23,13 @@ metadata:
 # 宏观经济数据查询 (MX_MacroData)
 
 通过**文本输入**查询宏观经济数据，接口返回 JSON 后会自动转换为 **CSV** 并生成对应的**内容描述 txt** 文件。
+
+## 密钥来源与安全说明
+
+- 本技能仅使用一个环境变量：`EM_API_KEY`。
+- `EM_API_KEY` 由东方财富妙想服务（`https://ai.eastmoney.com/mxClaw`）签发，用于其接口鉴权。
+- 在提供密钥前，请先确认密钥来源、可用范围、有效期及是否支持重置/撤销。
+- 禁止在代码、提示词、日志或输出文件中硬编码/明文暴露密钥。
 
 ## ⚠️ 核心输入约束 (Critical Input Constraints)
 
@@ -45,15 +52,79 @@ metadata:
 ### 3. 时间与地域的灵活性 (Flexible Time & Region)
 - **时间**：无需绝对日期。
   - ✅ 允许：`"查询中国过去五年的M2增速"`、`"查询上个月美国的非农数据"`、`"查询黄金今日价格"`。
-  - ✅ 允许（缺省）：`"查询德国失业率"`。
+  - ✅ 允许（缺省）：`"查询德国失业率"` 。
 - **地域**：无需拆解为子集列表。
   - ✅ 允许：`"查询华东地区GDP"`,`"查询中国各省GDP"`。
   - ⚠️ 注意：若涉及“主要新兴市场”、“Top 5 国家”等动态排名指代，仍建议上层模型解包为具体国家列表（如 `"查询中国、印度、巴西的M2"`），以确保数据源一致性。
+
+## 🔄 输出接口与上层规划协议 (Output Interface & Orchestration Protocol)
+
+本 Skill 仅负责执行单次查询并生成文件。**为实现数据完整性保障，上层规划引擎必须根据以下协议，对本 Skill 的输出进行后续处理。**
+
+### 1. 输出文件结构 (Output File Structure)
+执行 `MX_MacroData` 后，Skill 将在指定目录下生成一个或多个 CSV 文件，以及一个描述文件。
+
+- **CSV 文件**：`MX_MacroData_<查询ID>_<频率>.csv`
+  - *示例*：`MX_MacroData_4591GG28_yearly.csv`, `MX_MacroData_4591GG28_quarterly.csv`, `MX_MacroData_4591GG28_monthly.csv`
+  - **注意**：文件数量和频率取决于查询指标的可用性（yearly、quarterly、monthly、weekly、daily）。
+- **描述文件**：`MX_MacroData_<查询ID>_description.txt`
+  - 包含数据来源、时间范围、指标说明等基础信息。
+
+### 2. 上层规划引擎必须执行的“完整性复核”逻辑 (Mandatory Verification Logic for Orchestrator)
+
+上层规划引擎在调用 `MX_MacroData` 后，**必须**执行以下工作流，以确保最终结果的完整性：
+#### **阶段 A: 任务解析与预期规划 (Task Parsing & Expectation Planning)**
+1.  **解析原始用户意图**：从用户查询中提取核心要素。
+2.  **构建预期全集 (Expected Universe)**：
+    - **地域**：通过规划引擎的内置知识库、搜索引擎或 LLM 推理能力，将模糊地域表述解析为具体行政单元。例如："中国各省" → 34 个省级行政区；"华东地区" → 上海、江苏、浙江、安徽、福建、江西、山东共 7 个省市。
+    - **指标**：将复合指标拆解为独立指标。例如："GDP, CPI" → ["GDP", "CPI"]。
+    - **频率**：根据查询语境推断预期频率，可能生成多个频率的数据文件（yearly、quarterly、monthly等）。
+
+#### **阶段 B: 文件读取与差异检测 (File Reading   & Gap Detection)**
+1.  **获取输出文件列表**：获取 `MX_MacroData` 生成的所有 CSV 文件路径。
+2.  **读取并分析每个文件**：
+    - 使用规划引擎内置的代码执行能力（如 Python Sandbox）读取 CSV。
+    - 提取每个文件中实际覆盖的 `(地区, 指标)` 组合及其数量。
+3.  **执行差异计算**：
+    - 对**每一种频率**的文件，分别计算 `Missing_Pairs_<Frequency> = Expected_Universe - Actual_From_CSV_File`。
+    - 识别出具体缺失的项（如：年频数据中缺失“西藏-GDP”）。
+
+#### **阶段 C: 决策与迭代调用 (Decision & Iterative Invocation)**
+
+> ⚠️ **强制要求**：上层规划引擎**必须**执行以下补全流程，不得在存在缺失数据时直接交付结果。
+
+1.  **判断是否需要补全**：
+    - 如果所有频率的 `Missing_Pairs` 集合均为空：**结束流程**，交付现有文件。
+    - 如果存在非空的 `Missing_Pairs` 集合：**必须进入补全流程**，不可跳过。
+
+2.  **构建补全查询**：
+    - 根据 `Missing_Pairs_<Frequency>` 中的缺失项，结合原始查询的时间维度，构造新的自然语言查询。
+    - **示例**：
+      ```
+      Missing_Pairs_季 = [("西藏", "GDP"), ("宁夏", "GDP")]
+      ↓
+      补全查询 = "查询西藏自治区、宁夏回族自治区的 GDP 季度数据，时间范围同前次查询"
+      ```
+
+3.  **再次调用 `MX_MacroData`**：
+    - 使用新构造的补全查询，再次调用本 Skill 获取缺失数据。
+
+4.  **迭代循环**：
+    - 重复执行 **阶段 B（差异检测）→ 阶段 C（决策补全）**，直至满足以下任一条件：
+      - ✅ 所有频率下的缺失项均已补全
+      - ⚠️ 达到最大重试次数5次，此时应向用户报告未能补全的数据项
+
+#### **阶段 D: 最终交付 (Final Delivery)**
+1.  **数据合并（可选）**：
+    - 如果需要，可将同一频率下多次查询的结果（如多个 `quarterly.csv` 文件）合并为一个完整的 `quarterly.csv`。
+2.  **状态报告**：
+    - 规划引擎应向上游（如用户界面）报告最终交付的文件列表，并可选地报告补全过程（如“系统已自动补全 2 个缺失数据项”）。
 ---
 
 ## 功能范围
 
 ### 基础查询能力
+
 - **经济指标**：GDP、CPI、PPI、PMI、失业率、工业增加值等（支持指定国家/地区及具体指标名）。
 - **货币金融**：M1/M2 货币供应量、社融规模、国债利率、汇率（支持指定币种对）。
 - **商品价格**：黄金、白银、原油、铜、特定稀土氧化物等（**必须**指定具体品种）。
@@ -70,17 +141,10 @@ metadata:
 | 时间灵活 | (无)                                  | 查询美国过去十年的失业率趋势                    |
 | 默认时间 | (无)                                  | 查询日本最新的核心 CPI 数据                     |
 
-## 错误处理机制
-
-若接收到违反上述约束的输入，工具将直接返回错误信息，**不执行任何数据检索**，并提示用户或上层模型进行修正：
-- `Error: Ambiguous Region Detected. Please provide specific city/country names instead of "[Input]".`
-- `Error: Ambiguous Commodity Category. Please specify exact commodity names instead of "[Input]".`
-- `Error: Relative Time/Ranking Detected. Please resolve to specific dates or entity lists before calling.`
-- 
 
 ## 前提条件
 
-### 1. 注册东方财富账号
+### 1. 注册东方财富妙想账号
 
 访问 https://ai.eastmoney.com/mxClaw 注册账号并获取API_KEY。
 
@@ -101,7 +165,7 @@ source ~/.zshrc
 
 
 ```bash
-pip3 install httpx pandas pypinyin --user
+pip3 install httpx --user
 ```
 
 ## 快速开始
@@ -111,7 +175,7 @@ pip3 install httpx pandas pypinyin --user
 在项目根目录或配置的工作目录下执行：
 
 ```bash
-python3 -m scripts.get_data --query 中国GDP
+python3 {baseDir}/scripts/get_data.py --query 中国GDP
 ```
 **参数说明：**
 
@@ -121,7 +185,7 @@ python3 -m scripts.get_data --query 中国GDP
 ```
 ### 2. 代码调用
 
-​```python
+```python
 import asyncio
 from pathlib import Path
 from scripts.get_data import query_macro_data
@@ -143,10 +207,10 @@ asyncio.run(main())
 
 输出示例：
 ```
-CSV: /path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_年.csv
-CSV: /path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_季.csv
-CSV: /path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_月.csv
-描述:/path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_description.txt
+CSV: /path/to/workspace/MX_MacroData/MX_MacroData_4591GG28_yearly.csv
+CSV: /path/to/workspace/MX_MacroData/MX_MacroData_4591GG28_quarterly.csv
+CSV: /path/to/workspace/MX_MacroData/MX_MacroData_4591GG28_monthly.csv
+描述:/path/to/workspace/MX_MacroData/MX_MacroData_4591GG28_description.txt
 行数: 年: 10行, 季: 20行, 月: 40行
 ```
 
@@ -154,8 +218,8 @@ CSV: /path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_月.csv
 
 | 文件 | 说明 |
 |------|------|
-| `MX_MacroData_<查询摘要>_<频率>.csv` | 按频率分组的宏观数据表，UTF-8 编码，可直接用 Excel 或 pandas 打开。 |
-| `MX_MacroData_<查询摘要>_description.txt` | 说明文件，含各频率数据统计、数据来源和单位等信息。 |
+| `MX_MacroData_<查询ID>_<频率>.csv` | 按频率分组的宏观数据表，UTF-8 编码，可直接用 Excel 或 pandas 打开。 |
+| `MX_MacroData_<查询ID>_description.txt` | 说明文件，含各频率数据统计、数据来源和单位等信息。 |
 
 ## 环境变量
 
@@ -166,15 +230,40 @@ CSV: /path/to/workspace/MX_MacroData/MX_MacroData_中国GDP_月.csv
 
 ## 常见问题
 
-**错误：请设置 EM_API_KEY 环境变量**
+### 用户常见问题
 
-1. 请访问 https://ai.eastmoney.com/mxClaw 获取`API_KEY`。
-2. 配置`EM_API_KEY`环境变量
+**Q: 提示"请设置 EM_API_KEY 环境变量"怎么办？**
 
+A: 按以下步骤配置 API 密钥：
+1. 访问 [东方财富宏观查数工具](https://ai.eastmoney.com/mxClaw) 注册并获取 `API_KEY`。
+2. 配置环境变量：
+   ```bash
+   # macOS/Linux
+   export EM_API_KEY="your_api_key_here"
+   
+   # Windows PowerShell
+   $env:EM_API_KEY="your_api_key_here"
+   ```
 
-**如何指定输出目录？**
+**Q: 如何指定输出目录？**
 
+A: 通过设置 `MX_MacroData_OUTPUT_DIR` 环境变量：
 ```bash
 export MX_MacroData_OUTPUT_DIR="/path/to/output"
-python3 scripts/get_data.py --query "查询内容" 
+python3 scripts/get_data.py --query "查询内容"
 ```
+
+### 开发者常见问题（规划引擎集成）
+
+**Q: 为什么需要上层规划引擎做复核？**
+
+A: 本 Skill 专注于单一查询能力，不负责数据完整性校验。完整性验证（如"中国各省"是否真的覆盖全部省份）属于业务逻辑范畴，更适合由具备上下文理解和决策能力的规划引擎来处理。
+
+**Q: 如何判断何时进行复核？**
+
+A: 当原始用户意图包含以下特征时，应自动触发复核流程：
+- **集合性词汇**：如"各省"、"各地区"、"华东地区"等
+- **多指标查询**：如"GDP 和 CPI"、"主要经济指标"等
+
+**Q: 如何处理不同频率的数据？**
+A: **必须**对每种频率的 CSV 文件**分别**执行完整性审计和补全。年频数据的缺失不能用月频数据补全，反之亦然。
