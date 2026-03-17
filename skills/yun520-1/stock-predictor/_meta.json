@@ -1,0 +1,11 @@
+{
+  "owner": "yun520-1",
+  "slug": "stock-predictor",
+  "displayName": "股票预测系统",
+  "latest": {
+    "version": "12.0.0",
+    "publishedAt": 1773672345761,
+    "commit": null
+  },
+  "history": []
+}
