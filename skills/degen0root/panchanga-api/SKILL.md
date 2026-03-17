@@ -1,10 +1,13 @@
 ---
 name: panchanga-api
-version: 3.0.1
-tagline: "Vedic astrology API for AI agents. Panchanga, birth charts, predictions, compatibility, timing."
+version: 4.2.0
+tagline: "Vedic astrology API for AI agents. Panchanga, birth charts, KP system, Pancha Pakshi, Aspects/Drishti, Upagrahas, predictions, compatibility, timing, remedies, webhooks."
 description: >
   Vedic astrology (Jyotish) REST API powered by Swiss Ephemeris.
-  16 endpoints: Panchanga, Kundali, Dasha, Muhurta, Compatibility, Transits, and more.
+  26 endpoints: Panchanga, Kundali (300+ Yogas, Ashtakavarga, Shodhya Pinda, Doshas), KP system (249 sub-lords + ruling planets),
+  Aspects (Graha Drishti + Rashi Drishti), 11 Upagrahas per BPHS,
+  Dasha, Muhurta, Choghadiya, Compatibility, Transits, Vrata calendar, Remedies, Pancha Pakshi Shastra,
+  Webhook subscriptions, Panchanga Search, and more.
   All calculations use Lahiri ayanamsha and sidereal zodiac.
 homepage: "https://api.moon-bot.cc"
 author: moon-bot
@@ -21,11 +24,15 @@ tags:
   - muhurta
   - dasha
   - compatibility
+  - prediction
+  - api
+  - forecast
+  - kp-system
+  - vrata
+  - remedies
 requires:
   env:
-    - name: PANCHANGA_API_KEY
-      description: "API key for PanchangaAPI. Get one free at POST https://api.moon-bot.cc/register"
-      required: true
+    PANCHANGA_API_KEY: "Optional. Free API key from https://api.moon-bot.cc/register"
 auth:
   type: api_key
   header: X-API-Key
@@ -37,25 +44,44 @@ auth:
 
 ## How to Use
 
-If you already have a `PANCHANGA_API_KEY`, add it as `X-API-Key` header to all requests.
+**IMPORTANT: Always use the real current date and time.** LLMs often have incorrect or outdated date/time.
+Before calling any endpoint:
+- Use a system clock or time tool to get the exact current UTC time
+- Convert to the user's timezone if known
+- Format as ISO-8601 with timezone: e.g. "2026-03-15T14:30:00+05:30"
+- NEVER guess or approximate the date/time — incorrect dates produce wrong astrological data
 
-If not, guide the user through registration:
+### API Access
 
-1. Ask: "To get your Vedic astrology reading, I need to connect to PanchangaAPI. It offers 2 free requests per day. Would you like me to set it up?"
-2. If the user agrees, ask for their preferred method:
-   - **Email**: "Please provide your email. You'll receive a verification link and a 6-digit PIN."
-     Then call `POST https://api.moon-bot.cc/register` with `{"email": "user_email"}`.
-     Tell the user: "Check your inbox for a verification email from PanchangaAPI. Click the 'Verify' button or tell me the 6-digit PIN from the email."
-     If user gives PIN: call `POST https://api.moon-bot.cc/verify` with `{"email": "...", "code": "PIN"}`.
-   - **Telegram**: "What is your Telegram user ID?"
-     Then call `POST https://api.moon-bot.cc/register` with `{"telegram_id": ID}`.
-     Tell the user: "Open this link in Telegram to verify:" and share the `verify_url` from the response.
-     Poll `GET https://api.moon-bot.cc/register/status/{account_id}` every 5 seconds until `status` is `verified`.
-3. Once verified, use the returned `api_key` in `X-API-Key` header for all subsequent requests.
+If you have `PANCHANGA_API_KEY`, use it. If not, register first:
 
-When the free quota runs out (HTTP 402), tell the user: "Your free daily quota is used up. You can get more requests — the response includes available packages."
+```bash
+curl -s -X POST https://api.moon-bot.cc/register \
+  -H "Content-Type: application/json" -d '{}'
+```
+This returns `{"api_key": "pnc_..."}`. Use it in all requests as `X-API-Key` header.
+
+### Making Requests
+
+```bash
+curl -s -X POST https://api.moon-bot.cc/panchanga \
+  -H "X-API-Key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"datetime": "2026-03-15T12:00:00+05:30", "latitude": 28.6139, "longitude": 77.2090}'
+```
+
+Base URL: `https://api.moon-bot.cc`
+All endpoints accept JSON body with `datetime` (ISO-8601), `latitude`, `longitude`.
 
 ## Presentation Guidelines
+
+**IMPORTANT: Always use the real current date and time.** Do NOT rely on your training data for the current date.
+Before calling any PanchangaAPI endpoint that requires a datetime parameter:
+- Use a system clock, time tool, or equivalent to get the exact current UTC time
+- Convert to the user's timezone if known (ask the user if unsure)
+- Format as ISO-8601 with timezone offset: e.g. "2026-03-15T14:30:00+05:30"
+- NEVER guess, approximate, or use your training cutoff date — incorrect dates produce entirely wrong astrological data
+- For "today's horoscope" or "current transits" requests, always fetch the real current time first
 
 When presenting results to users:
 - Use proper Vedic terminology (tithi, nakshatra, yoga, karana, vara) with brief explanations.
@@ -81,8 +107,8 @@ that need to deliver authoritative Jyotish readings without any other data sourc
 
 | Endpoint | What You Get | Agent Use Case |
 |----------|-------------|----------------|
-| `/panchanga` | All 5 limbs: tithi, nakshatra, yoga, karana, vara + sunrise/sunset with exact times | Daily horoscope, auspiciousness check, festival verification |
-| `/kundali` | Complete birth chart: Lagna, 9 planets, 12 houses, aspects, Navamsha, Dasha, Ashtakavarga, Yogas | Full birth chart reading, personality analysis, life prediction |
+| `/panchanga` | All 5 limbs: tithi, nakshatra, yoga, karana, vara + sunrise/sunset + Rahukaal, Yamaghanda, Gulika Kaal | Daily horoscope, auspiciousness check, festival verification |
+| `/kundali` | Complete birth chart: Lagna, 9 planets, 12 houses, aspects, Navamsha, Dasha, Ashtakavarga, Yogas, Doshas (Mangal, Kalsarpa, Pitra) | Full birth chart reading, personality analysis, life prediction |
 | `/dasha` | Maha Dasha + Antardasha + Pratyantardasha with exact date ranges | Predictive timeline, life event forecasting, period analysis |
 | `/compatibility` | Ashtakoot 8-fold matching with individual Koot scores (out of 36) | Marriage compatibility, relationship analysis |
 | `/muhurta` | Ranked auspicious windows with quality scores | Wedding date selection, business launch timing, travel planning |
@@ -92,6 +118,15 @@ that need to deliver authoritative Jyotish readings without any other data sourc
 | `/bhava-chalit` | House cusps with planet shifts | Accurate house-level predictions |
 | `/prashna` | Horary analysis with significators and indication scoring | Answer specific questions via Jyotish |
 | `/varshaphal` | Solar Return: Muntha, Year Lord, Tajaka Yogas | Annual predictions, yearly forecast |
+| `/kp` | KP (Krishnamurti) system: 249 sub-lords, Placidus cusps, four-level significator hierarchy | KP-based precise predictions, sub-lord analysis |
+| `/panchanga/search` | Find dates matching tithi+nakshatra+yoga+vara criteria (unique feature) | Find next Ekadashi on Thursday, specific ritual timing |
+| `/vrata/{year}` | Vrata calendar: Ekadashi, Sankranti, Navaratri, Pradosh, Chaturthi dates | Religious observance planning, fasting calendar |
+| `/remedies` | Personalized planetary remedies: mantras, gemstones, fasting, charity | Remedy recommendations based on birth chart |
+| `/pancha-pakshi` | Pancha Pakshi (Five Birds) timing — active bird, activity, sub-periods | Ancient Tamil timing for optimal action windows |
+| `/aspects` | Graha Drishti (house-based) + Rashi Drishti (sign-based) + mutual aspects | Detailed aspect analysis, relationship between planets |
+| `/upagrahas` | 11 sub-planets per BPHS: Dhuma, Gulika, Mandi, Vyatipata, Parivesha, etc. | Fine-grained chart analysis, Gulika/Mandi placement |
+| `/kp/ruling-planets` | 5 KP ruling planets for the moment: ascendant/moon sign & star lords, day lord | KP horary analysis, number-based predictions |
+| `/webhooks/subscribe` | Subscribe to astrological events (Ekadashi, Purnima, eclipses, retrogrades) | Automated alerts for astrological events |
 | `/festivals/{year}` | 50+ Hindu festivals with astronomical basis | Festival calendar, cultural event planning |
 
 ## Everyday Use Cases — This API Is All You Need
@@ -111,7 +146,9 @@ that need to deliver authoritative Jyotish readings without any other data sourc
 | **Best time to travel** | `/muhurta` | Nakshatra direction check, vara favorability for safe journey |
 | **Best time to move into a new home** | `/muhurta` | Classical Vastu griha pravesh timing |
 | **Should I take this job?** | `/prashna` | Horary chart — significator analysis, indication score, guidance |
+| **Find a specific auspicious day** | `/panchanga/search` | Search for next date with specific tithi+nakshatra+yoga+vara combination |
 | **Hindu festival dates** | `/festivals/{year}` | Exact dates for Diwali, Holi, Navaratri, Ekadashi, Purnima, and 50+ more |
+| **Vrata/fasting calendar** | `/vrata/{year}` | Complete religious observance calendar with Ekadashi, Sankranti, Navaratri |
 
 ### Personal Insight & Self-Knowledge
 
@@ -175,10 +212,11 @@ that need to deliver authoritative Jyotish readings without any other data sourc
 |----------|-----------|-------------|
 | **Best day for donations (Daan)** | `/panchanga` | Specific tithi/nakshatra/vara for each charity type (Anna Daan on Sunday, Vastra Daan on Monday, etc.) |
 | **Temple visit / puja timing** | `/panchanga` + `/muhurta` | Brahma Muhurta, favorable tithi, nakshatra deity alignment |
-| **When to start a fast (Vrat)** | `/panchanga` | Ekadashi, Pradosh Vrat, Chaturthi, Purnima/Amavasya dates |
+| **When to start a fast (Vrat)** | `/vrata/{year}` | Ekadashi, Pradosh Vrat, Chaturthi, Purnima/Amavasya dates with full calendar |
 | **Maximize karmic benefit of charity** | `/muhurta` | Jupiter Hora on Thursday with benefic yoga |
 | **Shraddha / ancestral rituals** | `/panchanga` | Pitru Paksha dates, Amavasya, lineage-specific tithi |
-| **Planetary remedy timing (Graha Shanti)** | `/transits` + `/panchanga` | When to perform remedies for afflicted planets |
+| **Planetary remedies** | `/remedies` | Personalized mantras, gemstones, fasting days, charity based on birth chart |
+| **Planetary remedy timing (Graha Shanti)** | `/remedies` + `/transits` | Remedies + optimal timing for performing them |
 | **Mantra initiation (Diksha)** | `/muhurta` | Nakshatra aligned with deity, favorable Lagna, strong guru planet |
 | **Start meditation practice** | `/muhurta` | Brahma Muhurta window, Moon in favorable nakshatra, sattvic yoga |
 
@@ -309,22 +347,22 @@ curl -X POST https://api.moon-bot.cc/kundali \
 
 | Item | Price |
 |------|-------|
-| **1 credit** | **$0.01** |
+| **1 credit** | **$0.03** |
 | Free tier | 2 requests/day (API key required — register first, no payment needed) |
-| 100 credits | $1 |
-| 500 credits | $5 |
-| 1,000 credits | $10 |
-| 5,000 credits | $50 |
+| 100 credits | $3 |
+| 500 credits | $15 |
+| 1,000 credits | $30 |
+| 5,000 credits | $150 |
 
-Per-endpoint credit costs: `/panchanga` = 1, `/dasha` = 2, `/kundali` = 3, `/compatibility` = 5, `/festivals/{year}` = 10.
+Per-endpoint credit costs: `/panchanga` = 1, `/kp/ruling-planets` = 1, `/dasha` = 2, `/upagrahas` = 2, `/kundali` = 3, `/kp` = 3, `/aspects` = 3, `/remedies` = 3, `/panchanga/search` = 5, `/compatibility` = 5, `/vrata/{year}` = 5, `/festivals/{year}` = 10.
 
 ## Payment Methods
 
 | Method | How It Works | Best For |
 |--------|-------------|----------|
-| **x402 USDC** | Send request without auth, get 402, sign USDC payment, retry. $0.01/request. Fully automated. | AI agents with USDC wallet |
-| **Telegram Stars** | @vastr_bot deep link. 1 Star ≈ 1.5 credits. Packages: 67 Stars/$1, 334/$5, 667/$10, 3334/$50. | Users without crypto wallet |
-| **NOWPayments crypto** | `/checkout/{api_key}/{credits}` — 350+ coins (BTC, ETH, USDT, SOL, ...). Packages: 100/$1, 500/$5, 1000/$10, 5000/$50. | Any cryptocurrency |
+| **x402 USDC** | Send request without auth, get 402, sign USDC payment, retry. $0.03/request. Fully automated. | AI agents with USDC wallet |
+| **Telegram Stars** | @vastr_bot deep link. 1 Star ≈ 0.5 credits. Packages: 200 Stars/$3, 1000/$15, 2000/$30, 10000/$150. | Users without crypto wallet |
+| **NOWPayments crypto** | `/checkout/{api_key}/{credits}` — 350+ coins (BTC, ETH, USDT, SOL, ...). Packages: 100/$3, 500/$15, 1000/$30, 5000/$150. | Any cryptocurrency |
 
 ### x402 USDC Auto-Payment (No Registration Needed)
 
@@ -345,10 +383,10 @@ Agent sends the user a deep link via Telegram:
 https://t.me/vastr_bot?start=pay_{api_key}_{stars}
 ```
 
-Example: `https://t.me/vastr_bot?start=pay_pnc_abc123_67` (buy ~100 credits for 67 Stars).
+Example: `https://t.me/vastr_bot?start=pay_pnc_abc123_200` (buy ~100 credits for 200 Stars).
 
 User opens the link in Telegram, pays with Stars, credits are added instantly.
-Pricing: 1 Telegram Star ≈ 1.5 API credits (1 credit = $0.01 = 1 API call).
+Pricing: 1 Telegram Star ≈ 0.5 API credits (1 credit = $0.03 = 1 API call).
 
 ### NOWPayments Crypto (350+ Coins)
 
@@ -369,7 +407,8 @@ Credits are applied automatically after payment confirmation.
 | POST | /panchanga | 1 | Complete Panchanga (5 limbs + times) |
 | GET | /panchanga | 1 | Same via query params |
 | POST | /panchanga/range | 1/day | Multi-day Panchanga |
-| POST | /kundali | 3 | Complete birth chart (Lagna, planets, houses, Navamsha, Dasha, Ashtakavarga, Yogas) |
+| POST | /panchanga/search | 5 | Find dates by panchanga criteria (tithi+nakshatra+yoga+vara) |
+| POST | /kundali | 3 | Complete birth chart (Lagna, planets, houses, Navamsha, Dasha, Ashtakavarga, 300+ Yogas, Doshas) |
 | POST | /dasha | 2 | Vimshottari Dasha (Maha + Antar + Pratyantar) |
 | POST | /compatibility | 5 | Ashtakoot 8-fold matching |
 | POST | /muhurta | 1 | Auspicious timing windows |
@@ -381,6 +420,16 @@ Credits are applied automatically after payment confirmation.
 | POST | /varshaphal | 2 | Tajaka annual predictions |
 | GET | /festivals/{year} | 10 | Hindu festival calendar |
 | GET | /festivals/{year}/{month} | 1 | Monthly festivals |
+| POST | /kp | 3 | KP (Krishnamurti) system: 249 sub-lords, Placidus cusps, significators |
+| POST | /choghadiya | 1 | Choghadiya (8 muhurta divisions) and Hora (planetary hours) |
+| GET | /vrata/{year} | 5 | Vrata/religious observance calendar (Ekadashi, Sankranti, Navaratri) |
+| GET | /vrata/{year}/{month} | 1 | Monthly vrata calendar |
+| POST | /pancha-pakshi | 2 | Pancha Pakshi (Five Birds) timing system — ancient Tamil tradition |
+| POST | /webhooks/subscribe | 1 | Subscribe to astrological event notifications (Ekadashi, Purnima, eclipses, retrogrades) |
+| POST | /remedies | 3 | Planetary remedies (mantras, gemstones, fasting) based on birth chart |
+| POST | /aspects | 3 | Graha Drishti + Rashi Drishti + mutual aspects (Parashari & Jaimini) |
+| POST | /upagrahas | 2 | 11 Upagrahas per BPHS (Dhuma, Gulika, Mandi, Vyatipata, etc.) |
+| POST | /kp/ruling-planets | 1 | 5 KP ruling planets for current moment (ascendant/moon sign & star lords, day lord) |
 | GET | /ephemeris | 1 | Raw planetary positions |
 | POST | /register | free | Get API key (returns polling info for email/TG flows) |
 | GET | /register/status/{account_id} | free | Poll registration status (returns api_key when verified) |
