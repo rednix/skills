@@ -1,0 +1,11 @@
+{
+  "owner": "rightister",
+  "slug": "rightister-qwen-asr",
+  "displayName": "Qwen ASR (C-based Offline)",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773728964473,
+    "commit": null
+  },
+  "history": []
+}
