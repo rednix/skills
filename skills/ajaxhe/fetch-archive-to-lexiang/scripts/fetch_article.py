@@ -1,0 +1,1 @@
+../../xiaolvs-image-writer/scripts/fetch_article.py
