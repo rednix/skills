@@ -1,0 +1,11 @@
+{
+  "owner": "n1neman",
+  "slug": "claude-agent",
+  "displayName": "Claude Agent",
+  "latest": {
+    "version": "2.1.0",
+    "publishedAt": 1773736980045,
+    "commit": null
+  },
+  "history": []
+}
