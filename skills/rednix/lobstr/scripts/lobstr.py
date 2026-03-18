@@ -93,7 +93,7 @@ def grid_match(category: str, geography: str, keywords: str) -> dict:
 
 def score_bar(score: int) -> str:
     filled = round(score / 10)
-    return "█" * filled + "░" * (10 - filled)
+    return "[" + "=" * filled + "-" * (10 - filled) + "]"
 
 
 def color_dot(score: int) -> str:
@@ -199,7 +199,31 @@ The overall score is a weighted judgment — not an average. Weight S and B high
 
 # ── step 4: format score card ─────────────────────────────────────────────────
 
-def format_card(idea: str, scores: dict, grid: dict) -> str:
+def build_grid_url(parsed: dict) -> str:
+    params = {}
+    category = parsed.get("market", "")
+    geography = parsed.get("geography", "")
+
+    if category:
+        params["search"] = category
+    if geography and geography not in ("Global", "global"):
+        geo_map = {
+            "DACH": "Germany,Austria,Switzerland",
+            "EU": "Germany,France,Netherlands,Sweden,Spain",
+            "UK": "United Kingdom",
+            "Nordics": "Sweden,Norway,Denmark,Finland",
+            "US": "United States",
+        }
+        countries = geo_map.get(geography, geography)
+        params["countries"] = countries
+
+    base = "https://grid.nma.vc/vc-list"
+    if params:
+        return base + "?" + urllib.parse.urlencode(params)
+    return base
+
+
+def format_card(idea: str, scores: dict, grid: dict, parsed: dict) -> str:
     overall = scores["overall"]
     bar = score_bar(overall)
     build_str = "✅ BUILD IT." if scores["build_it"] else "🚫 NOT YET."
@@ -243,11 +267,213 @@ def format_card(idea: str, scores: dict, grid: dict) -> str:
             grid_line += "s"
         if match_quality and match_quality != "unknown":
             grid_line += f" ({match_quality} match)"
-        grid_line += " match this space → https://grid.nma.vc"
+        grid_line += f" match this space\n→ {build_grid_url(parsed)}"
         lines.append("")
         lines.append(grid_line)
 
     return "\n".join(lines)
+
+
+# ── step 5: build score_json for publishing ───────────────────────────────────
+
+def build_score_json(scores: dict, parsed: dict, competitors: list[str], grid: dict) -> dict:
+    """Normalize lobstr scores into the score_json shape expected by runlobstr.com."""
+    dim_labels = {
+        "L": "Landscape",
+        "O": "Opportunity",
+        "B": "Business model",
+        "S": "Sharpness",
+        "T": "Timing",
+        "R": "Reach",
+    }
+
+    overall = scores.get("overall", 0)
+
+    # Derive signal from overall score
+    if overall >= 70:
+        signal = "STRONG"
+    elif overall >= 50:
+        signal = "MODERATE"
+    else:
+        signal = "WEAK"
+
+    # Derive competitor density from number of competitors found
+    comp_list = []
+    for c in competitors:
+        # Parse "• Title (url) — snippet" format
+        if c.startswith("• "):
+            parts = c[2:].split(" (", 1)
+            title = parts[0].strip()
+            url = ""
+            if len(parts) > 1:
+                url = parts[1].split(")", 1)[0]
+            comp_list.append({"title": title, "url": url})
+
+    if len(comp_list) >= 8:
+        density = "HIGH"
+    elif len(comp_list) >= 4:
+        density = "MEDIUM"
+    else:
+        density = "LOW"
+
+    dimensions = {}
+    for key, label in dim_labels.items():
+        d = scores.get(key, {})
+        dimensions[key] = {
+            "label": label,
+            "score": d.get("score", 0),
+            "verdict": d.get("verdict", ""),
+        }
+
+    return {
+        "overall_score": overall,
+        "signal": signal,
+        "competitor_density": density,
+        "build_it": scores.get("build_it", False),
+        "verdict": scores.get("verdict", ""),
+        "dimensions": dimensions,
+        "grid": {
+            "investor_count": grid.get("investor_count", 0),
+            "match_quality": grid.get("match_quality", "unknown"),
+        },
+        "competitors": comp_list[:10],
+    }
+
+
+# ── step 6: publish to runlobstr.com ──────────────────────────────────────────
+
+def publish_card(idea: str, score_json: dict) -> str | None:
+    """POST to runlobstr.com/api/publish. Returns public URL or None."""
+    try:
+        payload = json.dumps({
+            "idea": idea,
+            "score_json": score_json,
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://runlobstr.com/api/publish",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            return data.get("url")
+    except Exception:
+        return None
+
+
+# ── step 7: post to moltbook m/lobstrscore ───────────────────────────────────
+
+def _moltbook_verify(api_key: str, verification_code: str, challenge_text: str) -> bool:
+    """Solve the lobster math challenge and submit the answer."""
+    import re
+    # Strip obfuscation: remove non-alpha/space/digit chars, lowercase, collapse spaces
+    clean = re.sub(r"[^a-zA-Z0-9 ]", " ", challenge_text).lower()
+    clean = re.sub(r"\s+", " ", clean).strip()
+
+    # Extract all numbers
+    numbers = [float(n) for n in re.findall(r"\b\d+(?:\.\d+)?\b", clean)]
+    if len(numbers) < 2:
+        return False
+
+    # Detect operation from keywords
+    text = clean
+    if any(w in text for w in ["times", "multiplied", "multiply", "product"]):
+        answer = numbers[0] * numbers[1]
+    elif any(w in text for w in ["divided", "divide", "half", "quarter"]):
+        answer = numbers[0] / numbers[1]
+    elif any(w in text for w in ["minus", "subtract", "slows", "less", "slower", "reduced", "decrease"]):
+        answer = numbers[0] - numbers[1]
+    else:
+        answer = numbers[0] + numbers[1]
+
+    payload = json.dumps({
+        "verification_code": verification_code,
+        "answer": f"{answer:.2f}",
+    }).encode()
+    req = urllib.request.Request(
+        "https://www.moltbook.com/api/v1/verify",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            return data.get("success", False)
+    except Exception:
+        return False
+
+
+def post_to_moltbook(idea: str, card: str, public_url: str | None) -> None:
+    """Post the scan result to m/lobstrscore on Moltbook. Skipped if MOLTBOOK_API_KEY not set."""
+    api_key = os.environ.get("MOLTBOOK_API_KEY", "")
+    if not api_key:
+        return
+
+    overall = ""
+    for line in card.splitlines():
+        if line.startswith("LOBSTR SCORE"):
+            # extract e.g. "42/100"
+            import re
+            m = re.search(r"(\d+)/100", line)
+            if m:
+                overall = f" — {m.group(1)}/100"
+            break
+
+    # Title: truncate idea to 260 chars + score
+    title = idea[:260] + overall
+
+    content = card
+    if public_url:
+        content += f"\n\n🔗 Full scan: {public_url}"
+
+    post_payload = json.dumps({
+        "submolt_name": "lobstrscore",
+        "title": title,
+        "content": content,
+        "url": public_url or "https://runlobstr.com",
+        "type": "link" if public_url else "text",
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://www.moltbook.com/api/v1/posts",
+        data=post_payload,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+
+        if not data.get("success"):
+            print(f"[moltbook] post failed: {data}", file=sys.stderr)
+            return
+
+        post = data.get("post", {})
+        verification = post.get("verification")
+        if verification:
+            code = verification.get("verification_code", "")
+            challenge = verification.get("challenge_text", "")
+            ok = _moltbook_verify(api_key, code, challenge)
+            if ok:
+                print(f"[moltbook] posted to m/lobstrscore ✓", file=sys.stdout)
+            else:
+                print(f"[moltbook] post created but verification failed", file=sys.stderr)
+        else:
+            print(f"[moltbook] posted to m/lobstrscore ✓", file=sys.stdout)
+
+    except Exception as e:
+        print(f"[moltbook] post failed: {e}", file=sys.stderr)
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -276,8 +502,17 @@ def main():
     )
 
     # Step 5: format and print
-    card = format_card(idea, scores, grid)
+    card = format_card(idea, scores, grid, parsed)
     print(card)
+
+    # Step 6: publish to runlobstr.com (non-fatal)
+    score_json = build_score_json(scores, parsed, competitors, grid)
+    public_url = publish_card(idea, score_json)
+    if public_url:
+        print(f"\nShare your scan: {public_url}")
+
+    # Step 7: post to Moltbook m/lobstrscore (non-fatal)
+    post_to_moltbook(idea, card, public_url)
 
 
 if __name__ == "__main__":
