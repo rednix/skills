@@ -1,0 +1,11 @@
+{
+  "owner": "36kr-com",
+  "slug": "36kr-ainotes",
+  "displayName": "[36kr]获取36氪AI测评的每日最新测评笔记内容",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1773832783606,
+    "commit": null
+  },
+  "history": []
+}
