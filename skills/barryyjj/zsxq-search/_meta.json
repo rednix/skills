@@ -3,9 +3,15 @@
   "slug": "zsxq-search",
   "displayName": "Zsxq Search",
   "latest": {
-    "version": "1.1.0",
-    "publishedAt": 1773733410042,
-    "commit": "https://github.com/openclaw/skills/commit/7b242f3b2682d6a34ff92dd327c5d090a15e3225"
+    "version": "1.1.1",
+    "publishedAt": 1773734361437,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.1.0",
+      "publishedAt": 1773733410042,
+      "commit": "https://github.com/openclaw/skills/commit/7b242f3b2682d6a34ff92dd327c5d090a15e3225"
+    }
+  ]
 }

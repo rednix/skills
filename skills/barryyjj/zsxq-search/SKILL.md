@@ -101,6 +101,7 @@ browser(action="snapshot", compact=false, profile="openclaw", targetId=<tabId>)
 ```
 
 - 解析 snapshot 内容，按日期倒序整理为结构化总结返回用户
+- **只输出搜索结果，不输出中间步骤**（导航、点tab、截图确认等过程全部跳过）
 - **如果搜索无结果**（snapshot中出现"暂无搜索结果"等提示文字，或结果列表为空），告知用户并建议换关键词重试
 
 ### Step 6（可选）: 滚动加载更多结果
