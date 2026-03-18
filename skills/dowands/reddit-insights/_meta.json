@@ -3,9 +3,15 @@
   "slug": "reddit-insights",
   "displayName": "Reddit Insights",
   "latest": {
-    "version": "1.2.0",
-    "publishedAt": 1769614982307,
-    "commit": "https://github.com/clawdbot/skills/commit/749fde4890d83693e81c1e29dc8417d2fa2fbd48"
+    "version": "2.2.0",
+    "publishedAt": 1773848458035,
+    "commit": null
   },
-  "history": []
+  "history": [
+    {
+      "version": "1.2.0",
+      "publishedAt": 1769614982307,
+      "commit": "https://github.com/clawdbot/skills/commit/749fde4890d83693e81c1e29dc8417d2fa2fbd48"
+    }
+  ]
 }
