@@ -1,0 +1,11 @@
+{
+  "owner": "codekungfu",
+  "slug": "trending-attractions",
+  "displayName": "网红景点",
+  "latest": {
+    "version": "0.1.0",
+    "publishedAt": 1773734742512,
+    "commit": null
+  },
+  "history": []
+}
