@@ -1,0 +1,90 @@
+{
+  "goods_recommend": {
+    "name": "商品推荐",
+    "emoji": "🔥",
+    "description": "推荐单个商品，带图片和链接",
+    "format": "link",
+    "template": {
+      "title": "🔥 {商品名}",
+      "text": "💰 价格: {价格}\n⭐ 亮点: {亮点}\n\n{描述}",
+      "picUrl": "{图片URL}",
+      "messageUrl": "{商品链接}"
+    }
+  },
+  "goods_list": {
+    "name": "商品列表",
+    "emoji": "📋",
+    "description": "多个商品推荐列表",
+    "format": "feedCard",
+    "template": {
+      "links": [
+        {"title": "🔥 {商品名1} - {价格1}", "picURL": "{图片1}", "messageURL": "{链接1}"},
+        {"title": "🔥 {商品名2} - {价格2}", "picURL": "{图片2}", "messageURL": "{链接2}"}
+      ]
+    }
+  },
+  "task_report": {
+    "name": "任务报告",
+    "emoji": "📋",
+    "description": "任务完成情况报告",
+    "format": "markdown",
+    "template": {
+      "title": "📋 任务完成报告",
+      "text": "### 📋 任务完成报告\n\n**时间**: {时间}\n\n---\n\n| 任务 | 状态 | 备注 |\n|------|------|------|\n{任务表格}\n\n---\n\n**总计**: 完成 {完成数}/{总数} 个任务\n\n> 💡 {总结}"
+    }
+  },
+  "price_alert": {
+    "name": "降价提醒",
+    "emoji": "📉",
+    "description": "商品降价通知",
+    "format": "link",
+    "template": {
+      "title": "📉 降价提醒: {商品名}",
+      "text": "📉 原价: ~~{原价}~~\n💰 现价: **{现价}**\n📉 降幅: {降幅}\n\n⏰ 限时优惠，速抢！",
+      "picUrl": "{图片URL}",
+      "messageUrl": "{商品链接}"
+    }
+  },
+  "order_status": {
+    "name": "订单状态",
+    "emoji": "📦",
+    "description": "订单状态更新通知",
+    "format": "markdown",
+    "template": {
+      "title": "📦 订单状态更新",
+      "text": "### 📦 订单状态更新\n\n**订单号**: {订单号}\n**商品**: {商品名}\n**状态**: {状态}\n\n---\n\n📦 物流信息:\n{物流信息}\n\n---\n\n> ⏰ 更新时间: {时间}"
+    }
+  },
+  "daily_summary": {
+    "name": "每日总结",
+    "emoji": "📊",
+    "description": "每日工作/任务总结",
+    "format": "markdown",
+    "template": {
+      "title": "📊 每日总结 - {日期}",
+      "text": "### 📊 每日总结\n\n**日期**: {日期}\n\n---\n\n#### ✅ 已完成\n\n{已完成列表}\n\n#### ⏳ 进行中\n\n{进行中列表}\n\n#### 📌 待办\n\n{待办列表}\n\n---\n\n**统计**: 完成 {完成数} 项，进行中 {进行中数} 项"
+    }
+  },
+  "meeting_reminder": {
+    "name": "会议提醒",
+    "emoji": "📅",
+    "description": "会议开始前提醒",
+    "format": "actionCard",
+    "template": {
+      "title": "📅 会议提醒",
+      "text": "### 📅 会议提醒\n\n**主题**: {主题}\n**时间**: {时间}\n**地点**: {地点}\n\n**参会人**: {参会人}",
+      "singleTitle": "查看详情",
+      "singleURL": "{链接}"
+    }
+  },
+  "shopping_cart": {
+    "name": "购物车提醒",
+    "emoji": "🛒",
+    "description": "购物车商品汇总",
+    "format": "markdown",
+    "template": {
+      "title": "🛒 购物车提醒",
+      "text": "### 🛒 购物车提醒\n\n您购物车中有 **{商品数}** 件商品，总计 **¥{总金额}**\n\n---\n\n| 商品 | 价格 | 数量 |\n|------|------|------|\n{商品表格}\n\n---\n\n> 💡 部分商品有优惠，点击查看详情"
+    }
+  }
+}
