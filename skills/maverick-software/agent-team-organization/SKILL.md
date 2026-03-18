@@ -106,3 +106,6 @@ If the UI seems correct but saved team hierarchy disappears after clicking **Sav
 
 For the page structure and file map, read:
 - `references/ui-structure.md`
+
+For live gateway/runtime mismatches where the UI looks right but `parentId` or other team fields disappear on save, read:
+- `references/runtime-troubleshooting.md`
